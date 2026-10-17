@@ -495,22 +495,22 @@
                         <Border Background="{DynamicResource PanelRaised}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1" CornerRadius="16" Padding="24" Margin="0,0,0,16">
                             <StackPanel>
                                 <TextBlock Text="PERFORMANCE CENTER" Foreground="{DynamicResource Accent}" FontSize="10" FontWeight="SemiBold"/>
-                                <TextBlock Text="Smoother Roblox, less guesswork." FontSize="24" FontWeight="SemiBold" Margin="0,9,0,8"/>
+                                <TextBlock Text="Graphics and performance" FontSize="24" FontWeight="SemiBold" Margin="0,9,0,8"/>
                                 <TextBlock Text="Performance presets with change summaries and restore options. Results vary by device and experience." Style="{StaticResource Hint}"/>
                             </StackPanel>
                         </Border>
                         <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,15">
                             <StackPanel>
-                                <TextBlock Text="01   Quick presets" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                                <TextBlock Text="Presets update the active profile and apply supported rendering flags while Roblox is closed. FPS caps are configured separately in section 02." Style="{StaticResource Hint}" Margin="0,0,0,17"/>
-                                <TextBlock Text="CHOOSE A PRESET" Foreground="{DynamicResource Accent}" FontSize="10" FontWeight="SemiBold"/>
+                                <TextBlock Text="Rendering presets" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                <TextBlock Text="Optional rendering presets for the active profile. Flag effects depend on Roblox client support; FPS caps are managed independently." Style="{StaticResource Hint}" Margin="0,0,0,17"/>
+                                <TextBlock Text="PRESET" Foreground="{DynamicResource Accent}" FontSize="10" FontWeight="SemiBold"/>
                                 <ComboBox x:Name="PerformancePresetCombo" Margin="0,8,0,14" SelectionChanged="PerformancePresetCombo_SelectionChanged" SelectedIndex="0">
                                     <ComboBoxItem Content="Maximum performance (experimental)" Tag="max"/>
                                     <ComboBoxItem Content="Balanced graphics (experimental)" Tag="balanced"/>
-                                    <ComboBoxItem Content="Roblox defaults (recommended starting point)" Tag="default"/>
+                                    <ComboBoxItem Content="Roblox defaults" Tag="default"/>
                                 </ComboBox>
                                 <TextBlock x:Name="PerformancePresetPreview" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="0,0,0,16"/>
-                                <CheckBox x:Name="PerfGrassToggle" IsChecked="False" Content="Also test reduced grass draw distance (experimental)" Margin="0,0,0,14" Checked="PerfGrassToggle_Changed" Unchecked="PerfGrassToggle_Changed"/>
+                                <CheckBox x:Name="PerfGrassToggle" IsChecked="False" Content="Reduced grass draw distance (experimental)" Margin="0,0,0,14" Checked="PerfGrassToggle_Changed" Unchecked="PerfGrassToggle_Changed"/>
                                 <WrapPanel>
                                     <Button Content="Save and apply preset" Style="{StaticResource PrimaryButton}" Click="ApplyPerformancePreset_Click" Margin="0,0,10,9"/>
                                     <Button Content="Clear performance overrides" Click="ClearPerformanceOverrides_Click" Margin="0,0,10,9"/>
@@ -520,8 +520,8 @@
                         </Border>
                         <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,15">
                             <StackPanel>
-                                <TextBlock Text="02   Roblox graphics · directly from Viora" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,9"/>
-                                <TextBlock Text="Edit Roblox's saved Windows Player settings here, without opening a game. Close Roblox before applying. Settings may be reset by client updates or by changes made in Roblox." Style="{StaticResource Hint}" Margin="0,0,0,15"/>
+                                <TextBlock Text="Frame rate and graphics" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,9"/>
+                                <TextBlock Text="Saved Roblox Player preferences for frame rate and graphics quality. Settings apply while Roblox is closed; client updates may reset them." Style="{StaticResource Hint}" Margin="0,0,0,15"/>
                                 <Grid Margin="0,0,0,13">
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0">
@@ -562,8 +562,8 @@
                         </Border>
                         <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,15">
                             <StackPanel>
-                                <TextBlock Text="03   Windows performance tools" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,9"/>
-                                <TextBlock Text="These are Windows-controlled settings, so their official Settings panels open directly. Viora does not secretly change GPU drivers, power modes, or Windows security settings." Style="{StaticResource Hint}" Margin="0,0,0,14"/>
+                                <TextBlock Text="Windows performance options" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,9"/>
+                                <TextBlock Text="Optional Windows performance controls. The linked system panels remain responsible for driver, power and operating-system preferences." Style="{StaticResource Hint}" Margin="0,0,0,14"/>
                                 <WrapPanel>
                                     <Button Content="Windows Game Mode ↗" Click="OpenGameMode_Click" Margin="0,0,10,9"/>
                                     <Button Content="Graphics preferences ↗" Click="OpenWindowsGraphics_Click" Margin="0,0,10,9"/>
@@ -572,9 +572,9 @@
                         </Border>
                         <Border Style="{StaticResource PanelBorder}">
                             <StackPanel>
-                                <TextBlock Text="04   Check if it helped" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,9"/>
-                                <TextBlock Text="Press Shift + F5 inside Roblox to view performance statistics. Compare the same experience and scene before and after applying a preset. FPS alone isn't everything: watch for stutter, visual glitches and overheating." Style="{StaticResource Hint}" Margin="0,0,0,12"/>
-                                <TextBlock Text="Tip: For graphics and FPS, use the Restore previous values button above. For FastFlags, use Personalise → Utilities → Undo Viora FastFlags." Style="{StaticResource Hint}" FontSize="11"/>
+                                <TextBlock Text="Performance information" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,9"/>
+                                <TextBlock Text="Frame rate and frame-time statistics are available through Roblox's built-in performance display (Shift + F5). Lower graphics settings may help some systems, but hardware limits and experience complexity affect results." Style="{StaticResource Hint}" Margin="0,0,0,12"/>
+                                <TextBlock Text="Previous graphics values and Viora-managed FastFlags are reversible through the restore controls." Style="{StaticResource Hint}" FontSize="11"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -877,7 +877,7 @@
                         <Border Style="{StaticResource PanelBorder}">
                             <StackPanel>
                                 <TextBlock Text="04  Splash Screen" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,10"/>
-                                <TextBlock Text="Customise the compact startup splash with static images, GIF animations and a live preview." Style="{StaticResource Hint}" Margin="0,0,0,12"/>
+                                <TextBlock Text="Full-screen forest splash by default; optional compact image and GIF styles." Style="{StaticResource Hint}" Margin="0,0,0,12"/>
                                 <Button Content="Customise splash screen  ↗" Click="NavSplash_Click" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Left"/>
                             </StackPanel>
                         </Border>
@@ -891,7 +891,7 @@
                             <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,12">
                                 <StackPanel>
                                     <TextBlock Text="Startup splash settings" FontWeight="SemiBold" FontSize="17"/>
-                                    <TextBlock Text="A compact splash window shown when Viora starts. Roblox loading screens are unaffected." Style="{StaticResource Hint}" Margin="0,7,0,14"/>
+                                    <TextBlock Text="The default opens full-screen. Custom images and GIFs retain the compact window. Roblox loading screens are unaffected." Style="{StaticResource Hint}" Margin="0,7,0,14"/>
                                     <CheckBox x:Name="SplashEnable" Style="{StaticResource SwitchCheckBox}" Content="Enable startup splash" Checked="SplashPreviewInput_Changed" Unchecked="SplashPreviewInput_Changed"/>
                                 </StackPanel>
                             </Border>
@@ -900,7 +900,7 @@
                                     <TextBlock Text="01  Splash content" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,9"/>
                                     <TextBlock Text="DEFAULT, IMAGE OR ANIMATED GIF" Foreground="{DynamicResource Accent}" FontSize="10" FontWeight="SemiBold" Margin="0,0,0,7"/>
                                     <ComboBox x:Name="SplashMode" SelectionChanged="SplashPreviewInput_Changed" HorizontalAlignment="Stretch">
-                                        <ComboBoxItem Content="Default Viora" Tag="Default"/>
+                                        <ComboBoxItem Content="Default · full-screen forest" Tag="Default"/>
                                         <ComboBoxItem Content="Custom image (PNG / JPG)" Tag="Image"/>
                                         <ComboBoxItem Content="Custom animated GIF" Tag="Gif"/>
                                     </ComboBox>
@@ -980,7 +980,16 @@
                                 <TextBlock Text="Live preview" FontWeight="SemiBold" FontSize="17"/>
                                 <TextBlock Text="See the selected look before saving." Style="{StaticResource Hint}" FontSize="11" Margin="0,5,0,16"/>
                                 <Border x:Name="SplashPreviewCard" CornerRadius="14" BorderThickness="1" BorderBrush="{DynamicResource Stroke}" Background="#100B1A" Padding="11">
-                                    <StackPanel>
+                                    <Grid>
+                                        <Border x:Name="SplashPreviewDefault" CornerRadius="10" Height="228" ClipToBounds="True" Visibility="Collapsed" Background="#0E0B1B">
+                                            <Grid>
+                                                <Image Source="/Assets/Viora-forest.jpg" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                                <Border Background="#350A061C"/>
+                                                <TextBlock Text="Viora" FontSize="47" FontWeight="ExtraBold" Foreground="#FF9FDB"
+                                                           TextOptions.TextRenderingMode="ClearType" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </Border>
+                                        <StackPanel x:Name="SplashPreviewCompact">
                                         <Border CornerRadius="10" Height="155" Background="#26133C" ClipToBounds="True">
                                             <Grid>
                                                 <Image x:Name="SplashPreviewBackground" Stretch="UniformToFill"/>
@@ -996,10 +1005,11 @@
                                             <TextBlock x:Name="SplashPreviewText" Text="Starting workspace…" HorizontalAlignment="Center" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,7,0,0"/>
                                             <TextBlock Text="●  ●  ●" Foreground="{DynamicResource Accent}" HorizontalAlignment="Center" Margin="0,9,0,0" FontSize="10"/>
                                         </StackPanel>
-                                    </StackPanel>
+                                        </StackPanel>
+                                    </Grid>
                                 </Border>
                                 <TextBlock x:Name="SplashPreviewInfo" Style="{StaticResource Hint}" Text="Small · 2.0 seconds · Default" Margin="0,12,0,0" FontSize="11"/>
-                                <TextBlock Text="A live preview is shown here. Use Play preview to test the separate floating startup window and fade timing." Style="{StaticResource Hint}" FontSize="11" Margin="0,12,0,0"/>
+                                <TextBlock Text="Preview reflects the selected mode. Full-screen default or compact custom media opens with Play preview." Style="{StaticResource Hint}" FontSize="11" Margin="0,12,0,0"/>
                             </StackPanel>
                         </Border>
                     </Grid>
@@ -1075,16 +1085,16 @@
                         <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,16">
                             <StackPanel>
                                 <TextBlock Text="Viora updates" FontSize="18" FontWeight="SemiBold"/>
-                                <TextBlock Text="Configure a public GitHub Releases repository for optional startup checks and checksum-verified EXE downloads. Installation requires manual approval." Style="{StaticResource Hint}" Margin="0,8,0,12"/>
+                                <TextBlock Text="Viora checks published releases and offers one-click installation after confirmation. Downloads are checksum-verified; the previous executable is retained as a backup." Style="{StaticResource Hint}" Margin="0,8,0,12"/>
                                 <TextBlock Text="GITHUB REPOSITORY (owner/repo)" Style="{StaticResource Hint}" FontSize="10"/>
                                 <TextBox x:Name="UpdatesRepo" Margin="0,6,0,12" ToolTip="Example: balcony3232/Viora"/>
                                 <CheckBox x:Name="UpdatesAtStartup" Content="Check for new versions on startup" Style="{StaticResource SwitchCheckBox}" Margin="0,0,0,12"/>
                                 <WrapPanel>
                                     <Button Content="Save update settings" Click="UpdatesSave_Click" Margin="0,0,8,8"/>
                                     <Button Content="Check for updates" Style="{StaticResource PrimaryButton}" Click="UpdatesCheck_Click" Margin="0,0,8,8"/>
-                                    <Button x:Name="UpdatesDownload" Content="Download verified EXE" IsEnabled="False" Click="UpdatesDownload_Click" Margin="0,0,8,8"/>
+                                    <Button x:Name="UpdatesDownload" Content="Install update &amp; restart" IsEnabled="False" Click="UpdatesDownload_Click" Margin="0,0,8,8"/>
                                 </WrapPanel>
-                                <TextBlock x:Name="UpdatesResult" Text="Add a repository and click Check for updates." Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,7,0,0"/>
+                                <TextBlock x:Name="UpdatesResult" Text="Update status is shown here." Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,7,0,0"/>
                             </StackPanel>
                         </Border>
                         <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,16">

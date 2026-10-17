@@ -8,13 +8,14 @@ using System.Text.RegularExpressions;
 namespace Viora;
 
 public sealed record UpdateRelease(string Version, string DetailsUrl, string ExecutableUrl, string ChecksumUrl, string FileName);
+public sealed record VerifiedUpdate(string FilePath, string Sha256);
 
-/// <summary>Checks a user-configured public GitHub repository. Never runs downloaded software.</summary>
+/// <summary>Checks a user-configured public GitHub repository. Downloads are verified before a separate user-approved installer is launched.</summary>
 public static class ReleaseUpdateService
 {
     private static readonly HttpClient Client = new(new HttpClientHandler { AllowAutoRedirect = true })
     { Timeout = TimeSpan.FromSeconds(55) };
-    static ReleaseUpdateService() => Client.DefaultRequestHeaders.UserAgent.ParseAdd("Viora/0.8 (+desktop updater)");
+    static ReleaseUpdateService() => Client.DefaultRequestHeaders.UserAgent.ParseAdd("Viora/0.9.2 (+desktop updater)");
     public static bool TryNormalizeRepo(string input, out string repo)
     {
         repo = input.Trim().Trim('/');
@@ -58,16 +59,16 @@ public static class ReleaseUpdateService
         => Version.TryParse(version, out var latest) &&
            latest > (typeof(ReleaseUpdateService).Assembly.GetName().Version ?? new Version(0, 0));
 
-    public static async Task<string> DownloadVerifiedAsync(UpdateRelease release)
+    public static async Task<VerifiedUpdate> DownloadVerifiedAsync(UpdateRelease release, IProgress<int>? progress = null)
     {
         // The checksum is read from the same release, never guessed or skipped.
         var checksumBody = await Client.GetStringAsync(release.ChecksumUrl);
         var match = Regex.Match(checksumBody, @"(?im)^([a-f0-9]{64})\s+\*?" + Regex.Escape(release.FileName) + @"\s*$");
         if (!match.Success) throw new InvalidDataException("Release SHA-256 checksum file is invalid.");
         var expectedSha = match.Groups[1].Value;
-        var downloads = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
-        Directory.CreateDirectory(downloads);
-        var destination = Path.Combine(downloads, release.FileName);
+        var stage = Path.Combine(Storage.Root, "updates", "staged");
+        Directory.CreateDirectory(stage);
+        var destination = Path.Combine(stage, release.FileName);
         var temp = destination + ".part";
         try
         {
@@ -86,14 +87,18 @@ public static class ReleaseUpdateService
                     total += n;
                     if (total > 350_000_000) throw new InvalidDataException("Release exceeds download limit.");
                     await target.WriteAsync(buffer.AsMemory(0, n));
+                    if (response.Content.Headers.ContentLength is long length && length > 0)
+                        progress?.Report((int)Math.Clamp(total * 100 / length, 0, 100));
                 }
             }
-            using var input = File.OpenRead(temp);
-            var actual = Convert.ToHexString(SHA256.HashData(input));
+            string actual;
+            using (var input = File.OpenRead(temp))
+                actual = Convert.ToHexString(SHA256.HashData(input));
             if (!actual.Equals(expectedSha, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidDataException("SHA-256 verification failed. Download was discarded.");
             File.Move(temp, destination, true);
-            return destination;
+            progress?.Report(100);
+            return new VerifiedUpdate(destination, actual.ToLowerInvariant());
         }
         finally { if (File.Exists(temp)) File.Delete(temp); }
     }

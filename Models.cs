@@ -170,7 +170,7 @@ public sealed class LaunchShortcut
 public sealed class UpdateOptions
 {
     public string GitHubRepository { get; set; } = "balcony3232/Viora";
-    public bool CheckAtStartup { get; set; } = false;
+    public bool CheckAtStartup { get; set; } = true;
 }
 
 public sealed class ThemeColours

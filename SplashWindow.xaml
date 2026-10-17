@@ -8,7 +8,20 @@
         RenderOptions.BitmapScalingMode="HighQuality"
         ResizeMode="NoResize" ShowInTaskbar="False" WindowStartupLocation="CenterScreen"
         Topmost="True">
-    <Border x:Name="Outer" CornerRadius="19" Background="#100B19" BorderBrush="#925DDA"
+    <Grid>
+        <!-- The official default splash is a full-screen image with a single title. -->
+        <Grid x:Name="DefaultFullScreen" Background="#090617" Visibility="Collapsed" ClipToBounds="True">
+            <Image Source="/Assets/Viora-forest.jpg" Stretch="UniformToFill"
+                   RenderOptions.BitmapScalingMode="HighQuality"/>
+            <!-- Gentle contrast overlay keeps the pink wordmark readable on every display. -->
+            <Border Background="#350A061C"/>
+            <TextBlock Text="Viora" FontSize="96" FontWeight="ExtraBold"
+                       FontFamily="Segoe UI" Foreground="#FF9FDB"
+                       TextOptions.TextRenderingMode="ClearType" TextOptions.TextFormattingMode="Display"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                       Margin="24"/>
+        </Grid>
+        <Border x:Name="Outer" CornerRadius="19" Background="#100B19" BorderBrush="#925DDA"
             BorderThickness="1" Margin="0" Padding="15" ClipToBounds="True">
         <Grid>
             <Grid.RowDefinitions><RowDefinition Height="23"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
@@ -36,4 +49,5 @@
             </StackPanel>
         </Grid>
     </Border>
+    </Grid>
 </Window>

@@ -7,9 +7,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <AssemblyName>Viora</AssemblyName>
-    <Version>0.9.1</Version>
-    <FileVersion>0.9.1.0</FileVersion>
-    <AssemblyVersion>0.9.1.0</AssemblyVersion>
+    <Version>0.9.2</Version>
+    <FileVersion>0.9.2.0</FileVersion>
+    <AssemblyVersion>0.9.2.0</AssemblyVersion>
     <RootNamespace>Viora</RootNamespace>
     <ApplicationIcon>Assets\Viora.ico</ApplicationIcon>
   </PropertyGroup>
@@ -17,5 +17,6 @@
     <None Remove="Assets\FlagCatalog.json" />
     <EmbeddedResource Include="Assets\FlagCatalog.json" />
     <Resource Include="Assets\Viora-logo.png" />
+    <Resource Include="Assets\Viora-forest.jpg" />
   </ItemGroup>
 </Project>

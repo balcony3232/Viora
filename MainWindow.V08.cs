@@ -264,7 +264,7 @@ public partial class MainWindow
             _latestRelease = await ReleaseUpdateService.GetLatestAsync(_state.Updates.GitHubRepository);
             bool newer = ReleaseUpdateService.IsNewer(_latestRelease.Version);
             UpdatesResult.Text = newer ?
-                "New release v" + _latestRelease.Version + " available. Click Download verified EXE to save it in Downloads." :
+                "Viora v" + _latestRelease.Version + " is available. Installation is ready after confirmation." :
                 "Up to date. Latest published release: v" + _latestRelease.Version + ".";
             UpdatesDownload.IsEnabled = newer;
             if (silent && newer) SetStatus("Viora v" + _latestRelease.Version + " is available in Utilities.");
@@ -279,18 +279,45 @@ public partial class MainWindow
     }
     private async void UpdatesDownload_Click(object sender, RoutedEventArgs e)
     {
-        if (_downloadingUpdate || _latestRelease is null) return;
-        _downloadingUpdate = true; UpdatesDownload.IsEnabled = false;
-        UpdatesResult.Text = "Downloading EXE and verifying SHA-256…";
+        if (_downloadingUpdate || _latestRelease is null || !ReleaseUpdateService.IsNewer(_latestRelease.Version)) return;
+        if (!ReleaseUpdateService.TryNormalizeRepo(_state.Updates.GitHubRepository, out var repo) ||
+            !repo.Equals("balcony3232/Viora", StringComparison.OrdinalIgnoreCase))
+        {
+            Alert("One-click installation is supported only for the official balcony3232/Viora release feed.");
+            return;
+        }
+        if (MessageBox.Show("Install Viora v" + _latestRelease.Version + "?\n\n" +
+            "The update will be downloaded and SHA-256 verified. Viora will close, replace its current executable, and reopen. " +
+            "A backup of the previous executable will be retained. Local settings and statistics are not changed.",
+            "Viora update", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+
+        _downloadingUpdate = true;
+        UpdatesDownload.IsEnabled = false;
+        UpdatesResult.Text = "Preparing verified update…";
+        bool installing = false;
         try
         {
-            var destination = await ReleaseUpdateService.DownloadVerifiedAsync(_latestRelease);
-            UpdatesResult.Text = "Verified: " + destination + "\nExit Viora before opening the new executable.";
-            MessageBox.Show("Verified update saved to:\n" + destination + "\n\nClose Viora before launching the new version. Settings remain in local AppData.",
-                "Verified download complete", MessageBoxButton.OK, MessageBoxImage.Information);
+            var progress = new Progress<int>(percentage =>
+                UpdatesResult.Text = "Downloading Viora v" + _latestRelease.Version + "… " + percentage + "%");
+            VerifiedUpdate staged = await ReleaseUpdateService.DownloadVerifiedAsync(_latestRelease, progress);
+            UpdatesResult.Text = "Download verified. Installing and restarting…";
+            Storage.Save(_state);
+            UpdateInstallerService.Start(staged);
+            installing = true;
+            // Window_Closing stops tracking and Discord and disposes the system tray.
+            Close();
         }
-        catch (Exception ex) { UpdatesResult.Text = "Download failed: " + ex.Message; Alert(UpdatesResult.Text); }
-        finally { _downloadingUpdate = false; UpdatesDownload.IsEnabled = _latestRelease is not null; }
+        catch (Exception ex)
+        {
+            UpdatesResult.Text = "Update could not start: " + ex.Message +
+                "\nThe current Viora installation was not intentionally changed.";
+            Alert(UpdatesResult.Text);
+        }
+        finally
+        {
+            _downloadingUpdate = false;
+            if (!installing) UpdatesDownload.IsEnabled = _latestRelease is not null;
+        }
     }
 
     private void RecoveryExport_Click(object sender, RoutedEventArgs e)

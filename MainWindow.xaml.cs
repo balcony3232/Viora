@@ -221,7 +221,7 @@ public partial class MainWindow : Window
             PerformancePresets.Apply(ActiveProfile, level, grass, published);
             Persist();
             if (SelectedInstallation is not null && ApplyCurrentProfile())
-                SetStatus("Performance preset saved and applied to Roblox. Restart Roblox to test it.");
+                SetStatus("Performance preset saved. Changes apply during the next Roblox session.");
             else
                 SetStatus("Performance preset saved in the current profile. Select an installation and apply the profile when Roblox is closed.");
         }

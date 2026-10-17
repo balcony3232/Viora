@@ -8,7 +8,7 @@ using System.Windows.Threading;
 
 namespace Viora;
 
-/// <summary>Small, independent post-sign-in startup splash, never a full-screen overlay.</summary>
+/// <summary>Default full-screen forest splash; optional custom media uses a compact window.</summary>
 public partial class SplashWindow : Window
 {
     private readonly SplashOptions _options;
@@ -37,10 +37,25 @@ public partial class SplashWindow : Window
     public SplashWindow(SplashOptions options, bool reduceMotion)
     {
         InitializeComponent();
-        SourceInitialized += (_, _) => PreferNativeRoundedCorners();
+        SourceInitialized += (_, _) =>
+        {
+            if (_options.Mode != "Default") PreferNativeRoundedCorners();
+        };
         _options = options.Clone();
         _reduceMotion = reduceMotion;
-        (Width, Height) = options.Size switch
+        bool defaultSplash = string.Equals(options.Mode, "Default", StringComparison.OrdinalIgnoreCase);
+        DefaultFullScreen.Visibility = defaultSplash ? Visibility.Visible : Visibility.Collapsed;
+        Outer.Visibility = defaultSplash ? Visibility.Collapsed : Visibility.Visible;
+        if (defaultSplash)
+        {
+            // Borderless maximised window covers the primary display, independent of saved compact size.
+            WindowState = WindowState.Maximized;
+            KeyDown += (_, e) =>
+            {
+                if (e.Key == System.Windows.Input.Key.Escape) Close();
+            };
+        }
+        else (Width, Height) = options.Size switch
         {
             "Medium" => (560d, 395d),
             "Large" => (660d, 460d),
@@ -49,7 +64,7 @@ public partial class SplashWindow : Window
         BannerLogo.Visibility = options.ShowLogo && options.Mode == "Default" ? Visibility.Visible : Visibility.Collapsed;
         BrandLogo.Visibility = options.ShowLogo ? Visibility.Visible : Visibility.Collapsed;
         LoadingText.Visibility = options.ShowText ? Visibility.Visible : Visibility.Collapsed;
-        if (!string.IsNullOrWhiteSpace(options.BackgroundFile) && File.Exists(options.BackgroundFile))
+        if (!defaultSplash && !string.IsNullOrWhiteSpace(options.BackgroundFile) && File.Exists(options.BackgroundFile))
             BannerBackground.Source = ReadStatic(options.BackgroundFile);
 
         _player = new GifPlayback(BannerMedia);
