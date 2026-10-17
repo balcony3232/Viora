@@ -69,7 +69,7 @@ public partial class MainWindow
                 Fps = SelectedFps(), Quality = SelectedQuality() };
             _state.LaunchShortcuts.Add(entry);
             Persist(); RefreshQuickList(); QuickList.SelectedItem = entry;
-            SetStatus("Saved '" + entry.DisplayName + "' to your quick launcher.");
+            SetStatus("Saved '" + entry.DisplayName + "' to Quick Launcher.");
         }
         catch (Exception ex) { Alert("Could not save game: " + ex.Message); }
     }
@@ -112,7 +112,7 @@ public partial class MainWindow
     private void QuickRemove_Click(object sender, RoutedEventArgs e)
     {
         if (QuickList.SelectedItem is not LaunchShortcut q) return;
-        if (MessageBox.Show("Remove the quick-launch entry for '" + q.DisplayName + "'? Your game history stays intact.",
+        if (MessageBox.Show("Remove the quick-launch entry for '" + q.DisplayName + "'? Game history will not be deleted.",
             "Remove shortcut", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         _state.LaunchShortcuts.Remove(q);
         Persist(); RefreshQuickList();
@@ -286,7 +286,7 @@ public partial class MainWindow
         {
             var destination = await ReleaseUpdateService.DownloadVerifiedAsync(_latestRelease);
             UpdatesResult.Text = "Verified: " + destination + "\nExit Viora before opening the new executable.";
-            MessageBox.Show("Verified update saved to:\n" + destination + "\n\nClose Viora before launching the new version. Your settings remain in AppData.",
+            MessageBox.Show("Verified update saved to:\n" + destination + "\n\nClose Viora before launching the new version. Settings remain in local AppData.",
                 "Verified download complete", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex) { UpdatesResult.Text = "Download failed: " + ex.Message; Alert(UpdatesResult.Text); }
@@ -305,7 +305,7 @@ public partial class MainWindow
     {
         var picker = new OpenFileDialog { Filter = "Viora backup (*.zip)|*.zip" };
         if (picker.ShowDialog() != true) return;
-        if (MessageBox.Show("Stage this backup for restoration on the NEXT startup?\n\nThis overwrites saved account/settings files and may change your local sign-in. A safety copy of overwritten files will be kept in backups.",
+        if (MessageBox.Show("Stage this backup for restoration at next startup?\n\nSaved account/settings files will be overwritten and local sign-in may change. A safety copy will be retained in backups.",
             "Restore Viora backup", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
         try
         {

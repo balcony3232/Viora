@@ -1,20 +1,20 @@
 <Window x:Class="Viora.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Viora — your Roblox workspace" Width="1240" Height="840"
+        Title="Viora — Roblox Workspace" UseLayoutRounding="True" SnapsToDevicePixels="True" Width="1240" Height="840"
         Background="{DynamicResource Bg}" Closing="Window_Closing" StateChanged="Window_StateChanged"
         MinWidth="1060" MinHeight="810" WindowStartupLocation="CenterScreen">
     <Grid Background="{DynamicResource Bg}">
         <Grid.ColumnDefinitions><ColumnDefinition Width="224"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
         <Border Grid.Column="0" Background="{DynamicResource Sidebar}" BorderBrush="{DynamicResource Stroke}" BorderThickness="0,0,1,0">
-            <DockPanel Margin="14,26,14,18">
+            <DockPanel Margin="12,14,12,16">
                 <StackPanel DockPanel.Dock="Top">
-                    <StackPanel Margin="10,8,6,27">
+                    <StackPanel Margin="8,4,6,15">
                         <StackPanel Orientation="Horizontal">
                             <Image Source="/Assets/Viora-logo.png" Width="32" Height="32" Margin="0,0,8,0"/>
-                            <TextBlock Text="viora" FontWeight="SemiBold" FontSize="22" Foreground="{DynamicResource Fg}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Viora" FontWeight="SemiBold" FontSize="22" Foreground="{DynamicResource Fg}" VerticalAlignment="Center"/>
                         </StackPanel>
-                        <TextBlock Text="your Roblox workspace" FontSize="11" Foreground="{DynamicResource Muted}" Margin="4,7,0,0"/>
+                        <TextBlock Text="Your Roblox workspace" FontSize="11" Foreground="{DynamicResource Muted}" Margin="4,4,0,0"/>
                     </StackPanel>
                     <TextBlock Text="YOUR SPACE" Margin="16,0,0,11" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource Muted}"/>
                     <Button x:Name="NavDashboard" Content="⌂   Overview" Style="{StaticResource NavButton}" Click="NavDashboard_Click"/>
@@ -77,7 +77,7 @@
 
                         </StackPanel>
                     </Border>
-                    <TextBlock Text="VIORA  ·  v0.8.0" FontSize="10" Foreground="{DynamicResource Muted}" HorizontalAlignment="Center" Margin="0,16,0,0"/>
+                    <TextBlock Text="VIORA  ·  v0.9.1" FontSize="10" Foreground="{DynamicResource Muted}" HorizontalAlignment="Center" Margin="0,16,0,0"/>
                     <Button Content="Sign out" Click="SignOut_Click" Margin="0,12,0,0" FontSize="11"/>
                 </StackPanel>
             </DockPanel>
@@ -105,7 +105,7 @@
                                 <StackPanel>
                                     <TextBlock Text="YOUR SPACE" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
                                     <TextBlock x:Name="GreetingText" Text="Hello! Ready to play?" FontWeight="SemiBold" FontSize="26" Margin="0,9,0,0"/>
-                                    <TextBlock Text="Everything you need for Roblox, all in one place." Margin="0,8,0,22" Foreground="{DynamicResource Muted}"/>
+                                    <TextBlock Text="Roblox launch, optimisation and activity tools in one workspace." Margin="0,8,0,22" Foreground="{DynamicResource Muted}"/>
                                     <StackPanel Orientation="Horizontal">
                                         <Button Content="▶  Launch Roblox" Style="{StaticResource PrimaryButton}" Click="Launch_Click" Margin="0,0,10,0"/>
                                         <Button Content="Apply current profile" Click="ApplyProfile_Click" Margin="0,0,10,0"/>
@@ -131,7 +131,7 @@
                             <Border Style="{StaticResource PanelBorder}" Margin="0,0,12,0">
                                 <StackPanel><TextBlock Text="ACTIVE PROFILE" Style="{StaticResource Hint}" FontSize="10"/>
                                     <TextBlock x:Name="DashProfileName" Text="Default" FontSize="19" FontWeight="SemiBold" Margin="0,11,0,4"/>
-                                    <TextBlock Text="Your saved configuration" Style="{StaticResource Hint}" FontSize="11"/>
+                                    <TextBlock Text="Saved profile configuration" Style="{StaticResource Hint}" FontSize="11"/>
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource PanelBorder}">
@@ -145,7 +145,7 @@
                             <StackPanel>
                                 <DockPanel Margin="0,0,0,12">
                                     <Button Content="Open Game Activity Hub  ↗" DockPanel.Dock="Right" Click="NavGameHub_Click"/>
-                                    <TextBlock Text="Your game activity" FontSize="17" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Game activity" FontSize="17" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                 </DockPanel>
                                 <UniformGrid Columns="3" Margin="0,0,0,12">
                                     <StackPanel><TextBlock Text="TODAY" Style="{StaticResource Hint}" FontSize="10"/><TextBlock x:Name="HomeTodayTime" Text="0m" FontSize="21" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/></StackPanel>
@@ -186,7 +186,7 @@
                         <Border Style="{StaticResource PanelBorder}">
                             <StackPanel>
                                 <TextBlock Text="Quick startup tools" FontWeight="SemiBold" FontSize="17" Margin="0,0,0,7"/>
-                                <TextBlock Text="Jump straight to your favourite settings or start a session." Style="{StaticResource Hint}" Margin="0,0,0,16"/>
+                                <TextBlock Text="Shortcuts for frequently used settings and launching Roblox." Style="{StaticResource Hint}" Margin="0,0,0,16"/>
                                 <WrapPanel>
                                     <Button Content="Explore FastFlags  ↗" Click="GoFlags_Click" Margin="0,0,10,10"/>
                                     <Button Content="FPS presets  ↗" Click="GoPerformance_Click" Margin="0,0,10,10"/>
@@ -208,7 +208,7 @@
                         <Border Background="{DynamicResource PanelRaised}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1" CornerRadius="16" Padding="24" Margin="0,0,0,16">
                             <StackPanel>
                                 <TextBlock Text="YOUR GAME ACTIVITY" Foreground="{DynamicResource Accent}" FontWeight="SemiBold" FontSize="10"/>
-                                <TextBlock Text="Your games, in one place." FontSize="25" FontWeight="SemiBold" Margin="0,9,0,5"/>
+                                <TextBlock Text="Game library and activity" FontSize="25" FontWeight="SemiBold" Margin="0,9,0,5"/>
                                 <TextBlock Text="Playtime per Roblox place is observed while Viora is open and Roblox logs identify the game. Earlier version totals can't be attributed retroactively." Style="{StaticResource Hint}" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Border>
@@ -301,7 +301,7 @@
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                             <Border Grid.Column="0" Style="{StaticResource PanelBorder}"><StackPanel>
                                 <TextBlock Text="Favourites &amp; quick launch" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,9"/>
-                                <TextBlock Text="Add a public Roblox place ID or link. Your most recently opened favourites appear first; Viora never auto-joins private servers." Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                                <TextBlock Text="Add a public Roblox place ID or URL. Recently opened favourites appear first; private servers are never joined automatically." Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,0,0,10"/>
                                 <TextBox x:Name="GameHubAddUrl" ToolTip="Paste https://www.roblox.com/games/12345 or place ID" Margin="0,0,0,9"/>
                                 <Button Content="+  Add favourite" Style="{StaticResource PrimaryButton}" Click="AddFavorite_Click" HorizontalAlignment="Left" Margin="0,0,0,12"/>
                                 <ListBox x:Name="GameHubFavoritesList" Height="184" Margin="0,0,0,10" Background="Transparent" BorderThickness="0"
@@ -467,7 +467,7 @@
                                 <TextBlock Text="Session status" FontSize="17" FontWeight="SemiBold"/>
                                 <TextBlock x:Name="StatsCurrentSession" Text="Roblox is not currently detected." Foreground="{DynamicResource Accent}" Margin="0,10,0,12"/>
                                 <TextBlock x:Name="StatsLastSeen" Style="{StaticResource Hint}" Margin="0,0,0,14"/>
-                                <TextBlock Text="These aren't your complete Roblox account statistics or historical playtime. Closing Viora pauses monitoring; launching it during an existing session may count that session as newly observed." Style="{StaticResource Hint}" FontSize="11" Margin="0,0,0,14"/>
+                                <TextBlock Text="Statistics reflect only locally observed sessions, not full Roblox account history. Monitoring pauses when Viora closes; a session already underway may be counted as a new observation." Style="{StaticResource Hint}" FontSize="11" Margin="0,0,0,14"/>
                                 <WrapPanel>
                                     <Button Content="Export statistics CSV" Style="{StaticResource PrimaryButton}" Click="ExportStats_Click" Margin="0,0,10,0"/>
                                     <Button Content="Reset my statistics" Click="ResetStats_Click"/>
@@ -496,13 +496,13 @@
                             <StackPanel>
                                 <TextBlock Text="PERFORMANCE CENTER" Foreground="{DynamicResource Accent}" FontSize="10" FontWeight="SemiBold"/>
                                 <TextBlock Text="Smoother Roblox, less guesswork." FontSize="24" FontWeight="SemiBold" Margin="0,9,0,8"/>
-                                <TextBlock Text="Choose a starting point, see exactly what changes, and restore the original settings whenever you like. Results depend on your hardware and the game." Style="{StaticResource Hint}"/>
+                                <TextBlock Text="Performance presets with change summaries and restore options. Results vary by device and experience." Style="{StaticResource Hint}"/>
                             </StackPanel>
                         </Border>
                         <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,15">
                             <StackPanel>
                                 <TextBlock Text="01   Quick presets" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                                <TextBlock Text="The preset updates your active profile and applies supported rendering flags to Roblox when the game is closed. It does not set the FPS cap below; use the direct controls in section 02 for that." Style="{StaticResource Hint}" Margin="0,0,0,17"/>
+                                <TextBlock Text="Presets update the active profile and apply supported rendering flags while Roblox is closed. FPS caps are configured separately in section 02." Style="{StaticResource Hint}" Margin="0,0,0,17"/>
                                 <TextBlock Text="CHOOSE A PRESET" Foreground="{DynamicResource Accent}" FontSize="10" FontWeight="SemiBold"/>
                                 <ComboBox x:Name="PerformancePresetCombo" Margin="0,8,0,14" SelectionChanged="PerformancePresetCombo_SelectionChanged" SelectedIndex="0">
                                     <ComboBoxItem Content="Maximum performance (experimental)" Tag="max"/>
@@ -623,7 +623,7 @@
                                     <TextBlock x:Name="FlagExampleValue" Text="" Style="{StaticResource Hint}" FontSize="10" Margin="0,0,0,15"/>
                                     <Button x:Name="SaveFlagButton" Content="Add / update in profile" Style="{StaticResource PrimaryButton}" Click="SaveFlag_Click" Margin="0,0,0,9"/>
                                     <Button x:Name="RemoveFlagButton" Content="Remove from profile" Click="RemoveFlag_Click"/>
-                                    <TextBlock Text="Changes apply to your saved profile first. To write supported values, close Roblox and apply your profile." Style="{StaticResource Hint}" FontSize="11" Margin="0,12,0,0"/>
+                                    <TextBlock Text="Changes are saved to the selected profile. Supported values can be applied when Roblox is closed." Style="{StaticResource Hint}" FontSize="11" Margin="0,12,0,0"/>
                                 </StackPanel>
                             </ScrollViewer>
                         </Border>
@@ -649,7 +649,7 @@
                     <Border Grid.Column="2" Style="{StaticResource PanelBorder}">
                         <StackPanel>
                             <TextBlock Text="Manage profiles" FontSize="18" FontWeight="Bold" Margin="0,0,0,12"/>
-                            <TextBlock Text="Profiles keep separate sets of flags, so you can switch configurations without losing previous settings." Style="{StaticResource Hint}" Margin="0,0,0,24"/>
+                            <TextBlock Text="Profiles maintain independent FastFlag configurations without overwriting previous settings." Style="{StaticResource Hint}" Margin="0,0,0,24"/>
                             <TextBlock Text="PROFILE NAME" FontSize="10" Foreground="{DynamicResource Accent}" FontWeight="Bold"/>
                             <TextBox x:Name="ProfileNameBox" Margin="0,8,0,14"/>
                             <WrapPanel>
@@ -669,7 +669,7 @@
                 <!-- Asset Studio -->
                 <ScrollViewer x:Name="ModsPage" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" Margin="0,8,0,10">
                     <StackPanel>
-                        <TextBlock Text="Replace optional local textures, sounds or fonts. You must point to an existing asset inside the client's content directory. The original is backed up before any replacement." Style="{StaticResource Hint}" Margin="0,0,0,16"/>
+                        <TextBlock Text="Optional local texture, sound and font replacements require an existing asset in the client content directory. Originals are backed up before replacement." Style="{StaticResource Hint}" Margin="0,0,0,16"/>
                         <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,16">
                             <StackPanel>
                                 <TextBlock Text="Stage a new asset" FontSize="18" FontWeight="Bold" Margin="0,0,0,17"/>
@@ -694,7 +694,7 @@
                                     <Button Content="Restore originals" Click="RestoreAssets_Click" Margin="0,0,9,9"/>
                                     <Button Content="Remove from staged list" Click="DeleteMod_Click" Margin="0,0,9,9"/>
                                 </WrapPanel>
-                                <TextBlock Text="Important: Roblox updates can replace your modified resources. Use the restore button before deleting staged assets." Style="{StaticResource Hint}" FontSize="11" Margin="0,9,0,0"/>
+                                <TextBlock Text="Roblox updates may overwrite modified resources. Restore original assets before deleting staged replacements." Style="{StaticResource Hint}" FontSize="11" Margin="0,9,0,0"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -706,8 +706,8 @@
                         <Border Background="{DynamicResource PanelRaised}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1" CornerRadius="16" Padding="24" Margin="0,0,0,16">
                             <StackPanel>
                                 <TextBlock Text="DISCORD INTEGRATION" Foreground="{DynamicResource Accent}" FontWeight="Bold" FontSize="10"/>
-                                <TextBlock Text="Your Roblox activity, your way." FontSize="24" FontWeight="SemiBold" Margin="0,10,0,8"/>
-                                <TextBlock Text="Show your current Roblox experience, a running timer and optional idle status in Discord. Everything is controlled here." Style="{StaticResource Hint}"/>
+                                <TextBlock Text="Discord activity settings" FontSize="24" FontWeight="SemiBold" Margin="0,10,0,8"/>
+                                <TextBlock Text="Optional Discord Rich Presence for detected experiences, session time and idle status." Style="{StaticResource Hint}"/>
                             </StackPanel>
                         </Border>
                         <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,16">
@@ -736,7 +736,7 @@
                         </Border>
                         <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,16">
                             <StackPanel>
-                                <TextBlock Text="02   Customize your activity" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,13"/>
+                                <TextBlock Text="02   Activity display" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,13"/>
                                 <CheckBox x:Name="DiscordShowGame" Style="{StaticResource SwitchCheckBox}" Content="Show detected Roblox experience names (may not work in every session)" Margin="0,0,0,12"/>
                                 <TextBlock Text="MANUAL EXPERIENCE NAME (OPTIONAL)" Foreground="{DynamicResource Accent}" FontSize="10" FontWeight="Bold"/>
                                 <TextBox x:Name="DiscordManualGame" Margin="0,7,0,5" MaxLength="100"/>
@@ -756,7 +756,7 @@
                                 <CheckBox x:Name="DiscordShowClosed" Style="{StaticResource SwitchCheckBox}" Content="Show 'Roblox closed' / Viora idle activity when not playing" Margin="0,0,0,16"/>
                                 <TextBlock Text="OPTIONAL LARGE IMAGE ASSET KEY" Foreground="{DynamicResource Accent}" FontSize="10" FontWeight="Bold"/>
                                 <TextBox x:Name="DiscordImageKey" Margin="0,7,0,8" MaxLength="120"/>
-                                <TextBlock Text="Upload an image in your Discord app's Rich Presence assets and enter the image key here. Leave blank for no image." Style="{StaticResource Hint}" Margin="0,0,0,15"/>
+                                <TextBlock Text="Use an image asset configured in the Discord Developer Portal. Leave empty to hide the large image." Style="{StaticResource Hint}" Margin="0,0,0,15"/>
                                 <WrapPanel>
                                     <Button Content="Save and connect" Style="{StaticResource PrimaryButton}" Click="SaveDiscord_Click" Margin="0,0,10,8"/>
                                     <Button Content="Turn off and clear presence" Click="DisableDiscord_Click" Margin="0,0,10,8"/>
@@ -766,7 +766,7 @@
                         <Border Style="{StaticResource PanelBorder}">
                             <StackPanel>
                                 <TextBlock Text="Privacy and compatibility" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" Margin="0,0,0,9"/>
-                                <TextBlock Text="Game detection reads only your local Roblox Player logs. When an experience ID is found, Viora optionally asks Roblox's public game API for its name. Discord activity is public to people who can see your Discord activity. No Discord or Roblox passwords, cookies or private server IDs are requested. Keep Viora running for updates; Roblox updates may change log formats." Style="{StaticResource Hint}" TextWrapping="Wrap"/>
+                                <TextBlock Text="Detection uses local Roblox Player logs and, optionally, the public game-name API. Discord activity is visible according to Discord privacy settings. No account passwords, cookies or private server IDs are required. Tracking operates while Viora is running; Roblox updates may affect log detection." Style="{StaticResource Hint}" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Border>
                         <Border Style="{StaticResource PanelBorder}" Margin="0,16,0,0">
@@ -809,8 +809,8 @@
                         <Border Background="{DynamicResource PanelRaised}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1" CornerRadius="16" Padding="24" Margin="0,0,0,16">
                             <StackPanel>
                                 <TextBlock Text="MAKE IT YOURS" Foreground="{DynamicResource Accent}" FontSize="10" FontWeight="Bold"/>
-                                <TextBlock Text="Your workspace. Your style." FontSize="24" FontWeight="SemiBold" Margin="0,8,0,6"/>
-                                <TextBlock Text="Everything on this page stays on your PC. Themes, avatar images, and animations never modify Roblox itself." Style="{StaticResource Hint}"/>
+                                <TextBlock Text="Appearance and themes" FontSize="24" FontWeight="SemiBold" Margin="0,8,0,6"/>
+                                <TextBlock Text="Appearance settings are stored locally. Themes, avatars and animations do not modify the Roblox client." Style="{StaticResource Hint}"/>
                             </StackPanel>
                         </Border>
                         <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,16">
@@ -819,7 +819,7 @@
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                                     <Ellipse x:Name="AppearanceAvatar" Width="78" Height="78" Stroke="{DynamicResource Accent}" StrokeThickness="2"/>
                                     <StackPanel Margin="18,8,0,0">
-                                        <TextBlock Text="Shown in your dashboard and sidebar" FontWeight="SemiBold"/>
+                                        <TextBlock Text="Displayed on dashboard and sidebar" FontWeight="SemiBold"/>
                                         <TextBlock Text="PNG or JPEG · max 5 MB; a private local copy is saved." Style="{StaticResource Hint}" Margin="0,6,0,0"/>
                                     </StackPanel>
                                 </StackPanel>
@@ -840,7 +840,7 @@
                                     <ComboBoxItem Content="Midnight · electric blue" Tag="Midnight"/>
                                     <ComboBoxItem Content="Rose · soft pink" Tag="Rose"/>
                                     <ComboBoxItem Content="Emerald · mint green" Tag="Emerald"/>
-                                    <ComboBoxItem Content="Custom · your own colours" Tag="Custom"/>
+                                    <ComboBoxItem Content="Custom · editable colours" Tag="Custom"/>
                                 </ComboBox>
                                 <TextBlock x:Name="ThemeDescription" Style="{StaticResource Hint}" Margin="0,12,0,0"/>
                             </StackPanel>
@@ -871,13 +871,13 @@
                             <StackPanel>
                                 <TextBlock Text="03  Motion" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,9"/>
                                 <CheckBox x:Name="AppearanceReduceMotion" Style="{StaticResource SwitchCheckBox}" Content="Reduce motion (disable page fade animations)" Checked="ReduceMotion_Changed" Unchecked="ReduceMotion_Changed"/>
-                                <TextBlock Text="Page transitions are subtle and never delay your controls. Reduced motion disables them completely." Style="{StaticResource Hint}" Margin="0,12,0,0"/>
+                                <TextBlock Text="Reduced motion disables page transitions and other optional interface animations." Style="{StaticResource Hint}" Margin="0,12,0,0"/>
                             </StackPanel>
                         </Border>
                         <Border Style="{StaticResource PanelBorder}">
                             <StackPanel>
                                 <TextBlock Text="04  Splash Screen" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,10"/>
-                                <TextBlock Text="Your splash screen now has its own editor, with animated GIFs, a compact startup window, and a live preview." Style="{StaticResource Hint}" Margin="0,0,0,12"/>
+                                <TextBlock Text="Customise the compact startup splash with static images, GIF animations and a live preview." Style="{StaticResource Hint}" Margin="0,0,0,12"/>
                                 <Button Content="Customise splash screen  ↗" Click="NavSplash_Click" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Left"/>
                             </StackPanel>
                         </Border>
@@ -890,8 +890,8 @@
                         <StackPanel Grid.Column="0" Margin="0,0,14,0">
                             <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,12">
                                 <StackPanel>
-                                    <TextBlock Text="Your startup, your style" FontWeight="SemiBold" FontSize="17"/>
-                                    <TextBlock Text="A small floating splash window when you sign in to Viora. It never changes Roblox itself." Style="{StaticResource Hint}" Margin="0,7,0,14"/>
+                                    <TextBlock Text="Startup splash settings" FontWeight="SemiBold" FontSize="17"/>
+                                    <TextBlock Text="A compact splash window shown when Viora starts. Roblox loading screens are unaffected." Style="{StaticResource Hint}" Margin="0,7,0,14"/>
                                     <CheckBox x:Name="SplashEnable" Style="{StaticResource SwitchCheckBox}" Content="Enable startup splash" Checked="SplashPreviewInput_Changed" Unchecked="SplashPreviewInput_Changed"/>
                                 </StackPanel>
                             </Border>
@@ -908,7 +908,7 @@
                                         <Button Content="Choose image / GIF…" Style="{StaticResource PrimaryButton}" Click="SplashChooseMedia_Click" Margin="0,0,10,8"/>
                                         <Button Content="Clear custom media" Click="SplashClearMedia_Click" Margin="0,0,0,8"/>
                                     </WrapPanel>
-                                    <TextBlock x:Name="SplashMediaLabel" Style="{StaticResource Hint}" FontSize="11" Text="Default viora artwork" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock x:Name="SplashMediaLabel" Style="{StaticResource Hint}" FontSize="11" Text="Default Viora artwork" TextTrimming="CharacterEllipsis"/>
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,12">
@@ -924,13 +924,13 @@
                                         <TextBlock Text="Duration" FontWeight="SemiBold" DockPanel.Dock="Left"/>
                                         <TextBlock x:Name="SplashDurationLabel" Text="2.0 seconds" Foreground="{DynamicResource Accent}" HorizontalAlignment="Right"/>
                                     </DockPanel>
-                                    <Slider x:Name="SplashDurationSlider" Minimum="0.5" Maximum="10" TickFrequency="0.5" IsSnapToTickEnabled="True" Value="2" ValueChanged="SplashPreviewInput_Changed"
+                                    <Slider x:Name="SplashDurationSlider" Minimum="0.5" Maximum="10" TickFrequency="0.5" IsSnapToTickEnabled="True" Value="2" Margin="0,4,0,5" ValueChanged="SplashPreviewInput_Changed"
                                             AutomationProperties.Name="Splash duration in seconds"/>
                                     <DockPanel Margin="0,2,0,0">
                                         <TextBlock DockPanel.Dock="Left" Text="0.5s" Foreground="{DynamicResource Muted}" FontSize="10"/>
                                         <TextBlock Text="10s" HorizontalAlignment="Right" Foreground="{DynamicResource Muted}" FontSize="10"/>
                                     </DockPanel>
-                                    <TextBlock Text="Preview follows your chosen duration. Very short values may hide long GIFs before they finish." Style="{StaticResource Hint}" FontSize="11" Margin="0,7,0,0"/>
+                                    <TextBlock Text="Preview duration matches the selected value. Short durations may end before a GIF completes." Style="{StaticResource Hint}" FontSize="11" Margin="0,7,0,0"/>
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,12">
@@ -973,7 +973,7 @@
                                 <Button Content="Play preview" Click="SplashTest_Click" Margin="0,0,9,8"/>
                                 <Button Content="Reset defaults" Click="SplashReset_Click" Margin="0,0,0,8"/>
                             </WrapPanel>
-                            <TextBlock Text="Changes aren't saved until you press Save. Custom images and GIFs are copied into Viora's local app data folder." Style="{StaticResource Hint}" FontSize="11"/>
+                            <TextBlock Text="Settings remain unsaved until Save is selected. Imported images and GIFs are copied into local application data." Style="{StaticResource Hint}" FontSize="11"/>
                         </StackPanel>
                         <Border Grid.Column="1" Background="{DynamicResource Panel}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1" CornerRadius="12" Padding="16" VerticalAlignment="Top">
                             <StackPanel>
@@ -1009,8 +1009,8 @@
                     <StackPanel Margin="0,0,8,12">
                         <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,14">
                             <StackPanel>
-                                <TextBlock Text="Your games, one click away" FontSize="20" FontWeight="SemiBold"/>
-                                <TextBlock Text="Save a Roblox place ID or official game URL, group your games, and optionally apply an existing FastFlag profile plus saved FPS/graphics settings before opening the official game page. Roblox must be closed to apply client settings." Style="{StaticResource Hint}" Margin="0,8,0,15"/>
+                                <TextBlock Text="Quick Launcher" FontSize="20" FontWeight="SemiBold"/>
+                                <TextBlock Text="Save official experience URLs or place IDs, organise folders and assign launch profiles. Roblox must be closed before applying saved FastFlags or graphics settings." Style="{StaticResource Hint}" Margin="0,8,0,15"/>
                                 <TextBlock Text="GAME NAME" Style="{StaticResource Hint}" FontSize="10"/>
                                 <TextBox x:Name="QuickName" Margin="0,5,0,10" MaxLength="80"/>
                                 <TextBlock Text="PLACE ID OR ROBLOX GAME URL" Style="{StaticResource Hint}" FontSize="10"/>
@@ -1048,7 +1048,7 @@
                         <Border Style="{StaticResource PanelBorder}">
                             <StackPanel>
                                 <TextBlock Text="Game-specific performance profile" FontSize="18" FontWeight="SemiBold"/>
-                                <TextBlock Text="Choose a profile for the selected shortcut. These settings apply BEFORE Roblox opens, not while a game is already running. If Roblox rejects a saved setting, it may use its own default." Style="{StaticResource Hint}" Margin="0,8,0,14"/>
+                                <TextBlock Text="Assigned profiles apply before Roblox launches. Unsupported or rejected settings may revert to Roblox defaults." Style="{StaticResource Hint}" Margin="0,8,0,14"/>
                                 <TextBlock Text="FASTFLAG PROFILE" Style="{StaticResource Hint}" FontSize="10"/>
                                 <ComboBox x:Name="QuickProfile" DisplayMemberPath="Name" SelectedValuePath="Id" Margin="0,5,0,12"/>
                                 <TextBlock Text="FPS CAP" Style="{StaticResource Hint}" FontSize="10"/>
@@ -1075,9 +1075,9 @@
                         <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,16">
                             <StackPanel>
                                 <TextBlock Text="Viora updates" FontSize="18" FontWeight="SemiBold"/>
-                                <TextBlock Text="Connect your PUBLIC GitHub Releases repository. Viora can check automatically at startup, or download a checksum-verified release on request. Installing an update remains your decision." Style="{StaticResource Hint}" Margin="0,8,0,12"/>
+                                <TextBlock Text="Configure a public GitHub Releases repository for optional startup checks and checksum-verified EXE downloads. Installation requires manual approval." Style="{StaticResource Hint}" Margin="0,8,0,12"/>
                                 <TextBlock Text="GITHUB REPOSITORY (owner/repo)" Style="{StaticResource Hint}" FontSize="10"/>
-                                <TextBox x:Name="UpdatesRepo" Margin="0,6,0,12" ToolTip="For example: your-username/viora"/>
+                                <TextBox x:Name="UpdatesRepo" Margin="0,6,0,12" ToolTip="Example: balcony3232/Viora"/>
                                 <CheckBox x:Name="UpdatesAtStartup" Content="Check for new versions on startup" Style="{StaticResource SwitchCheckBox}" Margin="0,0,0,12"/>
                                 <WrapPanel>
                                     <Button Content="Save update settings" Click="UpdatesSave_Click" Margin="0,0,8,8"/>
@@ -1090,7 +1090,7 @@
                         <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,16">
                             <StackPanel>
                                 <TextBlock Text="Backup &amp; recovery centre" FontSize="18" FontWeight="SemiBold"/>
-                                <TextBlock Text="Export or restore a complete snapshot of your local Viora account, settings, images and profiles. ZIPs contain your local account password hash: store them privately. Restoration is applied on your next launch, with a safety copy of overwritten files." Style="{StaticResource Hint}" Margin="0,8,0,12"/>
+                                <TextBlock Text="Export and restore local account settings, images and profiles. Backup ZIPs include the local password hash and must be kept private. Restores apply at next launch after creating a safety copy." Style="{StaticResource Hint}" Margin="0,8,0,12"/>
                                 <WrapPanel>
                                     <Button Content="Create full local backup" Style="{StaticResource PrimaryButton}" Click="RecoveryExport_Click" Margin="0,0,8,8"/>
                                     <Button Content="Restore a backup ZIP" Click="RecoveryRestore_Click" Margin="0,0,8,8"/>
@@ -1103,7 +1103,7 @@
                             <StackPanel>
                                 <TextBlock Text="System tray" FontSize="18" FontWeight="SemiBold"/>
                                 <CheckBox x:Name="TrayEnabled" Content="Minimise Viora to the notification area" Style="{StaticResource SwitchCheckBox}" Checked="TraySetting_Changed" Unchecked="TraySetting_Changed" Margin="0,9,0,12"/>
-                                <TextBlock Text="When minimised, your session tracker and Discord Rich Presence can stay active. Use the tray icon to reopen Viora or exit completely." Style="{StaticResource Hint}"/>
+                                <TextBlock Text="Session tracking and Discord Rich Presence can remain active while minimised to the system tray. The tray menu includes Open and Exit." Style="{StaticResource Hint}"/>
                             </StackPanel>
                         </Border>
                         <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,16">
@@ -1121,7 +1121,7 @@
                         <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,16">
                             <StackPanel>
                                 <TextBlock Text="Backup &amp; reset" FontSize="18" FontWeight="Bold" Margin="0,0,0,8"/>
-                                <TextBlock Text="Export your configuration, or undo only the FastFlag entries changed by Viora for the selected client version." Style="{StaticResource Hint}" Margin="0,0,0,15"/>
+                                <TextBlock Text="Export configuration or revert FastFlag entries modified by Viora for the selected client version." Style="{StaticResource Hint}" Margin="0,0,0,15"/>
                                 <WrapPanel>
                                     <Button Content="Export complete config ZIP" Click="BackupConfig_Click" Margin="0,0,10,9"/>
                                     <Button Content="Undo Viora FastFlags" Click="UndoFlags_Click" Margin="0,0,10,9"/>
@@ -1165,8 +1165,8 @@
         <Grid x:Name="AuthOverlay" Grid.ColumnSpan="2" Panel.ZIndex="30" Background="#0B0912" Visibility="Visible">
             <Border Background="#181222" BorderBrush="#433057" BorderThickness="1" CornerRadius="20" Width="440" Padding="36" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <StackPanel>
-                    <TextBlock Text="◆  viora" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource Accent}" Margin="0,0,0,26"/>
-                    <TextBlock x:Name="AuthTitle" Text="Create your account" FontSize="25" FontWeight="SemiBold" Margin="0,0,0,9"/>
+                    <TextBlock Text="◆  Viora" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource Accent}" Margin="0,0,0,26"/>
+                    <TextBlock x:Name="AuthTitle" Text="Create local account" FontSize="25" FontWeight="SemiBold" Margin="0,0,0,9"/>
                     <TextBlock x:Name="AuthSubtitle" Text="One private profile on this Windows PC." Style="{StaticResource Hint}" Margin="0,0,0,24"/>
                     <TextBlock Text="USERNAME" FontSize="11" Foreground="{DynamicResource Accent}" FontWeight="SemiBold"/>
                     <TextBox x:Name="AuthUsername" Margin="0,7,0,16" MaxLength="24"/>
@@ -1179,7 +1179,7 @@
                     <CheckBox x:Name="AuthRemember" Style="{StaticResource SwitchCheckBox}" Content="Keep me signed in on this PC" IsChecked="True" Margin="0,1,0,17"/>
                     <TextBlock x:Name="AuthError" Foreground="#FFB3C5" TextWrapping="Wrap" Margin="0,0,0,9"/>
                     <Button x:Name="AuthSubmit" Content="Create local account" Style="{StaticResource PrimaryButton}" Click="AuthSubmit_Click" Padding="14,12"/>
-                    <TextBlock Text="Not a Roblox sign-in. Your salted password hash stays on this PC; no online account or sync is created." Foreground="{DynamicResource Muted}" TextWrapping="Wrap" FontSize="11" Margin="0,22,0,0"/>
+                    <TextBlock Text="Local authentication only, separate from Roblox. A salted password hash is stored on this PC; no online account or sync is created." Foreground="{DynamicResource Muted}" TextWrapping="Wrap" FontSize="11" Margin="0,22,0,0"/>
                 </StackPanel>
             </Border>
         </Grid>

@@ -1,4 +1,6 @@
 using System.IO;
+using System.Runtime.InteropServices;
+using System.Windows.Interop;
 using System.Windows;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
@@ -16,9 +18,26 @@ public partial class SplashWindow : Window
     private readonly TaskCompletionSource<bool> _closed = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private int _dotFrame;
 
+    // Windows 11 can round an opaque, hardware-rendered window without forcing
+    // WPF to render all text through a transparency layer.
+    [DllImport("dwmapi.dll", PreserveSig = true)]
+    private static extern int DwmSetWindowAttribute(nint hwnd, int attribute, ref int value, int valueSize);
+
+    private void PreferNativeRoundedCorners()
+    {
+        if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000)) return;
+        var hwnd = new WindowInteropHelper(this).Handle;
+        if (hwnd == nint.Zero) return;
+        const int DwmWindowCornerPreference = 33;
+        int round = 2;
+        _ = DwmSetWindowAttribute(hwnd, DwmWindowCornerPreference, ref round, sizeof(int));
+    }
+
+
     public SplashWindow(SplashOptions options, bool reduceMotion)
     {
         InitializeComponent();
+        SourceInitialized += (_, _) => PreferNativeRoundedCorners();
         _options = options.Clone();
         _reduceMotion = reduceMotion;
         (Width, Height) = options.Size switch

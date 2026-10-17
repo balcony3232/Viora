@@ -16,7 +16,7 @@ public static class LocalAccountService
     {
         username = username.Trim();
         if (!Regex.IsMatch(username, @"^[a-zA-Z0-9_]{3,24}$"))
-            throw new ArgumentException("Use 3–24 letters, numbers or underscores for your username.");
+            throw new ArgumentException("Use 3–24 letters, numbers or underscores for a local username.");
         if (password.Length < 8 || password.Length > 256)
             throw new ArgumentException("Choose a password of 8–256 characters.");
         if (Exists) throw new InvalidOperationException("A local account already exists on this PC.");

@@ -189,7 +189,7 @@ public partial class MainWindow : Window
         var desired = PerformancePresets.Preview(level, grass);
         if (desired.Count == 0)
         {
-            PerformancePresetPreview.Text = "Restores Roblox-managed defaults for texture quality, antialiasing and grass. Does not change any other FastFlags in your active profile.";
+            PerformancePresetPreview.Text = "Restores Roblox-managed defaults for texture quality, antialiasing and grass. Does not change any other FastFlags in the active profile.";
             return;
         }
         var summary = level == PerformancePresets.Max
@@ -213,7 +213,7 @@ public partial class MainWindow : Window
         var preview = PerformancePresets.Preview(level, grass);
         var summary = preview.Count == 0 ? "Remove Viora-managed performance overrides?" :
             "Save and apply " + preview.Count + " experimental rendering overrides?";
-        if (MessageBox.Show(summary + "\n\nYour other FastFlags will be kept. If Roblox is closed and an installation is selected, Viora will apply the updated profile now.",
+        if (MessageBox.Show(summary + "\n\nOther FastFlags will be preserved. If Roblox is closed and an installation is selected, Viora will apply the updated profile now.",
             "Confirm performance preset", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         try
         {
@@ -223,7 +223,7 @@ public partial class MainWindow : Window
             if (SelectedInstallation is not null && ApplyCurrentProfile())
                 SetStatus("Performance preset saved and applied to Roblox. Restart Roblox to test it.");
             else
-                SetStatus("Performance preset saved in your profile. Select an installation and apply the profile when Roblox is closed.");
+                SetStatus("Performance preset saved in the current profile. Select an installation and apply the profile when Roblox is closed.");
         }
         catch (Exception ex) { Alert("Performance preset failed: " + ex.Message); }
     }

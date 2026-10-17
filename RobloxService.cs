@@ -120,7 +120,7 @@ public static class RobloxService
             results.Add(new FlagDefinition
             {
                 Name = name, Category = "Public reference", Type = type,
-                Description = "This name appears in a public tracker of Roblox client settings. Its exact behaviour is not verified or explained in public documentation. It may no longer exist in your current client version.",
+                Description = "This name appears in a public tracker of Roblox client settings. Its exact behaviour is not verified or explained in public documentation. It may no longer exist in the installed client version.",
                 Warning = "Reference only. Roblox will ignore local overrides not on its current allowlist.",
                 Confidence = "Third-party public settings tracker; function undocumented",
                 IsAllowlisted = false

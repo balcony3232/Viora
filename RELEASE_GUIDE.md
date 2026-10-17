@@ -10,11 +10,11 @@ Do not upload any `%LOCALAPPDATA%` files, your personal stats, passwords, splash
 ## Validate Windows executable
 
 Go to **Actions > Windows EXE build and release > Run workflow** on the `main` branch.
-Download the `Viora-Windows-exe` artifact from the successful workflow and test `Viora-v0.9.0.exe` on Windows.
+Download the `Viora-Windows-exe` artifact from the successful workflow and test `Viora-v0.9.1.exe` on Windows.
 
 ## Publish release
 
-After the build passes: tag the source commit `v0.9.0` and push that tag.
+After the build passes: tag the source commit `v0.9.1` and push that tag.
 GitHub Actions will build it again and publish a GitHub Release with the EXE and SHA-256 file.
 The version tag must match `<Version>` in `Viora.csproj`.
 

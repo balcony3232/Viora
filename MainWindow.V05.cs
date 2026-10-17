@@ -76,7 +76,7 @@ public partial class MainWindow
         _selectedNavBrush = BrushFrom(palette.Soft);
         _idleNavBrush = BrushFrom(palette.Raised);
         if (ThemeDescription is not null)
-            ThemeDescription.Text = "Selected: " + name + " · Dark surfaces and accents follow your palette.";
+            ThemeDescription.Text = "Selected: " + name + " · Dark surfaces and accents use the selected palette.";
         if (_ready)
         {
             SwitchPage(_currentPage);

@@ -80,8 +80,8 @@ public partial class MainWindow
     private void RefreshAuthenticationScreen()
     {
         var existing = LocalAccountService.Exists;
-        AuthTitle.Text = existing ? "Welcome back" : "Create your account";
-        AuthSubtitle.Text = existing ? "Sign in to your Viora workspace." : "Set up a private profile for this Windows PC.";
+        AuthTitle.Text = existing ? "Local account sign-in" : "Create local account";
+        AuthSubtitle.Text = existing ? "Sign in to the existing local Viora profile." : "Set up a private profile on this Windows PC.";
         AuthConfirmPanel.Visibility = existing ? Visibility.Collapsed : Visibility.Visible;
         AuthSubmit.Content = existing ? "Sign in" : "Create local account";
         AuthUsername.Text = LocalAccountService.ExistingUsername() ?? "";
@@ -134,7 +134,7 @@ public partial class MainWindow
         SwitchPage("dashboard");
         StartMonitor();
         await ShowSplashAsync();
-        SetStatus("Welcome, " + username + ". Your local workspace is ready.");
+        SetStatus("Local workspace ready · " + username);
         if (_state.Updates.CheckAtStartup && !string.IsNullOrWhiteSpace(_state.Updates.GitHubRepository))
             _ = CheckForUpdatesAsync(silent: true);
     }

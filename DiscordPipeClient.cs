@@ -37,7 +37,7 @@ public sealed class DiscordPipeClient : IDisposable
                 await SendAsync(_pipe!, 1, JsonSerializer.Serialize(packet), cancellationToken);
                 var (opcode, message) = await ReceiveAsync(_pipe!, cancellationToken);
                 if (opcode == 2 || IsDiscordError(message))
-                    throw new IOException("Discord rejected this Rich Presence update. Check your Application ID and activity settings.");
+                    throw new IOException("Discord rejected this Rich Presence update. Verify the Application ID and Discord activity settings.");
             }
             catch
             {

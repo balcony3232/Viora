@@ -21,7 +21,7 @@ public partial class MainWindow
     private bool _publishingDiscord;
     private DateTimeOffset? _browserStartUtc;
     private string _lastActivityKey = "";
-    private string _discordConnectivity = "Disabled — enable this feature when you're ready.";
+    private string _discordConnectivity = "Disabled — Discord presence is off.";
 
     [StructLayout(LayoutKind.Sequential)]
     private struct LastInputInfo { public uint Size; public uint Tick; }
@@ -114,7 +114,7 @@ public partial class MainWindow
         bool enabled = DiscordEnabled.IsChecked == true;
         if (enabled && !Regex.IsMatch(id, @"^\d{15,25}$"))
         {
-            Alert("Paste your Discord Application ID (15–25 digits). Don't paste a bot token or client secret.");
+            Alert("Enter a Discord Application ID (15–25 digits), not a bot token or client secret.");
             return;
         }
         var oldId = _state.Discord.ApplicationId;

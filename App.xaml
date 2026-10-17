@@ -243,7 +243,7 @@
             <Setter Property="Focusable" Value="False"/>
             <Setter Property="Template"><Setter.Value>
                 <ControlTemplate TargetType="RepeatButton">
-                    <Border Background="{DynamicResource Accent}" CornerRadius="3"/>
+                    <Border Height="9" VerticalAlignment="Center" Background="{DynamicResource AccentHover}" CornerRadius="5"/>
                 </ControlTemplate>
             </Setter.Value></Setter>
         </Style>
@@ -251,22 +251,22 @@
             <Setter Property="Focusable" Value="False"/>
             <Setter Property="Template"><Setter.Value>
                 <ControlTemplate TargetType="RepeatButton">
-                    <Border Background="{DynamicResource Stroke}" CornerRadius="3"/>
+                    <Border Height="9" VerticalAlignment="Center" Background="#544568" BorderBrush="#826BA0" BorderThickness="1" CornerRadius="5"/>
                 </ControlTemplate>
             </Setter.Value></Setter>
         </Style>
         <Style x:Key="SliderThumbStyle" TargetType="Thumb">
             <Setter Property="Template"><Setter.Value>
                 <ControlTemplate TargetType="Thumb">
-                    <Grid Width="22" Height="22">
-                        <Ellipse x:Name="ThumbCircle" Width="20" Height="20" Fill="{DynamicResource Accent}"
-                                 Stroke="{DynamicResource AccentHover}" StrokeThickness="2"/>
-                        <Ellipse Width="7" Height="7" Fill="White" IsHitTestVisible="False"/>
+                    <Grid Width="30" Height="30">
+                        <Ellipse x:Name="ThumbCircle" Width="26" Height="26" Fill="{DynamicResource Accent}"
+                                 Stroke="White" StrokeThickness="2"/>
+                        <Ellipse Width="9" Height="9" Fill="White" IsHitTestVisible="False"/>
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="ThumbCircle" Property="Width" Value="22"/>
-                            <Setter TargetName="ThumbCircle" Property="Height" Value="22"/>
+                            <Setter TargetName="ThumbCircle" Property="Width" Value="28"/>
+                            <Setter TargetName="ThumbCircle" Property="Height" Value="28"/>
                         </Trigger>
                         <Trigger Property="IsDragging" Value="True">
                             <Setter TargetName="ThumbCircle" Property="Fill" Value="{DynamicResource AccentHover}"/>
@@ -276,12 +276,12 @@
             </Setter.Value></Setter>
         </Style>
         <Style TargetType="Slider">
-            <Setter Property="Height" Value="32"/>
+            <Setter Property="Height" Value="40"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template"><Setter.Value>
                 <ControlTemplate TargetType="Slider">
-                    <Grid Height="32">
-                        <Track x:Name="PART_Track" Height="6" Margin="3,0" VerticalAlignment="Center">
+                    <Grid Height="40" ClipToBounds="False">
+                        <Track x:Name="PART_Track" Orientation="Horizontal" Height="36" Margin="4,0" VerticalAlignment="Center">
                             <Track.DecreaseRepeatButton>
                                 <RepeatButton Style="{StaticResource SliderFillRepeat}" Command="Slider.DecreaseLarge"/>
                             </Track.DecreaseRepeatButton>

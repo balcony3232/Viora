@@ -44,7 +44,7 @@ public partial class MainWindow
             !int.TryParse(fpsItem.Tag?.ToString(), out var fps) ||
             !int.TryParse(qualityItem.Tag?.ToString(), out var quality)) return;
         var label = quality == 0 ? "Automatic" : "Level " + quality;
-        if (MessageBox.Show($"Write {fps} FPS and graphics {label} to your saved Roblox settings?\n\nClose Roblox first. A restore point will be saved on the first edit.",
+        if (MessageBox.Show($"Write {fps} FPS and graphics {label} to saved Roblox settings?\n\nClose Roblox first. A restore point will be saved on the first edit.",
             "Apply Roblox graphics", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         try
         {
