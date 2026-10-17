@@ -1,0 +1,76 @@
+name: Windows EXE build and release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  windows-exe:
+    runs-on: windows-latest
+    permissions:
+      contents: write  # Required only for publishing release assets on version tags.
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Publish portable single-file executable
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          [xml]$project = Get-Content 'Viora.csproj'
+          $version = [string]$project.Project.PropertyGroup.Version
+          if ([string]::IsNullOrWhiteSpace($version)) { throw 'Missing project version' }
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "v$version") {
+            throw "Git tag $env:GITHUB_REF_NAME does not match project version v$version"
+          }
+          dotnet restore 'Viora.csproj' --runtime win-x64
+          if ($LASTEXITCODE -ne 0) { throw 'Restore failed' }
+          dotnet publish 'Viora.csproj' -c Release -r win-x64 --self-contained true --no-restore `
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:EnableCompressionInSingleFile=true -p:DebugType=None -p:DebugSymbols=false `
+            -o publish
+          if ($LASTEXITCODE -ne 0) { throw 'Publish failed' }
+          $outputFile = "publish/Viora-v$version.exe"
+          if (!(Test-Path 'publish/Viora.exe')) { throw 'Missing build output: Viora.exe' }
+          Move-Item 'publish/Viora.exe' $outputFile -Force
+          $hash = (Get-FileHash -Algorithm SHA256 $outputFile).Hash.ToLowerInvariant()
+          [IO.File]::WriteAllText("$outputFile.sha256", "$hash  Viora-v$version.exe`n")
+          if ((Get-Item $outputFile).Length -lt 1000000) { throw 'Output looks unexpectedly small' }
+          Write-Host "Built $outputFile ($((Get-Item $outputFile).Length) bytes)"
+
+      - name: Save EXE as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Viora-Windows-exe
+          path: |
+            publish/Viora-v*.exe
+            publish/Viora-v*.exe.sha256
+          if-no-files-found: error
+
+      - name: Publish direct EXE download on GitHub Releases
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tag = $env:GITHUB_REF_NAME
+          $exe = "publish/Viora-$tag.exe"
+          $hash = "$exe.sha256"
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $tag $exe $hash --clobber
+          } else {
+            gh release create $tag $exe $hash --title "Viora $tag" --generate-notes --verify-tag
+          }
+          if ($LASTEXITCODE -ne 0) { throw 'Publishing GitHub Release failed' }

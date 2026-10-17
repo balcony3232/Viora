@@ -1,0 +1,77 @@
+VIORA v0.8.0 — WORKSPACE & RELEASE UPDATE
+================================================
+Base: v0.7.1 (includes the v0.6.2 game-session shutdown fix)
+
+1. AUTOMATIC UPDATE CHECKS AND VERIFIED DOWNLOADS
+  • Connect a public GitHub repository by owner/repo or github.com URL in Personalise > Utilities.
+  • Optional check at sign-in (after sign-in and splash), with a manual Check button.
+  • Compare a published semantic version against Viora's assembly version.
+  • Look for the exact vVERSION.exe and matching .sha256 release assets.
+  • Download the new EXE to the user's Downloads directory and verify SHA-256 before keeping it.
+  • If verification fails, discard the partial download. No executables are launched automatically.
+  • Requires the repository's release workflow to be published on GitHub. A repository is not preconfigured.
+  • INSTALLATION LIMITATION: update checks/downloads are automatic/one-click, but replacement of a running
+    Viora executable is not automated. Close Viora and launch the newly downloaded EXE manually.
+
+2. ADVANCED QUICK LAUNCHER (WORKSPACE > QUICK LAUNCHER)
+  • Create local shortcuts from a positive place ID or a verified official Roblox game URL.
+  • Name games, group them into folders, search by name/folder/place ID.
+  • Import marked favourites from Game Hub without modifying activity history.
+  • Copy official game links, edit/delete saved shortcuts, count requested launches.
+  • Launch opens official Roblox game pages; joining a game still uses Roblox.
+  • No injection, no cookie/login capture, and no claim that opening a link confirms a join.
+
+3. GAME-SPECIFIC PERFORMANCE ASSIGNMENTS
+  • Assign an existing Viora FastFlag profile to a saved game shortcut.
+  • Optional FPS cap: 60/120/144/165/240, or keep current value.
+  • Optional graphics quality: automatic/1–10, or keep current value.
+  • Shows confirmation and applies selected settings only BEFORE opening a game.
+  • Won't overwrite settings while Roblox is running. Roblox may reject settings or ignore flags.
+  • Uses the existing allowlisted FastFlag writer and Roblox saved-settings editor,
+    including those components' existing backups and validation.
+  • Game-specific settings are prelaunch, NOT automatic live switching between running games.
+
+4. ADVANCED THEME STUDIO
+  • Six editable #RRGGBB colours: background, sidebar, panel, accent, border and muted text.
+  • Native Windows colour pickers for accents/backgrounds.
+  • Save & preview custom theme; custom colour values persist in settings.json.
+  • Export and import custom palettes as JSON; strict input validation and size limit.
+  • Reset custom colours, preserve original five themes and reduced-motion preference.
+  • Derive hover and raised-surface colours from custom accent and panel colours.
+
+5. SYSTEM TRAY INTEGRATION
+  • Optional Minimise to tray preference, enabled by default.
+  • Tray menu: Open Viora, Launch Roblox, Exit Viora.
+  • Double-click tray icon to restore the main window.
+  • The WPF window can hide when minimised while the existing monitor and Rich Presence continue.
+  • Exit removes the notification icon and disposes its menu.
+  • Includes WinForms support strictly for NotifyIcon and colour dialogs.
+
+6. BACKUP & RECOVERY CENTRE
+  • Export local account/settings/themes/profile/asset configuration into a ZIP.
+  • Restore ZIP through a staged, path-validated recovery workflow on NEXT app startup.
+  • Create a safety copy of overwritten local files in the app's backups directory.
+  • Limit archive entry count/size; reject traversal paths and executable files.
+  • Does not back up Roblox binaries, Roblox account cookies, cache images or older backups.
+  • ZIP CONTAINS THE LOCAL VIORA ACCOUNT'S PASSWORD HASH; HANDLE IT PRIVATELY.
+  • Does not silently restore over a live instance of the app.
+
+7. PRESERVED FROM v0.7.1
+  • Local account login, built-in FastFlag catalogue, profiles and Asset Studio.
+  • Roblox launch, graphics controls and performance presets.
+  • Per-experience activity tracking and v0.6.2 session-end fix.
+  • Game Hub cards, cached public Roblox artwork, favourite games and session statistics.
+  • Game-specific Discord Rich Presence and AFK detection.
+  • Animated GIF compact splash and other personalisation options.
+
+8. RELEASE / BUILD
+  • Project version 0.8.0, Windows x64 self-contained single-file publish.
+  • Local build: build-windows.bat -> release/Viora-v0.8.0.exe.
+  • CI: .github/workflows/windows-release.yml produces EXE + SHA256 artifact; a v0.8.0 tag
+    creates a GitHub Release with matching assets. See RELEASE_GUIDE.md.
+
+TESTING LIMITATIONS
+  • Source/XAML/reference/static package tests can run in this environment, but Windows WPF
+    compilation and runtime tests were NOT completed here. First real build is on Windows.
+  • Startup-check, GitHub release download, full backup restore and tray behaviour are not
+    yet verified in a live Windows application. Back up your existing local data before installing.

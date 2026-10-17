@@ -1,0 +1,30 @@
+VIOLETSTRAP v0.5.1 — SIDEBAR + PERFORMANCE
+
+NAVIGATION
+- Replaced 9 visible sidebar page buttons with Overview and four collapsible groups.
+- Optimise: Performance + FastFlags.
+- Workspace: Profiles + Asset Studio.
+- Activity: Statistics + Discord Presence.
+- Personalise: Appearance + Utilities.
+- Dashboard shortcuts auto-expand the relevant group. Compact subpage styling.
+- Reduced extra copy in sidebar account card.
+
+PERFORMANCE
+- New FPS cap selector: 60, 120, 144, 165, 240 (Roblox may change/override values).
+- New saved graphics quality selector: Automatic / levels 1–10.
+- Read the existing %LOCALAPPDATA%\Roblox\GlobalBasicSettings_13.xml user settings.
+- Apply controls directly from app without opening Roblox, with confirmation and closed-process check.
+- Reload controls from disk to show actually saved values.
+- Make a pristine file copy and a per-field original-values ledger on first change.
+- Restore only FramerateCap and SavedQualityLevel original values; don't overwrite unrelated settings.
+- Prevent edits if the saved XML file or target properties are missing/unexpected.
+- The existing experimental FastFlag presets now attempt a one-click profile sync.
+- Keep Windows Game Mode and GPU configuration in official Settings screens.
+
+UNCHANGED
+- Accounts, Discord Rich Presence, profiles, Asset Studio, themes, stats, custom images, FastFlag Explorer.
+- App data and user files remain under %LOCALAPPDATA%\Violetstrap.
+
+VALIDATION
+- XAML can be parsed and all handler references checked; no Windows build test available in this environment.
+- Roblox may reset settings; client version changes can break compatibility. No anti-cheat bypass.

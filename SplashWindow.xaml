@@ -1,0 +1,37 @@
+<Window x:Class="Viora.SplashWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Viora starting" Width="460" Height="340"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        ResizeMode="NoResize" ShowInTaskbar="False" WindowStartupLocation="CenterScreen"
+        Topmost="True">
+    <Border x:Name="Outer" CornerRadius="19" Background="#100B19" BorderBrush="#925DDA"
+            BorderThickness="1" Margin="14" Padding="15" ClipToBounds="True">
+        <Border.Effect><DropShadowEffect BlurRadius="23" ShadowDepth="0" Opacity="0.60" Color="#600BA7"/></Border.Effect>
+        <Grid>
+            <Grid.RowDefinitions><RowDefinition Height="23"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+            <Grid Grid.Row="0">
+                <TextBlock Text="◆  Viora" FontWeight="SemiBold" FontSize="11" Foreground="#B598E4" VerticalAlignment="Center"/>
+                <Button Width="24" Height="22" HorizontalAlignment="Right" Content="×" Click="CloseSplash_Click"
+                        Foreground="#C5B0DD" Background="Transparent" BorderThickness="0" FontSize="18" Padding="0" Cursor="Hand"
+                        ToolTip="Skip splash screen"/>
+            </Grid>
+            <Border Grid.Row="1" x:Name="BannerBorder" Background="#241238" CornerRadius="12" ClipToBounds="True" Margin="0,4,0,12">
+                <Grid>
+                    <Image x:Name="BannerBackground" Stretch="UniformToFill"/>
+                    <Image x:Name="BannerMedia" Stretch="UniformToFill"/>
+                    <Image x:Name="BannerLogo" Source="/Assets/Viora-logo.png" Width="98" Height="98" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                </Grid>
+            </Border>
+            <StackPanel Grid.Row="2" HorizontalAlignment="Center" Margin="0,0,0,9">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,4">
+                    <Image x:Name="BrandLogo" Source="/Assets/Viora-logo.png" Width="28" Height="28" Margin="0,0,8,0"/>
+                    <TextBlock Text="Viora" FontSize="21" FontWeight="SemiBold" Foreground="#FAF6FF" VerticalAlignment="Center"/>
+                </StackPanel>
+                <TextBlock x:Name="LoadingText" Text="starting workspace…" Foreground="#B8A8CC" FontSize="11"
+                           HorizontalAlignment="Center" Margin="0,2,0,4"/>
+                <TextBlock x:Name="LoadingDots" Text="●  ●  ●" Foreground="#AA76FC" FontSize="11" HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

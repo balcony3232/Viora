@@ -1,0 +1,10 @@
+Violetstrap v0.7.1 — Single EXE distribution update
+
+- New automated Windows x64 GitHub Actions build.
+- One direct EXE download via GitHub Releases when version tags are pushed.
+- SHA-256 checksums attached to releases.
+- One-click local build now creates release/Violetstrap-v0.7.1.exe.
+- Windows self-contained single-file publish configuration and release notes.
+- Adds version metadata and displays v0.7.1 in app.
+- No intended change to tracking, Discord, FastFlags, assets or splash features.
+- Automated build requires GitHub or a local Windows machine; EXE is not prebuilt.

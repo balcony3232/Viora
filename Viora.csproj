@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>Viora</AssemblyName>
+    <Version>0.9.0</Version>
+    <FileVersion>0.9.0.0</FileVersion>
+    <AssemblyVersion>0.9.0.0</AssemblyVersion>
+    <RootNamespace>Viora</RootNamespace>
+    <ApplicationIcon>Assets\Viora.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Remove="Assets\FlagCatalog.json" />
+    <EmbeddedResource Include="Assets\FlagCatalog.json" />
+    <Resource Include="Assets\Viora-logo.png" />
+  </ItemGroup>
+</Project>

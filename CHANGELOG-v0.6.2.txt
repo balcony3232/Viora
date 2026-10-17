@@ -1,0 +1,10 @@
+Violetstrap v0.6.2 — Session Tracking Hotfix
+
+FIXED: Closing the Roblox game window no longer keeps awarding time to the last detected game when a headless RobloxPlayerBeta process remains.
+FIXED: Pending game-name lookups cannot restore the previous game's status after Roblox closes or a new session begins.
+FIXED: Completed sessions are finalised once; statistics are saved immediately on exit.
+FIXED: A changed Roblox game-process PID separates adjacent sessions even if no empty polling interval occurs.
+PRESERVED: Roblox launcher, Game Hub artwork, favorites, Discord RPC, profiles, FastFlags, FPS controls, custom GIF splash, account, existing local data.
+
+NOTE: Existing erroneous accumulated seconds are not removed automatically. This hotfix stops future overcounting.
+TEST: Run build-windows.bat on a Windows PC with .NET 8 SDK; exercise minimized, closed, and restarted Roblox windows.
