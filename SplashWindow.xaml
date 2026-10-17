@@ -13,13 +13,22 @@
         <Grid x:Name="DefaultFullScreen" Background="#090617" Visibility="Collapsed" ClipToBounds="True">
             <Image Source="/Assets/Viora-forest.jpg" Stretch="UniformToFill"
                    RenderOptions.BitmapScalingMode="HighQuality"/>
-            <!-- Gentle contrast overlay keeps the pink wordmark readable on every display. -->
+            <!-- Gentle contrast overlay keeps the lilac wordmark readable on every display. -->
             <Border Background="#350A061C"/>
-            <TextBlock Text="Viora" FontSize="96" FontWeight="ExtraBold"
-                       FontFamily="Segoe UI" Foreground="#FF9FDB"
+            <TextBlock Text="V i o r a" FontSize="76" FontWeight="Bold"
+                       FontFamily="Segoe UI"
                        TextOptions.TextRenderingMode="ClearType" TextOptions.TextFormattingMode="Display"
                        HorizontalAlignment="Center" VerticalAlignment="Center"
-                       Margin="24"/>
+                       Margin="24">
+                <TextBlock.Foreground>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#F2E7FF" Offset="0"/>
+                        <GradientStop Color="#DBC4F3" Offset="0.28"/>
+                        <GradientStop Color="#AE83D9" Offset="0.78"/>
+                        <GradientStop Color="#C5A2E6" Offset="1"/>
+                    </LinearGradientBrush>
+                </TextBlock.Foreground>
+            </TextBlock>
         </Grid>
         <Border x:Name="Outer" CornerRadius="19" Background="#100B19" BorderBrush="#925DDA"
             BorderThickness="1" Margin="0" Padding="15" ClipToBounds="True">
