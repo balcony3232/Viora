@@ -48,6 +48,31 @@ jobs:
           if ((Get-Item $outputFile).Length -lt 1000000) { throw 'Output looks unexpectedly small' }
           Write-Host "Built $outputFile ($((Get-Item $outputFile).Length) bytes)"
 
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          choco install innosetup --yes --no-progress
+          if ($LASTEXITCODE -ne 0) { throw 'Inno Setup installation failed' }
+
+      - name: Build per-user Windows installer
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          [xml]$project = Get-Content 'Viora.csproj'
+          $version = [string]$project.Project.PropertyGroup.Version
+          $env:VIORA_VERSION = $version
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (!(Test-Path $iscc)) { $iscc = "${env:ProgramFiles}\Inno Setup 6\ISCC.exe" }
+          if (!(Test-Path $iscc)) { throw 'Inno Setup compiler was not found' }
+          & $iscc 'installer\Viora.iss'
+          if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed' }
+          $setup = "publish/Viora-v$version-Setup.exe"
+          if (!(Test-Path $setup)) { throw "Missing installer: $setup" }
+          $hash = (Get-FileHash -Algorithm SHA256 $setup).Hash.ToLowerInvariant()
+          [IO.File]::WriteAllText("$setup.sha256", "$hash  Viora-v$version-Setup.exe`n")
+          Write-Host "Built $setup"
+
       - name: Save EXE as workflow artifact
         uses: actions/upload-artifact@v4
         with:
@@ -67,10 +92,13 @@ jobs:
           $tag = $env:GITHUB_REF_NAME
           $exe = "publish/Viora-$tag.exe"
           $hash = "$exe.sha256"
+          $setup = "publish/Viora-$tag-Setup.exe"
+          $setupHash = "$setup.sha256"
+          if (!(Test-Path $setup) -or !(Test-Path $setupHash)) { throw 'Missing installer release assets' }
           gh release view $tag *> $null
           if ($LASTEXITCODE -eq 0) {
-            gh release upload $tag $exe $hash --clobber
+            gh release upload $tag $exe $hash $setup $setupHash --clobber
           } else {
-            gh release create $tag $exe $hash --title "Viora $tag" --generate-notes --verify-tag
+            gh release create $tag $exe $hash $setup $setupHash --title "Viora $tag" --generate-notes --verify-tag
           }
           if ($LASTEXITCODE -ne 0) { throw 'Publishing GitHub Release failed' }
