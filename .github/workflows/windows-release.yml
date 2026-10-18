@@ -9,6 +9,7 @@ on:
       - 'feature/v1.1.2-polish'
       - 'feature/v1.2-instance-manager'
       - 'feature/v1.2-performance-pass'
+      - 'feature/v1.3-stability-updater-ui'
     tags:
       - 'v*'
 
