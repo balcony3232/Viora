@@ -184,7 +184,7 @@ catch {
         info.ArgumentList.Add("-StatusLog");
         info.ArgumentList.Add(log);
 
-        using var process = Process.Start(info) ??
+        using var helperProcess = Process.Start(info) ??
             throw new InvalidOperationException("Could not start the update helper.");
         // MainWindow closes after this call returns.
     }
