@@ -1,6 +1,13 @@
 # Viora — major releases
 
-## v1.1 — Installer, first-run experience and privacy (preview)
+## v1.1 — Installer, onboarding and appearance (preview)
+- **v1.1.2:** Added Glossy (new default), Opaque and layered Glass surface styles, kept independent of colour themes. The Glass style is translucency within Viora rather than desktop acrylic.
+- **v1.1.2:** Fixed onboarding theme selection with immediate visual preview, persistence on Finish and rollback when cancelled.
+- **v1.1.2:** Routed mouse-wheel scrolling more reliably through the main workspace, without interfering with dropdowns and scrollbars.
+- **v1.1.2:** Replaced the hardcoded version text with the running assembly version and added preview-before-sharing GitHub issue reports to the sidebar.
+- **v1.1.2:** Issue reports require explicit confirmation, only copy reviewed text to the clipboard, and leave final submission to the user.
+
+## v1.1.1 — Privacy and Getting Started (preview)
 - v1.1.1 adds an in-app Getting Started guide, local privacy explanations, a manually reviewed diagnostics JSON export and official-client multi-instance compatibility testing instructions.
 - Removed the plaintext stay-signed-in authentication bypass; local account sign-in now requires a password on new application starts.
 - Clarified that recovery ZIPs contain sensitive profile/account data and diagnostics omit all account data, game history, process IDs and paths.
