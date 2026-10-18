@@ -10,6 +10,7 @@ on:
       - 'feature/v1.2-instance-manager'
       - 'feature/v1.2-performance-pass'
       - 'feature/v1.2.1-favourites-hotfix'
+      - 'feature/v1.2.1-crash-diagnostics'
     tags:
       - 'v*'
 
