@@ -18,6 +18,7 @@ public partial class MainWindow : Window
     }
 
     private readonly DispatcherTimer _refresh = new() { Interval = TimeSpan.FromSeconds(3) };
+    private readonly MultiInstanceExperiment _experiment = new();
 
     [DllImport("dwmapi.dll", PreserveSig = true)]
     private static extern int DwmSetWindowAttribute(nint hwnd, int attribute, ref int value, int size);
@@ -56,7 +57,7 @@ public partial class MainWindow : Window
         SourceInitialized += (_, _) => ApplyDarkTitleBar();
         _refresh.Tick += (_, _) => RefreshWindows();
         Loaded += (_, _) => { RefreshWindows(); _refresh.Start(); };
-        Closed += (_, _) => _refresh.Stop();
+        Closed += (_, _) => { _refresh.Stop(); _experiment.Disable(); };
     }
 
     private void RefreshWindows()
@@ -88,6 +89,56 @@ public partial class MainWindow : Window
         MemoryText.Text = total >= 1073741824 ? $"{total / 1073741824d:0.0} GB" : $"{total / 1048576d:0} MB";
         StatusText.Text = _instances.Count > 0 ? "Active" : "Idle";
         InstanceList.ItemsSource = _instances;
+    }
+
+    private void MultiInstanceToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (MultiInstanceToggle.IsChecked != true)
+        {
+            _experiment.Disable();
+            ExperimentStatus.Text = "Experimental mode disabled. Any already-running Roblox clients are unaffected.";
+            return;
+        }
+
+        bool robloxRunning = false;
+        var processes = Process.GetProcessesByName("RobloxPlayerBeta");
+        try { robloxRunning = processes.Any(p => { try { return !p.HasExited; } catch { return false; } }); }
+        finally { foreach (var process in processes) process.Dispose(); }
+
+        if (robloxRunning)
+        {
+            MultiInstanceToggle.IsChecked = false;
+            ExperimentStatus.Text = "Close all Roblox Player clients before enabling this mode.";
+            MessageBox.Show(this,
+                "Close all Roblox Player windows before enabling the experiment. Then enable it and launch the first Roblox game through the official website.",
+                "Start the experiment before Roblox", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var answer = MessageBox.Show(this,
+            "This experimental setting holds a legacy Windows mutex used for Roblox's single-instance behaviour. It does not edit Roblox files, inject code, or access account credentials.\n\n" +
+            "Roblox does not officially support simultaneous Player clients. Behaviour can break after updates, and Roblox's rules can change. No guarantee of account safety or compatibility is offered.\n\n" +
+            "This test remains enabled only while Viora Manager stays open. Enable it now?",
+            "Experimental multi-instance mode",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (answer != MessageBoxResult.Yes)
+        {
+            MultiInstanceToggle.IsChecked = false;
+            ExperimentStatus.Text = "Experimental mode not enabled.";
+            return;
+        }
+        if (_experiment.TryEnable(out string message))
+        {
+            ExperimentStatus.Text = message;
+        }
+        else
+        {
+            MultiInstanceToggle.IsChecked = false;
+            ExperimentStatus.Text = message;
+            MessageBox.Show(this, message, "Viora Manager", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     private void Refresh_Click(object sender, RoutedEventArgs e) => RefreshWindows();
