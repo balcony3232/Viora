@@ -1,5 +1,12 @@
 # Viora — major releases
 
+## v1.1 — Installer, first-run experience and privacy (preview)
+- v1.1.1 adds an in-app Getting Started guide, local privacy explanations, a manually reviewed diagnostics JSON export and official-client multi-instance compatibility testing instructions.
+- Removed the plaintext stay-signed-in authentication bypass; local account sign-in now requires a password on new application starts.
+- Clarified that recovery ZIPs contain sensitive profile/account data and diagnostics omit all account data, game history, process IDs and paths.
+- Kept v1.1 changes and a single major changelog, with no per-minor-version documentation files.
+- Multi-instance launching remains **unverified** and is not enabled in this build.
+
 ## v1.1.0 — Installer and first-run experience (preview)
 - Added a per-user Inno Setup installer, Start menu entry, optional desktop shortcut, registered uninstaller and post-install launch.
 - Kept the existing portable EXE as an alternative download.

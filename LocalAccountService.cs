@@ -48,25 +48,8 @@ public static class LocalAccountService
         catch (Exception) { return null; }
     }
 
-    public static string? AutoSignInUsername()
-    {
-        try
-        {
-            if (!Exists) return null;
-            var account = JsonSerializer.Deserialize<LocalAccount>(File.ReadAllText(Storage.AccountPath), Storage.JsonOptions);
-            return account?.StaySignedIn == true ? account.Username : null;
-        }
-        catch { return null; }
-    }
-
-    public static void SetStaySignedIn(bool enabled)
-    {
-        if (!Exists) return;
-        var account = JsonSerializer.Deserialize<LocalAccount>(File.ReadAllText(Storage.AccountPath), Storage.JsonOptions)
-            ?? throw new InvalidDataException("The local account file is invalid.");
-        account.StaySignedIn = enabled;
-        Storage.WriteJson(Storage.AccountPath, account);
-    }
+    // Persistent password bypass was intentionally removed for public builds.
+    // Signing in to a password-protected local account requires its password.
 
     public static string? ExistingUsername()
     {

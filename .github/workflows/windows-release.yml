@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - 'feature/v1.1-installer-onboarding'
+      - 'feature/v1.1.1-privacy-guide'
     tags:
       - 'v*'
 

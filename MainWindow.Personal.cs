@@ -73,8 +73,8 @@ public partial class MainWindow
         InitializeSplashEditor();
         RefreshStatsUI();
         InitializeDiscordControls();
-        var remembered = LocalAccountService.AutoSignInUsername();
-        if (!string.IsNullOrWhiteSpace(remembered)) _ = FinishSignInAsync(remembered);
+        // Public builds require the account password at each new sign-in.
+        // A plaintext stay-signed-in flag must not bypass local authentication.
     }
 
     private void RefreshAuthenticationScreen()
@@ -89,8 +89,7 @@ public partial class MainWindow
         AuthPassword.Clear();
         AuthConfirm.Clear();
         AuthError.Text = "";
-        AuthRemember.IsChecked = !existing;
-        AuthOverlay.Visibility = Visibility.Visible;
+         AuthOverlay.Visibility = Visibility.Visible;
     }
 
     private void AuthSubmit_Click(object sender, RoutedEventArgs e)
@@ -112,8 +111,7 @@ public partial class MainWindow
                 approvedUsername = LocalAccountService.Authenticate(username, password);
                 if (approvedUsername is null) throw new ArgumentException("Incorrect username or password.");
             }
-            LocalAccountService.SetStaySignedIn(AuthRemember.IsChecked == true);
-            _ = FinishSignInAsync(approvedUsername);
+             _ = FinishSignInAsync(approvedUsername);
         }
         catch (Exception ex)
         {
@@ -189,8 +187,7 @@ public partial class MainWindow
         if (!_isSignedIn) return;
         StopMonitor();
         CloseDiscordSession();
-        try { LocalAccountService.SetStaySignedIn(false); }
-        catch (Exception ex) { Alert("Couldn't update local sign-in preference: " + ex.Message); }
+        // Persistent auto sign-in is disabled; signing out only ends this session.
         _isSignedIn = false;
         _currentUsername = "";
         RefreshAuthenticationScreen();
