@@ -187,8 +187,7 @@ public partial class MainWindow
         if (!_isSignedIn) return;
         StopMonitor();
         CloseDiscordSession();
-        try { LocalAccountService.SetStaySignedIn(false); }
-        catch (Exception ex) { Alert("Couldn't update local sign-in preference: " + ex.Message); }
+        // Persistent auto sign-in is disabled; signing out only ends this session.
         _isSignedIn = false;
         _currentUsername = "";
         RefreshAuthenticationScreen();
