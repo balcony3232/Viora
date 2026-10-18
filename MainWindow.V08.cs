@@ -64,7 +64,7 @@ public partial class MainWindow
             if (_state.LaunchShortcuts.Any(q => q.PlaceId == id))
                 throw new InvalidOperationException("This place is already saved. Select it to update its settings.");
             var entry = new LaunchShortcut { PlaceId = id, Name = QuickName.Text.Trim(),
-                Folder = string.IsNullOrWhiteSpace(QuickFolder.Text) ? "Favourites" : QuickFolder.Text.Trim(),
+                Folder = string.IsNullOrWhiteSpace(QuickFolder.Text) ? "Games" : QuickFolder.Text.Trim(),
                 ProfileId = (QuickProfile.SelectedItem as UserProfile)?.Id ?? "",
                 Fps = SelectedFps(), Quality = SelectedQuality() };
             _state.LaunchShortcuts.Add(entry);
@@ -83,7 +83,7 @@ public partial class MainWindow
                 throw new ArgumentException("Another shortcut already has this place ID.");
             entry.PlaceId = id;
             entry.Name = QuickName.Text.Trim();
-            entry.Folder = string.IsNullOrWhiteSpace(QuickFolder.Text) ? "Favourites" : QuickFolder.Text.Trim();
+            entry.Folder = string.IsNullOrWhiteSpace(QuickFolder.Text) ? "Games" : QuickFolder.Text.Trim();
             entry.ProfileId = (QuickProfile.SelectedItem as UserProfile)?.Id ?? "";
             entry.Fps = SelectedFps(); entry.Quality = SelectedQuality();
             Persist(); RefreshQuickList(); QuickList.SelectedItem = entry;
@@ -116,18 +116,6 @@ public partial class MainWindow
             "Remove shortcut", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         _state.LaunchShortcuts.Remove(q);
         Persist(); RefreshQuickList();
-    }
-    private void QuickImport_Click(object sender, RoutedEventArgs e)
-    {
-        int added = 0;
-        foreach (var game in _state.Stats.Games.Where(g => g.Favorite && g.PlaceId > 0))
-        {
-            if (_state.LaunchShortcuts.Any(q => q.PlaceId == game.PlaceId)) continue;
-            _state.LaunchShortcuts.Add(new LaunchShortcut { Name = game.Name, PlaceId = game.PlaceId, Folder = "Favourites" });
-            added++;
-        }
-        Persist(); RefreshQuickList();
-        SetStatus($"Imported {added} favourites from Game Hub.");
     }
     private void QuickCopy_Click(object sender, RoutedEventArgs e)
     {
