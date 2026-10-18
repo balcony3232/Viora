@@ -86,7 +86,7 @@ public partial class MainWindow
         if (_loadingSplashEditor || _splashPreviewGif is null) return;
         var options = ReadSplashEditor();
         SplashDurationLabel.Text = options.DurationSeconds.ToString("0.0", CultureInfo.InvariantCulture) + " seconds";
-        SplashMediaLabel.Text = options.Mode == "Default" ? "Viora forest · full-screen" :
+        SplashMediaLabel.Text = options.Mode == "Default" ? "Viora forest · compact" :
             string.IsNullOrWhiteSpace(options.CustomMediaFile) ? "No custom media selected" : Path.GetFileName(options.CustomMediaFile);
         SplashBackgroundLabel.Text = string.IsNullOrWhiteSpace(options.BackgroundFile) ? "Default dark background (custom modes)" : Path.GetFileName(options.BackgroundFile);
         bool isDefault = string.Equals(options.Mode, "Default", StringComparison.OrdinalIgnoreCase);
@@ -95,7 +95,7 @@ public partial class MainWindow
         SplashSize.IsEnabled = !isDefault;
         SplashShowLogo.IsEnabled = !isDefault;
         SplashShowText.IsEnabled = !isDefault;
-        SplashPreviewInfo.Text = (isDefault ? "Full-screen" : options.Size) + "  ·  " + options.DurationSeconds.ToString("0.0", CultureInfo.InvariantCulture) +
+        SplashPreviewInfo.Text = (isDefault ? "Small" : options.Size) + "  ·  " + options.DurationSeconds.ToString("0.0", CultureInfo.InvariantCulture) +
             " seconds  ·  " + options.Mode + (options.Enabled ? "" : "  ·  Disabled");
         SplashPreviewSmallLogo.Visibility = options.ShowLogo ? Visibility.Visible : Visibility.Collapsed;
         SplashPreviewText.Visibility = options.ShowText ? Visibility.Visible : Visibility.Collapsed;
