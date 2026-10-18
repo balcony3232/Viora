@@ -1,5 +1,14 @@
 # Viora — major releases
 
+## v1.4 — Manager 2.0 dashboard (draft preview)
+- Per-window control cards with focus, minimise and confirmed normal-close requests, guarded against stale PIDs/window handles.
+- Per-instance CPU usage (sampled across logical processors), RAM, runtime, and hung-window indication; total CPU is summed across visible Player windows only.
+- Saved window layouts: balanced grid, side-by-side, main-plus-secondary, and user-named arrangements for the same number of visible windows. Local file: `%LOCALAPPDATA%\Viora\Manager\state.json`.
+- Optional always-on-top mini-manager for quick control of existing Player windows.
+- Local observed-window session history with resource peaks. This history is best-effort and does not diagnose crashes.
+- The opt-in multi-instance experiment, Manager packaging, and v1.3 updater safeguards are unchanged.
+- **Release gate:** Branch is a draft PR atop v1.3; Windows compile, runtime/DPI/multi-monitor acceptance tests and v1.3 update tests required before any public release.
+
 ## v1.3 — Stability, smaller updates and visual refinement (development)
 - **C · Performance & stability:** Remove the crashing favourites interface and all favourite mutation/filter/import paths from Game Hub and Quick Launcher. Keep normal saved game shortcuts and read historical favourite values without deleting existing user settings or game history. Retire the experimental crash-diagnostics popup cascade; prioritise controlled testing and fixes backed by error traces.
 - **C · Performance & stability:** Keep the primary observed Roblox process stable when multiple Player instances are running (eliminates phantom session resets from enumeration order). Persist settings without refreshing every hidden page. Preserve PC-wide elapsed time rather than multiplying total playtime by instance count. Further performance benchmarking remains a Windows acceptance test.
