@@ -27,11 +27,15 @@ public partial class MainWindow
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool IsWindowVisible(nint hWnd);
 
-    private static int? FindOpenRobloxPlayer()
+    private static int? FindOpenRobloxPlayer(int? preferredPid)
     {
         var processes = Process.GetProcessesByName("RobloxPlayerBeta");
         try
         {
+            // When multiple clients are open, keep the SAME visible process as
+            // the primary session until it exits. Process.GetProcessesByName()
+            // is not guaranteed to enumerate in stable order.
+            int? fallback = null;
             foreach (var process in processes)
             {
                 try
@@ -39,12 +43,14 @@ public partial class MainWindow
                     process.Refresh();
                     if (process.HasExited) continue;
                     nint window = process.MainWindowHandle;
-                    if (window != 0 && IsWindowVisible(window)) return process.Id;
+                    if (window == 0 || !IsWindowVisible(window)) continue;
+                    if (process.Id == preferredPid) return process.Id;
+                    if (fallback is null || process.Id < fallback.Value) fallback = process.Id;
                 }
-                catch (InvalidOperationException) { /* The process exited while being examined. */ }
-                catch (System.ComponentModel.Win32Exception) { /* Ignore inaccessible helper processes. */ }
+                catch (InvalidOperationException) { /* Player exited between samples. */ }
+                catch (System.ComponentModel.Win32Exception) { /* Ignore inaccessible processes. */ }
             }
-            return null;
+            return fallback;
         }
         finally
         {
@@ -262,7 +268,7 @@ public partial class MainWindow
         if (!_isSignedIn) return;
         var now = DateTimeOffset.UtcNow;
         int? activeProcessId;
-        try { activeProcessId = FindOpenRobloxPlayer(); }
+        try { activeProcessId = FindOpenRobloxPlayer(_activeRobloxProcessId); }
         catch
         {
             // A failed process query must never cause a false start/stop or count the gap.
@@ -270,8 +276,9 @@ public partial class MainWindow
             return;
         }
         bool running = activeProcessId.HasValue;
-        // Roblox can close and reopen between two 5-second polls. Process identity
-        // prevents carrying the previous game's place ID into the new process.
+        // Only a real change in the primary Player identity ends its tracked
+        // segment. Running two clients no longer oscillates on process order.
+        // Total elapsed time is PC-wide observed time, not multiplied by clients.
         if (running && _sawRobloxRunning && _activeRobloxProcessId != activeProcessId)
             EndObservedRobloxSession(now);
 

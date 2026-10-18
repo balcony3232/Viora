@@ -13,6 +13,79 @@
         <SolidColorBrush x:Key="AccentSoft" Color="#49316D"/>
         <SolidColorBrush x:Key="Fg" Color="#F3F1F8"/>
         <SolidColorBrush x:Key="Muted" Color="#A29CAF"/>
+
+        <!-- Dark, lightweight scrollbars: avoid bright system-theme strips on dark pages. -->
+        <Style x:Key="VioraScrollPage" TargetType="{x:Type RepeatButton}">
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type RepeatButton}">
+                        <Border Background="{TemplateBinding Background}"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="VioraScrollThumb" TargetType="{x:Type Thumb}">
+            <Setter Property="Background" Value="{DynamicResource AccentSoft}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Thumb}">
+                        <Border x:Name="Grip" Margin="2" CornerRadius="5"
+                                Background="{TemplateBinding Background}"/>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Grip" Property="Background" Value="{DynamicResource Accent}"/>
+                            </Trigger>
+                            <Trigger Property="IsDragging" Value="True">
+                                <Setter TargetName="Grip" Property="Background" Value="{DynamicResource AccentHover}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <ControlTemplate x:Key="VioraVerticalScrollBar" TargetType="{x:Type ScrollBar}">
+            <Border Background="{DynamicResource Sidebar}" CornerRadius="5">
+                <Track x:Name="PART_Track" Focusable="False" IsDirectionReversed="True">
+                    <Track.DecreaseRepeatButton>
+                        <RepeatButton Command="ScrollBar.PageUpCommand" Style="{StaticResource VioraScrollPage}"/>
+                    </Track.DecreaseRepeatButton>
+                    <Track.Thumb>
+                        <Thumb Style="{StaticResource VioraScrollThumb}"/>
+                    </Track.Thumb>
+                    <Track.IncreaseRepeatButton>
+                        <RepeatButton Command="ScrollBar.PageDownCommand" Style="{StaticResource VioraScrollPage}"/>
+                    </Track.IncreaseRepeatButton>
+                </Track>
+            </Border>
+        </ControlTemplate>
+        <ControlTemplate x:Key="VioraHorizontalScrollBar" TargetType="{x:Type ScrollBar}">
+            <Border Background="{DynamicResource Sidebar}" CornerRadius="5">
+                <Track x:Name="PART_Track" Focusable="False">
+                    <Track.DecreaseRepeatButton>
+                        <RepeatButton Command="ScrollBar.PageLeftCommand" Style="{StaticResource VioraScrollPage}"/>
+                    </Track.DecreaseRepeatButton>
+                    <Track.Thumb>
+                        <Thumb Style="{StaticResource VioraScrollThumb}"/>
+                    </Track.Thumb>
+                    <Track.IncreaseRepeatButton>
+                        <RepeatButton Command="ScrollBar.PageRightCommand" Style="{StaticResource VioraScrollPage}"/>
+                    </Track.IncreaseRepeatButton>
+                </Track>
+            </Border>
+        </ControlTemplate>
+        <Style TargetType="{x:Type ScrollBar}">
+            <Setter Property="Width" Value="12"/>
+            <Setter Property="Template" Value="{StaticResource VioraVerticalScrollBar}"/>
+            <Style.Triggers>
+                <Trigger Property="Orientation" Value="Horizontal">
+                    <Setter Property="Width" Value="Auto"/>
+                    <Setter Property="Height" Value="12"/>
+                    <Setter Property="Template" Value="{StaticResource VioraHorizontalScrollBar}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
         <Style TargetType="Window"><Setter Property="Background" Value="{DynamicResource Bg}"/><Setter Property="Foreground" Value="{DynamicResource Fg}"/><Setter Property="FontFamily" Value="Segoe UI"/></Style>
         <Style TargetType="TextBlock"><Setter Property="Foreground" Value="{DynamicResource Fg}"/></Style>
         <!-- Buttons share a soft themed hover state and a visible keyboard focus ring. -->

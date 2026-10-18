@@ -82,6 +82,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        ManagerVersionText.Text = "v" + (typeof(MainWindow).Assembly.GetName().Version?.ToString(3) ?? "unknown") + " Preview";
         InstanceList.ItemsSource = _cards;
         _games = new RobloxInstanceGames(() => Dispatcher.BeginInvoke(new Action(RefreshWindows)));
         SourceInitialized += (_, _) => ApplyDarkTitleBar();
@@ -151,6 +152,7 @@ public partial class MainWindow : Window
         if (MemoryText.Text != memory) MemoryText.Text = memory;
         string status = _instances.Count > 0 ? "Active" : "Idle";
         if (StatusText.Text != status) StatusText.Text = status;
+        EmptyInstancesText.Visibility = _instances.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
         // Poll less often when Roblox isn't running; return to the normal
         // three-second cadence once a visible session is detected.

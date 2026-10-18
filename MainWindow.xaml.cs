@@ -64,7 +64,18 @@ public partial class MainWindow : Window
     }
 
     private void SetStatus(string message) => StatusText.Text = message;
-    private void Persist() { Storage.Save(_state); RefreshDashboard(); RefreshPerformanceSummary(); RefreshStatsUI(); RefreshGameHub(); ReloadFilter(); }
+    private void Persist()
+    {
+        Storage.Save(_state);
+        RefreshDashboard();
+        // Avoid heavy offscreen layout and recursive binding callbacks when
+        // changing settings in an unrelated page. The destination pages
+        // refresh on navigation.
+        if (_currentPage == "performance") RefreshPerformanceSummary();
+        if (_currentPage == "stats") RefreshStatsUI();
+        if (_currentPage is "gamehub" or "dashboard") RefreshGameHub(force: true);
+        if (_currentPage == "flags") ReloadFilter();
+    }
     private void RefreshInstallations()
     {
         var current = SelectedInstallation?.DirectoryPath;
@@ -132,7 +143,12 @@ public partial class MainWindow : Window
             "flags" => "FastFlag Explorer", "performance" => "Performance", "profiles" => "Profiles", "mods" => "Asset Studio",
             "launcher" => "Quick Launcher", "tools" => "Utilities", "stats" => "My statistics", "gamehub" => "Game Activity Hub", "discord" => "Discord Presence", "appearance" => "Appearance", "splash" => "Splash Screen", _ => "Overview"
         };
-        if (changedPage && _ready && page == "performance") RefreshRobloxGraphics();
+        if (changedPage && _ready && page == "performance")
+        {
+            RefreshRobloxGraphics();
+            RefreshPerformanceSummary();
+        }
+        if (changedPage && _ready && page == "flags") ReloadFilter();
         if (changedPage && _ready && page == "gamehub") RefreshGameHub(force: true);
         if (changedPage && _ready && page == "stats") RefreshStatsUI();
         if (changedPage && _ready && page == "dashboard") RefreshGameHub(force: true);

@@ -9,6 +9,7 @@ on:
       - 'feature/v1.1.2-polish'
       - 'feature/v1.2-instance-manager'
       - 'feature/v1.2-performance-pass'
+      - 'feature/v1.3-stability-updater-ui'
     tags:
       - 'v*'
 
@@ -74,6 +75,54 @@ jobs:
           [IO.File]::WriteAllText("$output.sha256", "$hash  VioraManager-v$version.exe`n")
           Write-Host "Built $output"
 
+      # Experimental developer-only download: requires Microsoft.WindowsDesktop.App
+      # 8.x on the recipient PC. Keeps the fully self-contained installer intact.
+      - name: Publish lightweight framework-dependent EXEs
+        if: github.ref == 'refs/heads/feature/v1.3-stability-updater-ui' || startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          [xml]$project = Get-Content 'Viora.csproj'
+          $version = [string]$project.Project.PropertyGroup.Version
+          New-Item -ItemType Directory -Force -Path 'publish-lite' | Out-Null
+          dotnet publish 'Viora.csproj' -c Release -r win-x64 --self-contained false `
+            -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false `
+            -o publish-lite/launcher
+          if ($LASTEXITCODE -ne 0) { throw 'Lightweight Viora build failed' }
+          dotnet publish 'VioraManager/VioraManager.csproj' -c Release -r win-x64 --self-contained false `
+            -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false `
+            -o publish-lite/manager
+          if ($LASTEXITCODE -ne 0) { throw 'Lightweight Manager build failed' }
+          $launcher = "publish-lite/Viora-v$version-Lite.exe"
+          $manager = "publish-lite/VioraManager-v$version-Lite.exe"
+          Move-Item 'publish-lite/launcher/Viora.exe' $launcher -Force
+          Move-Item 'publish-lite/manager/VioraManager.exe' $manager -Force
+          foreach ($file in @($launcher, $manager)) {
+            $hash = (Get-FileHash -Algorithm SHA256 $file).Hash.ToLowerInvariant()
+            $filename = Split-Path -Leaf $file
+            [IO.File]::WriteAllText("$file.sha256", "$hash  $filename`n")
+            Write-Host "$filename : $((Get-Item $file).Length) bytes"
+          }
+          [IO.File]::WriteAllLines('publish-lite/README.txt', @(
+            'VIORA LIGHTWEIGHT DEVELOPMENT PREVIEW - Windows x64',
+            'Requires Microsoft .NET Desktop Runtime 8 (x64) installed once.',
+            'Run: dotnet --list-runtimes',
+            'Look for: Microsoft.WindowsDesktop.App 8.x',
+            'The fully self-contained installer remains available.',
+            'This development preview has not yet been Windows-user-tested.'
+          ))
+
+      - name: Save lightweight EXEs as separate artifact
+        if: github.ref == 'refs/heads/feature/v1.3-stability-updater-ui' || startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@v4
+        with:
+          name: Viora-Windows-lite-development
+          path: |
+            publish-lite/*.exe
+            publish-lite/*.sha256
+            publish-lite/README.txt
+          if-no-files-found: error
+
       - name: Install Inno Setup
         shell: pwsh
         run: |
@@ -124,12 +173,19 @@ jobs:
           $setupHash = "$setup.sha256"
           $manager = "publish/VioraManager-$tag.exe"
           $managerHash = "$manager.sha256"
+          $lite = "publish-lite/Viora-$tag-Lite.exe"
+          $liteHash = "$lite.sha256"
+          $liteManager = "publish-lite/VioraManager-$tag-Lite.exe"
+          $liteManagerHash = "$liteManager.sha256"
+          foreach ($file in @($lite, $liteHash, $liteManager, $liteManagerHash)) {
+            if (!(Test-Path $file)) { throw "Missing small release asset: $file" }
+          }
           if (!(Test-Path $manager) -or !(Test-Path $managerHash)) { throw 'Missing Manager release assets' }
           if (!(Test-Path $setup) -or !(Test-Path $setupHash)) { throw 'Missing installer release assets' }
           gh release view $tag *> $null
           if ($LASTEXITCODE -eq 0) {
-            gh release upload $tag $exe $hash $setup $setupHash $manager $managerHash --clobber
+            gh release upload $tag $exe $hash $setup $setupHash $manager $managerHash $lite $liteHash $liteManager $liteManagerHash --clobber
           } else {
-            gh release create $tag $exe $hash $setup $setupHash $manager $managerHash --title "Viora $tag" --generate-notes --verify-tag
+            gh release create $tag $exe $hash $setup $setupHash $manager $managerHash $lite $liteHash $liteManager $liteManagerHash --title "Viora $tag" --generate-notes --verify-tag
           }
           if ($LASTEXITCODE -ne 0) { throw 'Publishing GitHub Release failed' }
