@@ -9,13 +9,13 @@
         ResizeMode="NoResize" ShowInTaskbar="False" WindowStartupLocation="CenterScreen"
         Topmost="True">
     <Grid>
-        <!-- The official default splash is a full-screen image with a single title. -->
-        <Grid x:Name="DefaultFullScreen" Background="#090617" Visibility="Collapsed" ClipToBounds="True">
+        <!-- The default splash is a compact forest image with a single wordmark. -->
+        <Grid x:Name="DefaultForest" Background="#090617" Visibility="Collapsed" ClipToBounds="True">
             <Image Source="/Assets/Viora-forest.jpg" Stretch="UniformToFill"
                    RenderOptions.BitmapScalingMode="HighQuality"/>
             <!-- Gentle contrast overlay keeps the lilac wordmark readable on every display. -->
             <Border Background="#350A061C"/>
-            <TextBlock Text="V i o r a" FontSize="76" FontWeight="Bold"
+            <TextBlock Text="V i o r a" FontSize="58" FontWeight="Bold"
                        FontFamily="Segoe UI"
                        TextOptions.TextRenderingMode="ClearType" TextOptions.TextFormattingMode="Display"
                        HorizontalAlignment="Center" VerticalAlignment="Center"
