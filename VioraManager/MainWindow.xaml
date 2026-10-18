@@ -75,7 +75,10 @@
                                         </Border>
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                             <TextBlock Text="{Binding Label}" FontWeight="SemiBold" FontSize="16"/>
-                                            <TextBlock Text="{Binding Detail}" FontSize="12" Foreground="{StaticResource Muted}" Margin="0,5,0,0"/>
+                                            <TextBlock Text="{Binding GameName}" FontWeight="SemiBold" FontSize="13"
+                                                       Foreground="#C6A5FF" TextTrimming="CharacterEllipsis" Margin="0,4,0,0"
+                                                       ToolTip="{Binding GameName}"/>
+                                            <TextBlock Text="{Binding Detail}" FontSize="11" Foreground="{StaticResource Muted}" Margin="0,4,0,0"/>
                                         </StackPanel>
                                         <Border Grid.Column="2" Background="#17352B" CornerRadius="12" Padding="10,5" VerticalAlignment="Center">
                                             <TextBlock Text="Running" FontSize="11" Foreground="#62D6A3"/>
