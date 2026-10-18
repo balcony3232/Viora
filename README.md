@@ -14,7 +14,9 @@
 
 ## Viora Manager (v1.2 preview)
 
-Viora Manager is a **separate Windows EXE**, available as an optional component in Viora Setup. It can also be run independently from the testing build artifact. The interface mirrors the dark-purple Viora concept, with instance cards, process memory, status and session runtime.
+Viora Manager is a **separate Windows EXE**, available as an optional component in Viora Setup. It can also be run independently from the testing build artifact. The interface mirrors the dark-purple Viora concept, with instance cards, process memory, status, session runtime and **per-instance Roblox game names**.
+
+Manager identifies a game's public place ID by matching each Roblox Player process start time to a distinct local Player log file and reading only recent join lines. It then resolves the experience name using public Roblox place/universe endpoints, sending only public IDs. No Roblox credentials, cookies, player names, whole logs or session histories are transmitted. This best-effort feature may show **Game not detected** if logs are absent, names cannot be fetched or process/log matching is ambiguous; it does not guess a title. Each instance has its own log association, including after game teleports.
 
 The Manager monitors **official Roblox Player processes** with visible windows. **Open Roblox** opens the official Roblox website; **Manage windows** focuses one existing Player window or (with user confirmation) tiles already-running windows.
 
