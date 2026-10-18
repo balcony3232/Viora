@@ -10,6 +10,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -41,7 +42,18 @@
                     <TextBlock x:Name="StatusText" Text="Idle" Foreground="#DCC8F7" FontSize="21" FontWeight="SemiBold" Margin="0,5,0,0"/></StackPanel>
             </Border>
         </UniformGrid>
-        <Border Grid.Row="2" Background="#191222" CornerRadius="11" Padding="16" Margin="0,0,0,14">
+        <Border Grid.Row="2" Background="#1C142A" BorderBrush="#51336C" BorderThickness="1"
+                CornerRadius="11" Padding="15,12" Margin="0,0,0,14">
+            <StackPanel>
+                <CheckBox x:Name="MultiInstanceToggle" Click="MultiInstanceToggle_Click"
+                          Foreground="#E8D9FF" FontWeight="SemiBold" FontSize="13"
+                          Content="Enable experimental multi-instance mode"/>
+                <TextBlock x:Name="ExperimentStatus"
+                           Foreground="#B9A9CC" FontSize="11" Margin="20,7,0,0" TextWrapping="Wrap"
+                           Text="Off by default. Applies only while Viora Manager stays open. Roblox does not officially support simultaneous Player clients."/>
+            </StackPanel>
+        </Border>
+        <Border Grid.Row="3" Background="#191222" CornerRadius="11" Padding="16" Margin="0,0,0,14">
             <DockPanel>
                 <Grid DockPanel.Dock="Top" Margin="0,0,0,9">
                     <TextBlock Text="Detected Roblox Player windows" Foreground="{StaticResource Muted}" FontSize="12"/>
@@ -76,12 +88,12 @@
                 </ScrollViewer>
             </DockPanel>
         </Border>
-        <Grid Grid.Row="3">
+        <Grid Grid.Row="4">
             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
             <Button Content="＋  Open Roblox" Background="#A982F4" Foreground="#180D29" FontWeight="SemiBold" Margin="0,0,5,0" Click="OpenRoblox_Click"/>
             <Button Grid.Column="1" Content="Manage windows" Background="#39274D" FontWeight="SemiBold" Margin="5,0,0,0" Click="ManageWindows_Click"/>
         </Grid>
-        <TextBlock Grid.Row="4" Text="Official-client window monitoring only. Multi-instance Player launching is not verified or provided."
+        <TextBlock Grid.Row="5" Text="Experimental compatibility does not modify Roblox files, but simultaneous Player support and account safety are not guaranteed."
                    Foreground="{StaticResource Muted}" FontSize="11" Margin="0,12,0,0" TextWrapping="Wrap"/>
       </Grid>
     </Grid>
