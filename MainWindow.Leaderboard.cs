@@ -284,6 +284,29 @@ public partial class MainWindow
         }
     }
 
+    private async void OnlineAvatarRemove_Click(object sender, RoutedEventArgs e)
+    {
+        if (_onlineService?.IsSignedIn != true || _onlineProfile is null) return;
+        if (MessageBox.Show(this,
+            "Delete your publicly accessible profile picture from Viora's Storage?\n" +
+            "Your initials will replace the image. A previously cached copy may remain temporarily.",
+            "Remove profile picture", MessageBoxButton.YesNo,
+            MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        try
+        {
+            var id = _onlineProfile.PublicId;
+            OnlineAvatarStatus.Text = "Removing your public avatar…";
+            await _onlineService.RemoveAvatarAsync(id);
+            if (_onlineProfile?.PublicId != id) return;
+            OnlineAvatarStatus.Text = "Avatar removed from Storage. Your initials will be shown.";
+            await RefreshOnlineLeaderboardAsync();
+        }
+        catch (Exception ex)
+        {
+            OnlineAvatarStatus.Text = "Could not remove picture: " + ex.Message;
+        }
+    }
+
     private void ClearLeaderboardV2()
     {
         PodiumSecondSlot.Content = null;
