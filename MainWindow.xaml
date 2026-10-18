@@ -77,8 +77,9 @@
 
                         </StackPanel>
                     </Border>
-                    <TextBlock Text="VIORA  ·  v1.1.0" FontSize="10" Foreground="{DynamicResource Muted}" HorizontalAlignment="Center" Margin="0,16,0,0"/>
-                    <Button Content="Sign out" Click="SignOut_Click" Margin="0,12,0,0" FontSize="11"/>
+                    <TextBlock x:Name="FooterVersionText" Text="VIORA" FontSize="10" Foreground="{DynamicResource Muted}" HorizontalAlignment="Center" Margin="0,16,0,0"/>
+                    <Button Content="Report an issue" Click="ReportIssue_Click" Margin="0,10,0,0" FontSize="11" ToolTip="Review a report before opening GitHub Issues"/>
+                    <Button Content="Sign out" Click="SignOut_Click" Margin="0,7,0,0" FontSize="11"/>
                 </StackPanel>
             </DockPanel>
         </Border>
@@ -842,7 +843,14 @@
                                     <ComboBoxItem Content="Emerald · mint green" Tag="Emerald"/>
                                     <ComboBoxItem Content="Custom · editable colours" Tag="Custom"/>
                                 </ComboBox>
-                                <TextBlock x:Name="ThemeDescription" Style="{StaticResource Hint}" Margin="0,12,0,0"/>
+                                <TextBlock x:Name="ThemeDescription" Style="{StaticResource Hint}" Margin="0,12,0,14"/>
+                                <TextBlock Text="Surface style" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,7"/>
+                                <ComboBox x:Name="AppearanceStyleCombo" Width="270" HorizontalAlignment="Left" SelectionChanged="AppearanceStyle_Changed">
+                                    <ComboBoxItem Content="Glossy · signature finish" Tag="Glossy"/>
+                                    <ComboBoxItem Content="Opaque · solid surfaces" Tag="Opaque"/>
+                                    <ComboBoxItem Content="Glass · layered translucency" Tag="Glass"/>
+                                </ComboBox>
+                                <TextBlock Text="Glass gives panels a translucent appearance over Viora's background; it does not make the Windows desktop visible through Viora." Style="{StaticResource Hint}" Margin="0,10,0,0"/>
                             </StackPanel>
                         </Border>
                         <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,16">
