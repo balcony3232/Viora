@@ -151,6 +151,11 @@ public partial class MainWindow : Window
         if (MemoryText.Text != memory) MemoryText.Text = memory;
         string status = _instances.Count > 0 ? "Active" : "Idle";
         if (StatusText.Text != status) StatusText.Text = status;
+
+        // Poll less often when Roblox isn't running; return to the normal
+        // three-second cadence once a visible session is detected.
+        var wantedInterval = TimeSpan.FromSeconds(_instances.Count == 0 ? 5 : 3);
+        if (_refresh.Interval != wantedInterval) _refresh.Interval = wantedInterval;
     }
 
     private void MultiInstanceToggle_Click(object sender, RoutedEventArgs e)
