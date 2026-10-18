@@ -52,6 +52,8 @@ public partial class MainWindow
         var selected = AppearanceThemeCombo.Items.OfType<ComboBoxItem>()
             .FirstOrDefault(x => x.Tag?.ToString() == _state.ColorTheme);
         AppearanceThemeCombo.SelectedItem = selected ?? AppearanceThemeCombo.Items[0];
+        AppearanceStyleCombo.SelectedItem = AppearanceStyleCombo.Items.OfType<ComboBoxItem>()
+            .FirstOrDefault(x => x.Tag?.ToString() == _state.AppearanceStyle) ?? AppearanceStyleCombo.Items[0];
         AppearanceReduceMotion.IsChecked = _state.ReduceMotion;
         ApplyPalette(_state.ColorTheme);
         RefreshAvatarUI();
@@ -60,7 +62,7 @@ public partial class MainWindow
     private static SolidColorBrush BrushFrom(string html)
         => new((Color)ColorConverter.ConvertFromString(html));
 
-    private void ApplyPalette(string name)
+    private void ApplyPalette(string name, string? previewStyle = null)
     {
         var palette = GetPalette(name);
         var resources = Application.Current.Resources;
@@ -68,6 +70,22 @@ public partial class MainWindow
         resources["Sidebar"] = BrushFrom(palette.Sidebar);
         resources["Panel"] = BrushFrom(palette.Panel);
         resources["PanelRaised"] = BrushFrom(palette.Raised);
+        // Three reversible surface modes. The default is a restrained glossy gradient.
+        // "Glass" layers semi-transparent panels over our own opaque app background,
+        // not Windows desktop acrylic or anti-click-through transparency.
+        string surface = previewStyle ?? _state.AppearanceStyle;
+        if (surface == "Glossy")
+        {
+            resources["Panel"] = SurfaceGradient(Mix(palette.Panel, "#FFFFFF", 0.085), palette.Panel);
+            resources["PanelRaised"] = SurfaceGradient(Mix(palette.Raised, "#FFFFFF", 0.12), palette.Raised);
+            resources["Sidebar"] = SurfaceGradient(Mix(palette.Sidebar, "#FFFFFF", 0.055), palette.Sidebar);
+        }
+        else if (surface == "Glass")
+        {
+            resources["Panel"] = SurfaceGradient(WithAlpha(Mix(palette.Panel, "#FFFFFF", 0.07), 0xDB), WithAlpha(palette.Panel, 0xBC));
+            resources["PanelRaised"] = SurfaceGradient(WithAlpha(Mix(palette.Raised, "#FFFFFF", 0.11), 0xE6), WithAlpha(palette.Raised, 0xC5));
+            resources["Sidebar"] = SurfaceGradient(WithAlpha(Mix(palette.Sidebar, "#FFFFFF", 0.06), 0xE5), WithAlpha(palette.Sidebar, 0xC5));
+        }
         resources["Stroke"] = BrushFrom(palette.Border);
         resources["Accent"] = BrushFrom(palette.Accent);
         resources["AccentHover"] = BrushFrom(palette.Hover);
@@ -83,6 +101,32 @@ public partial class MainWindow
             _lastChartRange = -1;
             RefreshWeeklyBars();
         }
+    }
+
+    private static string WithAlpha(string color, byte alpha)
+        => $"#{alpha:X2}{color.TrimStart('#')}";
+
+    private static LinearGradientBrush SurfaceGradient(string upper, string lower)
+    {
+        return new LinearGradientBrush
+        {
+            StartPoint = new Point(0, 0),
+            EndPoint = new Point(0.9, 1),
+            GradientStops = new GradientStopCollection
+            {
+                new GradientStop((Color)ColorConverter.ConvertFromString(upper), 0),
+                new GradientStop((Color)ColorConverter.ConvertFromString(lower), 1)
+            }
+        };
+    }
+
+    private void AppearanceStyle_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (!_ready || AppearanceStyleCombo.SelectedItem is not ComboBoxItem item) return;
+        _state.AppearanceStyle = item.Tag?.ToString() ?? "Glossy";
+        ApplyPalette(_state.ColorTheme);
+        Persist();
+        SetStatus("Surface style changed to " + _state.AppearanceStyle + ".");
     }
 
     private void AppearanceTheme_Changed(object sender, SelectionChangedEventArgs e)

@@ -1,7 +1,7 @@
 <Window x:Class="Viora.FirstRunSetupWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Welcome to Viora" Width="660" Height="535"
+        Title="Welcome to Viora" Width="680" Height="675"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
         Background="#0B0912" Foreground="#F3F1F8"
         ShowInTaskbar="False" UseLayoutRounding="True" SnapsToDevicePixels="True">
@@ -33,13 +33,26 @@
                 </StackPanel>
                 <StackPanel x:Name="PreferencesStep" Visibility="Collapsed">
                     <TextBlock Text="Appearance" FontSize="15" FontWeight="SemiBold"/>
-                    <ComboBox x:Name="ThemeChoice" Margin="0,9,0,20" SelectedIndex="0">
+                    <ComboBox x:Name="ThemeChoice" Margin="0,9,0,14" SelectedIndex="0">
                         <ComboBoxItem Content="Violet (default)" Tag="Violet"/>
                         <ComboBoxItem Content="Amethyst" Tag="Amethyst"/>
                         <ComboBoxItem Content="Midnight" Tag="Midnight"/>
                         <ComboBoxItem Content="Rose" Tag="Rose"/>
                         <ComboBoxItem Content="Emerald" Tag="Emerald"/>
+                        <ComboBoxItem Content="Custom (saved theme)" Tag="Custom"/>
                     </ComboBox>
+                    <Border x:Name="ThemePreviewCard" BorderBrush="#B99BFA" Background="#281A3E"
+                            BorderThickness="1" CornerRadius="9" Padding="10" Margin="0,0,0,10">
+                        <TextBlock x:Name="ThemePreviewLabel" Text="Viora theme preview · Violet"
+                                   Foreground="#DCC6FF" FontSize="12" FontWeight="SemiBold"/>
+                    </Border>
+                    <TextBlock Text="Surface style" FontSize="15" FontWeight="SemiBold"/>
+                    <ComboBox x:Name="StyleChoice" Margin="0,9,0,14" SelectedIndex="0">
+                        <ComboBoxItem Content="Glossy (default)" Tag="Glossy"/>
+                        <ComboBoxItem Content="Opaque (solid)" Tag="Opaque"/>
+                        <ComboBoxItem Content="Glass (layered panels)" Tag="Glass"/>
+                    </ComboBox>
+                    <TextBlock Text="Changes preview immediately in Viora behind this wizard. Cancel restores the previous appearance." Foreground="#ACA3BA" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,12"/>
                     <TextBlock Text="Performance profile" FontSize="15" FontWeight="SemiBold"/>
                     <ComboBox x:Name="PerformanceChoice" Margin="0,9,0,10" SelectedIndex="0">
                         <ComboBoxItem Content="Keep Roblox defaults (recommended)" Tag="default"/>

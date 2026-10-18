@@ -203,6 +203,8 @@ public sealed class AppState
     public string AvatarImageFile { get; set; } = "";
     public string ColorTheme { get; set; } = "Violet";
     public bool ReduceMotion { get; set; } = false;
+    // Glossy (default), Opaque, Glass. Glass uses layered UI translucency, not desktop acrylic.
+    public string AppearanceStyle { get; set; } = "Glossy";
     public ActivityStats Stats { get; set; } = new();
 }
 

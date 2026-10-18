@@ -134,9 +134,19 @@ public partial class MainWindow
             ? PerformancePresets.Max
             : ActiveProfile.PerformancePreset.StartsWith("Balanced", StringComparison.OrdinalIgnoreCase)
                 ? PerformancePresets.Balanced : PerformancePresets.Default;
-        var wizard = new FirstRunSetupWindow(_state.ColorTheme, preset, _state.Discord.Enabled) { Owner = this };
-        if (wizard.ShowDialog() != true) return;
+        string previousTheme = _state.ColorTheme;
+        var wizard = new FirstRunSetupWindow(_state.ColorTheme, preset, _state.Discord.Enabled,
+            _state.AppearanceStyle, (theme, style) => ApplyPalette(theme, style)) { Owner = this };
+        if (wizard.ShowDialog() != true)
+        {
+            // Cancel must revert both the colour theme and the previous surface style.
+            ApplyPalette(previousTheme);
+            return;
+        }
 
+        _state.AppearanceStyle = wizard.SelectedStyle;
+        AppearanceStyleCombo.SelectedItem = AppearanceStyleCombo.Items.OfType<System.Windows.Controls.ComboBoxItem>()
+            .FirstOrDefault(x => x.Tag?.ToString() == _state.AppearanceStyle) ?? AppearanceStyleCombo.Items[0];
         _state.ColorTheme = wizard.SelectedTheme;
         var theme = AppearanceThemeCombo.Items.OfType<System.Windows.Controls.ComboBoxItem>()
             .FirstOrDefault(x => string.Equals(x.Tag?.ToString(), _state.ColorTheme, StringComparison.OrdinalIgnoreCase));

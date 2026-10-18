@@ -1,6 +1,6 @@
 # Viora
 
-**Viora v1.1.1 — installer, onboarding, privacy and help preview branch.** Unofficial Windows desktop companion for Roblox (formerly Violetstrap).
+**Viora v1.1.2 — preview branch (installer, onboarding, privacy, polish).** Unofficial Windows desktop companion for Roblox (formerly Violetstrap).
 
 ## Features
 
@@ -16,14 +16,22 @@
 
 The Windows workflow builds two distributions from the same source:
 
-- `Viora-v1.1.1-Setup.exe`: per-user installer with Start menu shortcut, optional desktop shortcut and uninstaller.
-- `Viora-v1.1.1.exe`: portable EXE for users who prefer not to install.
+- `Viora-v1.1.2-Setup.exe`: per-user installer with Start menu shortcut, optional desktop shortcut and uninstaller.
+- `Viora-v1.1.2.exe`: portable EXE for users who prefer not to install.
 
 The installer writes to `%LOCALAPPDATA%\Programs\Viora` without requiring administrator rights. Uninstallation removes the program but deliberately **does not delete** `%LOCALAPPDATA%\Viora` (local settings and histories). Users may delete that folder separately once backups are made.
 
 Viora's existing one-click updater can replace the installed `Viora.exe` when the current user has write permission. New releases are downloaded only after approval. Portable and installed distributions share local settings.
 
 **Unsigned software:** Neither EXE is code-signed. A checksum detects accidental corruption, but a release-supplied checksum alone does not authenticate the publisher. Only run binaries from the official repository and inspect warnings rather than broadly disabling security protections.
+
+## v1.1.2 appearance, scrolling and issue reports
+
+Appearance offers independent colour themes and **Glossy** (default), **Opaque** or **Glass** surface styles. Glossy uses muted gradients, Opaque uses solid surfaces, and Glass blends translucent panels over Viora's own background rather than using desktop acrylic. The selected style is stored locally.
+
+The first-run wizard previews theme/style changes immediately; **Finish** saves and **Cancel** reverts. Main workspace scrolling is handled at the page level while native dropdowns and interactive controls keep their own wheel input. The sidebar version label reads the running assembly version.
+
+A new bottom-left **Report an issue** button opens an editable report with an exact preview and optional minimal diagnostics. After explicit confirmation, Viora copies only the reviewed text and opens GitHub Issues. **Nothing is uploaded or submitted by Viora.** Reports on GitHub are public; never submit sensitive information or full backup ZIPs.
 
 ## Privacy and Getting Started (v1.1.1)
 
