@@ -202,6 +202,14 @@ public partial class MainWindow
         try
         {
             if (await _onlineService.LeaderboardConsentSeenAsync()) return;
+            // Existing users who deliberately opted in using the v1 toggle
+            // have already consented. Mark it without showing another prompt.
+            if (_onlineProfile.LeaderboardOptIn)
+            {
+                _onlineProfile = await _onlineService.SetLeaderboardVisibilityAsync(true);
+                RefreshOnlineAccountUI();
+                return;
+            }
             var yes = MessageBox.Show(this,
                 "Would you like to join Viora's public playtime leaderboard?\n\n" +
                 "If you join, your Viora username, public User ID, assigned tag, " +
