@@ -1,6 +1,8 @@
 -- Viora Online Accounts: run in a NEW Supabase project's SQL editor.
 -- Usernames and public IDs are global. Passwords/email remain in Supabase Auth.
 -- No service-role key ever belongs in the Viora desktop application.
+-- A unique username is claimed only after verified email sign-in, so
+-- unverified signups cannot reserve names indefinitely.
 begin;
 
 create table public.viora_profiles (
@@ -29,29 +31,43 @@ revoke all on public.viora_profiles from public, anon, authenticated;
 revoke all on public.viora_playtime from public, anon, authenticated;
 revoke all on sequence public.viora_profiles_public_id_seq from public, anon, authenticated;
 
-create or replace function public.viora_on_signup()
-returns trigger
-language plpgsql
+-- A verified Supabase Auth user can claim a unique username once.
+-- Never allow arbitrary profile metadata or direct client INSERTs to assign roles.
+create or replace function public.viora_claim_username(p_username text)
+returns table(public_id bigint, username text, role text,
+              joined_at timestamptz, leaderboard_opt_in boolean, playtime_seconds bigint)
+language plpgsql volatile
 security definer
 set search_path = ''
 as $$
 declare
-    requested_name text := trim(coalesce(new.raw_user_meta_data ->> 'username', ''));
+    user_id uuid := (select auth.uid());
+    username_clean text := trim(coalesce(p_username, ''));
 begin
-    if requested_name !~ '^[A-Za-z0-9_]{3,24}$' then
-        raise exception 'Invalid Viora username' using errcode = '23514';
+    if user_id is null then
+        raise exception 'Sign in and verify your email first' using errcode = '28000';
     end if;
-    -- Unique lower(username) index atomically rejects concurrent claims.
-    insert into public.viora_profiles(id, username) values (new.id, requested_name);
-    insert into public.viora_playtime(id) values (new.id);
-    return new;
+    if username_clean !~ '^[A-Za-z0-9_]{3,24}$' then
+        raise exception 'Username must be 3-24 letters, numbers or underscores'
+            using errcode = '22023';
+    end if;
+    if not exists(select 1 from auth.users u
+                  where u.id = user_id and u.email_confirmed_at is not null) then
+        raise exception 'Email confirmation is required' using errcode = '28000';
+    end if;
+    insert into public.viora_profiles(id, username)
+        values (user_id, username_clean)
+        on conflict (id) do nothing;
+    insert into public.viora_playtime(id) values (user_id)
+        on conflict (id) do nothing;
+    return query
+        select p.public_id, p.username, p.role, p.joined_at,
+               p.leaderboard_opt_in, t.seconds
+        from public.viora_profiles p
+        join public.viora_playtime t on t.id = p.id
+        where p.id = user_id;
 end;
 $$;
-revoke all on function public.viora_on_signup() from public, anon, authenticated;
-
-create trigger viora_auth_new_user
-after insert on auth.users
-for each row execute function public.viora_on_signup();
 
 -- Intentionally no email, password, provider metadata, or JWT secrets in results.
 create or replace function public.viora_me()
@@ -96,6 +112,11 @@ begin
     end if;
     update public.viora_profiles set leaderboard_opt_in = p_visible
     where id = (select auth.uid());
+    if not p_visible then
+        update public.viora_playtime
+        set last_ping = null, last_ping_playing = false
+        where id = (select auth.uid());
+    end if;
     return found;
 end;
 $$;
@@ -122,6 +143,12 @@ begin
         raise exception 'Authentication required' using errcode = '28000';
     end if;
 
+    -- Only opted-in players upload time. Hidden accounts do not advance.
+    if not exists (select 1 from public.viora_profiles
+                   where id = player_id and leaderboard_opt_in) then
+        raise exception 'Leaderboard participation is disabled'
+            using errcode = '42501';
+    end if;
     select last_ping, last_ping_playing into previous, previously_playing
     from public.viora_playtime where id = player_id for update;
     if not found then raise exception 'Viora profile missing' using errcode = 'P0002'; end if;
@@ -140,10 +167,12 @@ begin
 end;
 $$;
 
+revoke all on function public.viora_claim_username(text) from public, anon, authenticated;
 revoke all on function public.viora_me() from public, anon, authenticated;
 revoke all on function public.viora_leaderboard(integer) from public, anon, authenticated;
 revoke all on function public.viora_set_leaderboard_visibility(boolean) from public, anon, authenticated;
 revoke all on function public.viora_playtime_ping(boolean) from public, anon, authenticated;
+grant execute on function public.viora_claim_username(text) to authenticated;
 grant execute on function public.viora_me() to authenticated;
 grant execute on function public.viora_leaderboard(integer) to authenticated;
 grant execute on function public.viora_set_leaderboard_visibility(boolean) to authenticated;
