@@ -5,6 +5,7 @@
 - **v1.2.1:** Read only appended Roblox Player log data (with short overlap) and move parsing off the UI thread. Keep per-process log isolation and public game-name lookup.
 - **v1.2.1:** Poll Manager every 5 seconds when no Roblox Player is visible, reverting to 3 seconds with running games.
 - **v1.2.1:** Skip periodic redraws of hidden statistics, charts and game activity pages in Viora; refresh on navigation into them. Local session capture and periodic settings persistence continue independently.
+- **v1.2.1 hotfix candidate:** Avoid duplicate Game Hub / unrelated page refreshes when favouriting games. Save once and refresh the Game Hub once; show a user-facing error if a favourite operation fails instead of allowing an unhandled click/async-void exception to terminate Viora.
 - **v1.2.1:** These are candidate optimisations awaiting measured comparison with v1.2.0, not claims of lower CPU/RAM.
 - Created **Viora Manager**, a separate dark-purple WPF Windows EXE featuring live official Roblox Player window detection, process runtime, memory total and individually labelled instance cards.
 - Added per-instance game titles with best-effort unique matching of Roblox Player process start times to local log files, extraction of public place/universe IDs and optional public Roblox name lookups. Missing or ambiguous data shows an unknown game, never an invented title.

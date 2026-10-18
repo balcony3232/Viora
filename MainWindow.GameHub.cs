@@ -261,12 +261,41 @@ public partial class MainWindow
         if (!_updatingGameGrid) RefreshSelectedGameInfo();
     }
 
+    // A favourite changes only local metadata. Avoid Persist(), which refreshes
+    // several unrelated WPF pages and then refreshes Game Hub again. That
+    // redundant sequence could throw from a synchronous UI event handler.
+    private bool TryChangeFavorite(GameActivityRecord game, bool favourite)
+    {
+        bool previous = game.Favorite;
+        if (previous == favourite) return true;
+        try
+        {
+            game.Favorite = favourite;
+            Storage.Save(_state);
+            RefreshGameHub(force: true);
+            SetStatus(favourite ? "Favourite saved." : "Favourite removed.");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            game.Favorite = previous;
+            // Attempt to restore the original local state. Preserve the
+            // original exception for the user if rollback also fails.
+            try { Storage.Save(_state); } catch { }
+            SetStatus("Could not update favourite: " + ex.Message);
+            MessageBox.Show(this,
+                "Viora couldn't update that favourite. No Roblox files were changed.\n\n" +
+                ex.GetType().Name + ": " + ex.Message,
+                "Viora — Favourite error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+    }
+
     private void ToggleFavorite_Click(object sender, RoutedEventArgs e)
     {
         if (GameHubGamesGrid.SelectedItem is not GameActivityRecord game)
         { SetStatus("Select an experience first."); return; }
-        game.Favorite = !game.Favorite;
-        Persist(); RefreshGameHub(force: true);
+        TryChangeFavorite(game, !game.Favorite);
     }
 
     private static bool TryParseRobloxPlace(string input, out long placeId)
@@ -285,20 +314,29 @@ public partial class MainWindow
     private async void AddFavorite_Click(object sender, RoutedEventArgs e)
     {
         if (!TryParseRobloxPlace(GameHubAddUrl.Text, out long id))
-        { Alert("Enter a Roblox place ID or an official https://www.roblox.com/games/<id> link."); return; }
-        var game = GetOrCreateGame(id);
-        game.Favorite = true;
-        GameHubAddUrl.Clear();
-        Persist(); RefreshGameHub(force: true);
-        SetStatus("Favourite added. Looking up its public title...");
+        { Alert("Enter a Roblox place ID or an official Roblox game link."); return; }
+
         try
         {
+            var game = GetOrCreateGame(id);
+            if (!TryChangeFavorite(game, true)) return;
+            GameHubAddUrl.Clear();
+            SetStatus("Favourite added. Looking up its public title...");
             var name = await _robloxGameNames.GetNameAsync(id);
             UpdateGameName(id, name);
-            Persist(); RefreshGameHub(force: true);
+            // A name lookup can complete much later; write the resolved name
+            // without refreshing every unrelated page from an async-void handler.
+            Storage.Save(_state);
             SetStatus(name is null ? $"Favourite saved as Place #{id} (name unavailable)." : $"Favourite added: {name}");
         }
-        catch (Exception ex) { SetStatus("Favourite saved; title lookup failed: " + ex.Message); }
+        catch (Exception ex)
+        {
+            SetStatus("Could not add favourite: " + ex.Message);
+            MessageBox.Show(this,
+                "Viora couldn't finish adding the favourite.\n\n" +
+                ex.GetType().Name + ": " + ex.Message,
+                "Viora — Favourite error", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     private static string OfficialGameUrl(long placeId) => $"https://www.roblox.com/games/{placeId}";
@@ -354,8 +392,7 @@ public partial class MainWindow
     {
         if (GameHubFavoritesList.SelectedItem is not GameActivityRecord game)
         { SetStatus("Select a favourite first."); return; }
-        game.Favorite = false;
-        Persist(); RefreshGameHub(force: true);
+        TryChangeFavorite(game, false);
     }
 
     private void ExportGameHistory_Click(object sender, RoutedEventArgs e)
