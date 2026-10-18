@@ -42,6 +42,7 @@ public partial class MainWindow
             ? Visibility.Visible : Visibility.Collapsed;
         AuthConfirmPanel.Visibility = _onlineRegisterMode ? Visibility.Visible : Visibility.Collapsed;
         AuthPassword.Visibility = _onlineClaimUsername ? Visibility.Collapsed : Visibility.Visible;
+        AuthPasswordLabel.Visibility = _onlineClaimUsername ? Visibility.Collapsed : Visibility.Visible;
         AuthTitle.Text = _onlineClaimUsername ? "Choose your unique username"
             : _onlineRegisterMode ? "Create Viora Online account" : "Sign in to Viora Online";
         AuthSubtitle.Text = _onlineClaimUsername
