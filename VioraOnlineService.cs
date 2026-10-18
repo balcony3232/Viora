@@ -9,7 +9,7 @@ namespace Viora;
 public sealed record VioraOnlineProfile(long PublicId, string Username, string Role,
     long PlaytimeSeconds, bool LeaderboardOptIn);
 public sealed record VioraLeaderboardEntry(long Rank, long PublicId, string Username,
-    string Role, long PlaytimeSeconds)
+    string Role, long PlaytimeSeconds, int AvatarVersion = 0)
 {
     public string RankLabel => "#" + Rank;
     public string IdLabel => "#" + PublicId.ToString("D6");
@@ -24,6 +24,13 @@ public sealed record VioraLeaderboardEntry(long Rank, long PublicId, string User
         "tester" => "Tester",
         _ => "Member"
     };
+}
+
+public sealed record VioraPersonalRank(long? Rank, long PublicId, string Username,
+    string Role, long PlaytimeSeconds, int AvatarVersion, bool OptedIn)
+{
+    public string RankLabel => !OptedIn ? "Not participating" :
+        Rank is null ? "Unranked" : "#" + Rank.Value;
 }
 
 public sealed record VioraManagedAccount(long PublicId, string Username, string Role)
@@ -212,15 +219,67 @@ public sealed class VioraOnlineService : IDisposable
 
     public async Task<IReadOnlyList<VioraLeaderboardEntry>> LeaderboardAsync()
     {
-        using var data = await RpcAsync("viora_leaderboard", new { p_limit = 100 });
+        using var data = await RpcAsync("viora_leaderboard_v2", new { p_limit = 100 });
         var rows = new List<VioraLeaderboardEntry>();
         foreach (var row in data.RootElement.EnumerateArray())
             rows.Add(new VioraLeaderboardEntry(row.GetProperty("rank").GetInt64(),
                 row.GetProperty("public_id").GetInt64(),
                 row.GetProperty("username").GetString() ?? "",
                 row.GetProperty("role").GetString() ?? "member",
-                row.GetProperty("playtime_seconds").GetInt64()));
+                row.GetProperty("playtime_seconds").GetInt64(),
+                row.GetProperty("avatar_version").GetInt32()));
         return rows;
+    }
+
+    public async Task<bool> LeaderboardConsentSeenAsync()
+    {
+        using var data = await RpcAsync("viora_leaderboard_consent", new { });
+        return data.RootElement.ValueKind == JsonValueKind.True;
+    }
+
+    public async Task<VioraPersonalRank?> MyLeaderboardRankAsync()
+    {
+        using var data = await RpcAsync("viora_my_leaderboard_rank", new { });
+        if (data.RootElement.ValueKind != JsonValueKind.Array ||
+            data.RootElement.GetArrayLength() == 0) return null;
+        var row = data.RootElement[0];
+        var rankField = row.GetProperty("rank");
+        return new VioraPersonalRank(rankField.ValueKind == JsonValueKind.Null
+            ? null : rankField.GetInt64(),
+            row.GetProperty("public_id").GetInt64(),
+            row.GetProperty("username").GetString() ?? "",
+            row.GetProperty("role").GetString() ?? "member",
+            row.GetProperty("playtime_seconds").GetInt64(),
+            row.GetProperty("avatar_version").GetInt32(),
+            row.GetProperty("opted_in").GetBoolean());
+    }
+
+    public Uri? AvatarUri(long publicId, int avatarVersion)
+    {
+        if (publicId <= 0 || avatarVersion <= 0) return null;
+        // Always build from the trusted, validated Supabase project host.
+        return new Uri(_client.BaseAddress!, "storage/v1/object/public/viora-avatars/" +
+            publicId.ToString(System.Globalization.CultureInfo.InvariantCulture) +
+            ".png?v=" + avatarVersion.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    public async Task<int> UploadAvatarAsync(long publicId, byte[] sanitizedPng)
+    {
+        if (publicId < 1 || sanitizedPng.Length is < 12 or > 262144 ||
+            !sanitizedPng.AsSpan(0, 8).SequenceEqual(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }))
+            throw new ArgumentException("Avatar must be a small, valid PNG.");
+        using var request = new HttpRequestMessage(HttpMethod.Post,
+            "storage/v1/object/viora-avatars/" + publicId + ".png");
+        request.Headers.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", await TokenAsync());
+        request.Headers.TryAddWithoutValidation("x-upsert", "true");
+        request.Content = new ByteArrayContent(sanitizedPng);
+        request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
+        using var response = await _client.SendAsync(request);
+        if (!response.IsSuccessStatusCode)
+            throw new InvalidOperationException("Avatar upload failed. Check bucket storage policies and try again.");
+        using var verified = await RpcAsync("viora_avatar_uploaded", new { });
+        return verified.RootElement.GetInt32();
     }
 
     private static VioraManagedAccount ReadManagedAccount(JsonElement element) => new(
