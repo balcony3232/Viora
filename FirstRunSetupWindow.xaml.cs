@@ -7,6 +7,7 @@ namespace Viora;
 public partial class FirstRunSetupWindow : Window
 {
     private int _step;
+    private readonly Action<string, string>? _appearancePreview;
     private readonly UIElement[] _steps;
     private readonly string[] _titles = { "Welcome to Viora", "Roblox detection", "Appearance and performance", "Privacy preferences" };
     private readonly string[] _subtitles =
@@ -18,15 +19,21 @@ public partial class FirstRunSetupWindow : Window
     };
 
     public string SelectedTheme => (ThemeChoice.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "Violet";
+    public string SelectedStyle => (StyleChoice.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "Glossy";
     public string SelectedPerformancePreset => (PerformanceChoice.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "default";
     public bool EnableDiscordPresence => DiscordChoice.IsChecked == true;
 
-    public FirstRunSetupWindow(string currentTheme, string currentPreset, bool discordEnabled)
+    public FirstRunSetupWindow(string currentTheme, string currentPreset, bool discordEnabled,
+        string currentStyle, Action<string, string>? appearancePreview = null)
     {
         InitializeComponent();
+        _appearancePreview = appearancePreview;
         SelectTag(ThemeChoice, currentTheme);
+        SelectTag(StyleChoice, currentStyle);
         SelectTag(PerformanceChoice, currentPreset);
         DiscordChoice.IsChecked = discordEnabled;
+        ThemeChoice.SelectionChanged += (_, _) => PreviewAppearance();
+        StyleChoice.SelectionChanged += (_, _) => PreviewAppearance();
         _steps = new UIElement[] { WelcomeStep, DetectionStep, PreferencesStep, PrivacyStep };
         ShowStep();
     }
@@ -37,6 +44,8 @@ public partial class FirstRunSetupWindow : Window
             x => string.Equals(x.Tag?.ToString(), target, StringComparison.OrdinalIgnoreCase));
         if (match != null) combo.SelectedItem = match;
     }
+
+    private void PreviewAppearance() => _appearancePreview?.Invoke(SelectedTheme, SelectedStyle);
 
     private void RefreshRobloxButton_Click(object sender, RoutedEventArgs e) => DetectRoblox();
 
