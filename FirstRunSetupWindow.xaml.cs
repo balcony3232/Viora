@@ -21,11 +21,21 @@ public partial class FirstRunSetupWindow : Window
     public string SelectedPerformancePreset => (PerformanceChoice.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "default";
     public bool EnableDiscordPresence => DiscordChoice.IsChecked == true;
 
-    public FirstRunSetupWindow()
+    public FirstRunSetupWindow(string currentTheme, string currentPreset, bool discordEnabled)
     {
         InitializeComponent();
+        SelectTag(ThemeChoice, currentTheme);
+        SelectTag(PerformanceChoice, currentPreset);
+        DiscordChoice.IsChecked = discordEnabled;
         _steps = new UIElement[] { WelcomeStep, DetectionStep, PreferencesStep, PrivacyStep };
         ShowStep();
+    }
+
+    private static void SelectTag(ComboBox combo, string target)
+    {
+        var match = combo.Items.OfType<ComboBoxItem>().FirstOrDefault(
+            x => string.Equals(x.Tag?.ToString(), target, StringComparison.OrdinalIgnoreCase));
+        if (match != null) combo.SelectedItem = match;
     }
 
     private void RefreshRobloxButton_Click(object sender, RoutedEventArgs e) => DetectRoblox();
