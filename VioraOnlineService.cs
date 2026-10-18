@@ -9,7 +9,35 @@ namespace Viora;
 public sealed record VioraOnlineProfile(long PublicId, string Username, string Role,
     long PlaytimeSeconds, bool LeaderboardOptIn);
 public sealed record VioraLeaderboardEntry(long Rank, long PublicId, string Username,
-    string Role, long PlaytimeSeconds);
+    string Role, long PlaytimeSeconds)
+{
+    public string RankLabel => "#" + Rank;
+    public string IdLabel => "#" + PublicId.ToString("D6");
+    public string PlaytimeLabel => TimeSpan.FromSeconds(PlaytimeSeconds).TotalHours >= 1
+        ? $"{(long)TimeSpan.FromSeconds(PlaytimeSeconds).TotalHours}h {TimeSpan.FromSeconds(PlaytimeSeconds).Minutes}m"
+        : $"{PlaytimeSeconds / 60}m {PlaytimeSeconds % 60}s";
+    public string RoleLabel => Role switch
+    {
+        "owner" => "Owner",
+        "administrator" => "Admin",
+        "developer" => "Developer",
+        "tester" => "Tester",
+        _ => "Member"
+    };
+}
+
+public sealed record VioraManagedAccount(long PublicId, string Username, string Role)
+{
+    public string IdLabel => "#" + PublicId.ToString("D6");
+    public string RoleLabel => Role switch
+    {
+        "owner" => "Owner",
+        "administrator" => "Admin",
+        "developer" => "Developer",
+        "tester" => "Tester",
+        _ => "Member"
+    };
+}
 
 // Desktop clients may use only a Supabase publishable key. Roles and scores are
 // controlled by database RPCs, never by local files or client-provided totals.
@@ -193,6 +221,30 @@ public sealed class VioraOnlineService : IDisposable
                 row.GetProperty("role").GetString() ?? "member",
                 row.GetProperty("playtime_seconds").GetInt64()));
         return rows;
+    }
+
+    private static VioraManagedAccount ReadManagedAccount(JsonElement element) => new(
+        element.GetProperty("public_id").GetInt64(),
+        element.GetProperty("username").GetString() ?? "",
+        element.GetProperty("role").GetString() ?? "member");
+
+    public async Task<VioraManagedAccount?> OwnerLookupAsync(string username)
+    {
+        ValidateUsername(username.Trim());
+        using var data = await RpcAsync("viora_owner_lookup", new { p_username = username.Trim() });
+        return data.RootElement.ValueKind == JsonValueKind.Array &&
+            data.RootElement.GetArrayLength() > 0 ? ReadManagedAccount(data.RootElement[0]) : null;
+    }
+
+    public async Task<VioraManagedAccount> OwnerSetRoleAsync(long targetId, string role)
+    {
+        if (targetId < 1 || !(new[] { "member", "tester", "developer", "administrator" }).Contains(role))
+            throw new ArgumentException("Invalid target account or tag.");
+        using var data = await RpcAsync("viora_owner_set_role",
+            new { p_target_public_id = targetId, p_new_role = role });
+        if (data.RootElement.ValueKind != JsonValueKind.Array || data.RootElement.GetArrayLength() == 0)
+            throw new InvalidOperationException("The role change was not confirmed by the server.");
+        return ReadManagedAccount(data.RootElement[0]);
     }
 
     public async Task<VioraOnlineProfile?> SetLeaderboardVisibilityAsync(bool enabled)
