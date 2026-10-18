@@ -82,9 +82,9 @@ public partial class MainWindow
         }
         else if (surface == "Glass")
         {
-            resources["Panel"] = SurfaceGradient("#C72E223D", "#B41A142B");
-            resources["PanelRaised"] = SurfaceGradient("#D2412F57", "#B7211736");
-            resources["Sidebar"] = SurfaceGradient("#D7221833", "#BD100D1D");
+            resources["Panel"] = SurfaceGradient(WithAlpha(Mix(palette.Panel, "#FFFFFF", 0.07), 0xDB), WithAlpha(palette.Panel, 0xBC));
+            resources["PanelRaised"] = SurfaceGradient(WithAlpha(Mix(palette.Raised, "#FFFFFF", 0.11), 0xE6), WithAlpha(palette.Raised, 0xC5));
+            resources["Sidebar"] = SurfaceGradient(WithAlpha(Mix(palette.Sidebar, "#FFFFFF", 0.06), 0xE5), WithAlpha(palette.Sidebar, 0xC5));
         }
         resources["Stroke"] = BrushFrom(palette.Border);
         resources["Accent"] = BrushFrom(palette.Accent);
@@ -102,6 +102,9 @@ public partial class MainWindow
             RefreshWeeklyBars();
         }
     }
+
+    private static string WithAlpha(string color, byte alpha)
+        => $"#{alpha:X2}{color.TrimStart('#')}";
 
     private static LinearGradientBrush SurfaceGradient(string upper, string lower)
     {
