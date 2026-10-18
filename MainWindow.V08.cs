@@ -32,19 +32,129 @@ public partial class MainWindow
         _initializingV08 = false;
     }
 
-    private void RefreshQuickList()
+    // A "workspace" is simply a named group of existing Quick Launcher games.
+    // The saved Folder property remains the only source of truth: users upgrading
+    // from v1.3 keep every game and assigned performance profile unchanged.
+    private const string AllQuickWorkspaces = "All workspaces";
+    private bool _updatingQuickWorkspaceChoices;
+
+    private static string WorkspaceName(LaunchShortcut shortcut) =>
+        string.IsNullOrWhiteSpace(shortcut.Folder) ? "Games" : shortcut.Folder.Trim();
+
+    private void RefreshQuickList(string? preferredWorkspace = null)
     {
-        if (QuickList is null) return;
-        string selected = (QuickList.SelectedItem as LaunchShortcut)?.Id ?? "";
+        if (QuickList is null || QuickWorkspaceFilter is null) return;
+        string selectedId = (QuickList.SelectedItem as LaunchShortcut)?.Id ?? "";
+        string previous = preferredWorkspace ??
+            (QuickWorkspaceFilter.SelectedItem as string ?? AllQuickWorkspaces);
+        var folders = _state.LaunchShortcuts.Select(WorkspaceName)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToList();
+
+        string chosen = folders.FirstOrDefault(folder =>
+            folder.Equals(previous, StringComparison.OrdinalIgnoreCase)) ?? AllQuickWorkspaces;
+        var choices = new[] { AllQuickWorkspaces }.Concat(folders).ToList();
+        // Suppress SelectionChanged callbacks while replacing ComboBox items.
+        if (!QuickWorkspaceFilter.Items.OfType<string>().SequenceEqual(choices, StringComparer.Ordinal) ||
+            !string.Equals(QuickWorkspaceFilter.SelectedItem as string, chosen, StringComparison.Ordinal))
+        {
+            _updatingQuickWorkspaceChoices = true;
+            try
+            {
+                QuickWorkspaceFilter.ItemsSource = choices;
+                QuickWorkspaceFilter.SelectedItem = chosen;
+            }
+            finally { _updatingQuickWorkspaceChoices = false; }
+        }
+
         string filter = QuickSearch?.Text?.Trim() ?? "";
-        QuickList.ItemsSource = _state.LaunchShortcuts
-            .Where(q => (q.Name + " " + q.Folder + " " + q.PlaceId).Contains(filter, StringComparison.OrdinalIgnoreCase))
-            .OrderBy(q => q.Folder, StringComparer.OrdinalIgnoreCase)
+        var matched = _state.LaunchShortcuts
+            .Where(q => (chosen == AllQuickWorkspaces ||
+                         WorkspaceName(q).Equals(chosen, StringComparison.OrdinalIgnoreCase)) &&
+                        (q.DisplayName.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
+                         WorkspaceName(q).Contains(filter, StringComparison.OrdinalIgnoreCase) ||
+                         q.PlaceId.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                           .Contains(filter, StringComparison.OrdinalIgnoreCase)))
+            .OrderBy(q => WorkspaceName(q), StringComparer.OrdinalIgnoreCase)
             .ThenByDescending(q => q.LastLaunchedUtc)
-            .ThenBy(q => q.Name, StringComparer.OrdinalIgnoreCase).ToList();
-        if (!string.IsNullOrWhiteSpace(selected))
-            QuickList.SelectedItem = (QuickList.ItemsSource as IEnumerable<LaunchShortcut>)?.FirstOrDefault(q => q.Id == selected);
+            .ThenBy(q => q.DisplayName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        QuickList.ItemsSource = matched;
+        if (!string.IsNullOrEmpty(selectedId))
+            QuickList.SelectedItem = matched.FirstOrDefault(q => q.Id == selectedId);
+        QuickWorkspaceCount.Text = $"{matched.Count} shown · {folders.Count} workspaces";
+        QuickWorkspaceRename.IsEnabled = chosen != AllQuickWorkspaces;
     }
+
+    private void QuickWorkspaceFilter_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (_ready && !_updatingQuickWorkspaceChoices) RefreshQuickList();
+    }
+
+    private string? PromptWorkspaceRename(string oldName)
+    {
+        var dialog = new Window
+        {
+            Title = "Rename game workspace", Owner = this,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Width = 395, Height = 188, ResizeMode = ResizeMode.NoResize,
+            Background = (System.Windows.Media.Brush)Application.Current.Resources["Panel"]
+        };
+        var layout = new StackPanel { Margin = new Thickness(18) };
+        layout.Children.Add(new TextBlock
+        {
+            Text = "Name for \"" + oldName + "\"", Margin = new Thickness(0, 0, 0, 10)
+        });
+        var name = new TextBox { Text = oldName, MaxLength = 40, Height = 32 };
+        layout.Children.Add(name);
+        var save = new Button
+        {
+            Content = "Rename", HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Thickness(0, 12, 0, 0), Width = 90
+        };
+        save.Click += (_, _) =>
+        {
+            if (!string.IsNullOrWhiteSpace(name.Text)) dialog.DialogResult = true;
+        };
+        layout.Children.Add(save);
+        dialog.Content = layout;
+        dialog.Loaded += (_, _) => { name.Focus(); name.SelectAll(); };
+        return dialog.ShowDialog() == true ? name.Text.Trim() : null;
+    }
+
+    private void QuickWorkspaceRename_Click(object sender, RoutedEventArgs e)
+    {
+        if (QuickWorkspaceFilter.SelectedItem is not string previous ||
+            previous == AllQuickWorkspaces) return;
+        var updated = PromptWorkspaceRename(previous);
+        if (updated is null || string.Equals(previous, updated, StringComparison.Ordinal)) return;
+        if (updated.Equals(AllQuickWorkspaces, StringComparison.OrdinalIgnoreCase))
+        {
+            Alert("'All workspaces' is reserved for the workspace filter.");
+            return;
+        }
+        if (updated.Length == 0 || updated.Length > 40)
+        {
+            Alert("Workspace names must contain 1 to 40 characters.");
+            return;
+        }
+        if (_state.LaunchShortcuts.Any(q =>
+            !WorkspaceName(q).Equals(previous, StringComparison.OrdinalIgnoreCase) &&
+            WorkspaceName(q).Equals(updated, StringComparison.OrdinalIgnoreCase)))
+        {
+            if (MessageBox.Show(this,
+                "This workspace already exists. Combine the two groups?",
+                "Merge workspaces", MessageBoxButton.YesNo,
+                MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        }
+        foreach (var item in _state.LaunchShortcuts.Where(q =>
+            WorkspaceName(q).Equals(previous, StringComparison.OrdinalIgnoreCase)))
+            item.Folder = updated;
+        Persist();
+        RefreshQuickList(updated);
+        SetStatus("Renamed game workspace to \"" + updated + "\". Shortcuts and profiles were preserved.");
+    }
+
     private static long ParsePlace(string text)
     {
         text = text.Trim();
@@ -65,12 +175,15 @@ public partial class MainWindow
             var id = ParsePlace(QuickPlace.Text);
             if (_state.LaunchShortcuts.Any(q => q.PlaceId == id))
                 throw new InvalidOperationException("This place is already saved. Select it to update its settings.");
+            var folder = string.IsNullOrWhiteSpace(QuickFolder.Text) ? "Games" : QuickFolder.Text.Trim();
+            if (folder.Equals(AllQuickWorkspaces, StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("'All workspaces' is reserved for the workspace filter.");
             var entry = new LaunchShortcut { PlaceId = id, Name = QuickName.Text.Trim(),
-                Folder = string.IsNullOrWhiteSpace(QuickFolder.Text) ? "Games" : QuickFolder.Text.Trim(),
+                Folder = folder,
                 ProfileId = (QuickProfile.SelectedItem as UserProfile)?.Id ?? "",
                 Fps = SelectedFps(), Quality = SelectedQuality() };
             _state.LaunchShortcuts.Add(entry);
-            Persist(); RefreshQuickList(); QuickList.SelectedItem = entry;
+            Persist(); RefreshQuickList(entry.Folder); QuickList.SelectedItem = entry;
             SetStatus("Saved '" + entry.DisplayName + "' to Quick Launcher.");
         }
         catch (Exception ex) { Alert("Could not save game: " + ex.Message); }
@@ -85,10 +198,13 @@ public partial class MainWindow
                 throw new ArgumentException("Another shortcut already has this place ID.");
             entry.PlaceId = id;
             entry.Name = QuickName.Text.Trim();
-            entry.Folder = string.IsNullOrWhiteSpace(QuickFolder.Text) ? "Games" : QuickFolder.Text.Trim();
+            var folder = string.IsNullOrWhiteSpace(QuickFolder.Text) ? "Games" : QuickFolder.Text.Trim();
+            if (folder.Equals(AllQuickWorkspaces, StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("'All workspaces' is reserved for the workspace filter.");
+            entry.Folder = folder;
             entry.ProfileId = (QuickProfile.SelectedItem as UserProfile)?.Id ?? "";
             entry.Fps = SelectedFps(); entry.Quality = SelectedQuality();
-            Persist(); RefreshQuickList(); QuickList.SelectedItem = entry;
+            Persist(); RefreshQuickList(entry.Folder); QuickList.SelectedItem = entry;
             SetStatus("Updated game and performance assignment.");
         }
         catch (Exception ex) { Alert("Could not update game: " + ex.Message); }
@@ -134,8 +250,14 @@ public partial class MainWindow
             bool needsGraphics = q.Fps > 0 || q.Quality >= 0;
             if (needsProfile || needsGraphics)
             {
-                if (Process.GetProcessesByName("RobloxPlayerBeta").Length != 0)
-                    throw new InvalidOperationException("Close Roblox before opening a game with a performance profile.");
+                // Dispose process handles promptly; repeated quick-launch attempts must not leak handles.
+                var clients = Process.GetProcessesByName("RobloxPlayerBeta");
+                try
+                {
+                    if (clients.Any(p => { try { return !p.HasExited; } catch (InvalidOperationException) { return false; } }))
+                        throw new InvalidOperationException("Close Roblox before opening a game with a performance profile.");
+                }
+                finally { foreach (var client in clients) client.Dispose(); }
                 if (MessageBox.Show("Apply the assigned settings before opening '" + q.DisplayName + "'?\n\nRoblox may ignore some locally saved preferences.",
                     "Quick launch", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
                 if (needsProfile)

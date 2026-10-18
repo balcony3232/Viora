@@ -7,9 +7,9 @@
     <Nullable>enable</Nullable>
     <AssemblyName>VioraManager</AssemblyName>
     <RootNamespace>VioraManager</RootNamespace>
-    <Version>1.3.0</Version>
-    <FileVersion>1.3.0.0</FileVersion>
-    <AssemblyVersion>1.3.0.0</AssemblyVersion>
+    <Version>1.4.0</Version>
+    <FileVersion>1.4.0.0</FileVersion>
+    <AssemblyVersion>1.4.0.0</AssemblyVersion>
     <ApplicationIcon>..\Assets\Viora.ico</ApplicationIcon>
   </PropertyGroup>
 </Project>

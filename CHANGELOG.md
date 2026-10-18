@@ -1,5 +1,13 @@
 # Viora — major releases
 
+## v1.4 — Game Workspaces Lite & reliability (draft, not released)
+- **Game Workspaces Lite:** Existing Quick Launcher folders are now filterable workspaces. Switch between grouped game shortcuts, rename a workspace (with confirmation for merging names), and retain each game's assigned profile, FPS and graphics options. New workspaces are created by entering a new workspace name when saving a game; no migration or extra data store is required.
+- **Smaller UI footprint:** Added one compact workspace selector and rename button to Quick Launcher. No new dashboard or redesigned navigation.
+- **Performance:** Game Hub no longer rebuilds its hidden list, selection and charts when the Overview page is showing. Only artwork relevant to the currently visible page is queued for optional loading.
+- **Stability:** Promptly dispose Roblox process handles in Quick Launcher and block accidental overwrites of unreadable settings during a recovery session.
+- **Compatibility:** Original Viora Manager features and interface are unchanged. Only Manager version metadata is aligned with v1.4 packaging.
+- **Release gate:** Windows compilation and artifact/checksum verification, clean and upgrade installs, saved-workspace renaming/filtering, profile preservation and launch/graphics safety, measured performance and crash/rollback testing are required before merge, tagging or posting in #updates.
+
 ## v1.3 — Stability, smaller updates and visual refinement (development)
 - **C · Performance & stability:** Remove the crashing favourites interface and all favourite mutation/filter/import paths from Game Hub and Quick Launcher. Keep normal saved game shortcuts and read historical favourite values without deleting existing user settings or game history. Retire the experimental crash-diagnostics popup cascade; prioritise controlled testing and fixes backed by error traces.
 - **C · Performance & stability:** Keep the primary observed Roblox process stable when multiple Player instances are running (eliminates phantom session resets from enumeration order). Persist settings without refreshing every hidden page. Preserve PC-wide elapsed time rather than multiplying total playtime by instance count. Further performance benchmarking remains a Windows acceptance test.
