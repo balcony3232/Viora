@@ -20,6 +20,8 @@
     <ApplicationDefinition Remove="VioraManager\**\*.xaml" />
     <None Remove="Assets\FlagCatalog.json" />
     <EmbeddedResource Include="Assets\FlagCatalog.json" />
+    <None Remove="Assets\OnlineConfig.json" Condition="Exists('Assets\OnlineConfig.json')" />
+    <EmbeddedResource Include="Assets\OnlineConfig.json" Condition="Exists('Assets\OnlineConfig.json')" />
     <Resource Include="Assets\Viora-logo.png" />
     <Resource Include="Assets\Viora-forest.jpg" />
   </ItemGroup>
