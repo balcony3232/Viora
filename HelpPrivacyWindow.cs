@@ -14,7 +14,7 @@ public sealed class HelpPrivacyWindow : Window
     private readonly TextBox _report = new();
     private string _preview = "";
 
-    public HelpPrivacyWindow()
+    public HelpPrivacyWindow(int startTab = 0)
     {
         Title = "Viora — Getting Started & Privacy";
         Width = 770; Height = 630; MinWidth = 680; MinHeight = 520;
@@ -62,6 +62,7 @@ public sealed class HelpPrivacyWindow : Window
             ("What counts as success?", "Two independent and usable Player windows must remain open. Test closing one and joining a different server."),
             ("Limits", "Roblox has restricted simultaneous Player clients. Viora does not disable client protections, remove single-instance locks, or bypass anti-cheat."),
             ("Official alternative", "Roblox Studio's Server & Clients testing mode supports up to eight simulated clients for developer multiplayer tests.")));
+        tabs.SelectedIndex = Math.Clamp(startTab, 0, tabs.Items.Count - 1);
         RefreshReport();
     }
 
