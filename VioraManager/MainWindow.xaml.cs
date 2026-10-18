@@ -40,11 +40,12 @@ public partial class MainWindow : Window
 
         public void Update(string label, string gameName, string detail, string status)
         {
-            if (_label != label) { _label = label; PropertyChanged?.Invoke(this, new(nameof(Label))); }
-            if (_gameName != gameName) { _gameName = gameName; PropertyChanged?.Invoke(this, new(nameof(GameName))); }
-            if (_detail != detail) { _detail = detail; PropertyChanged?.Invoke(this, new(nameof(Detail))); }
-            if (_status != status) { _status = status; PropertyChanged?.Invoke(this, new(nameof(Status))); }
-            PropertyChanged?.Invoke(this, new(nameof(Summary)));
+            bool changed = false;
+            if (_label != label) { _label = label; changed = true; PropertyChanged?.Invoke(this, new(nameof(Label))); }
+            if (_gameName != gameName) { _gameName = gameName; changed = true; PropertyChanged?.Invoke(this, new(nameof(GameName))); }
+            if (_detail != detail) { _detail = detail; changed = true; PropertyChanged?.Invoke(this, new(nameof(Detail))); }
+            if (_status != status) { _status = status; changed = true; PropertyChanged?.Invoke(this, new(nameof(Status))); }
+            if (changed) PropertyChanged?.Invoke(this, new(nameof(Summary)));
         }
     }
 
