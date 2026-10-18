@@ -3,7 +3,8 @@
 ## v1.3 — Stability, smaller updates and visual refinement (development)
 - **C · Performance & stability:** Remove the crashing favourites interface and all favourite mutation/filter/import paths from Game Hub and Quick Launcher. Keep normal saved game shortcuts and read historical favourite values without deleting existing user settings or game history. Retire the experimental crash-diagnostics popup cascade; prioritise controlled testing and fixes backed by error traces.
 - **C · Performance & stability (next):** Audit redundant UI refreshes, settings persistence, background CPU/RAM and session-statistics correctness; benchmark against the v1.2.1 baseline.
-- **D · Lightweight updating (planned):** Separate Launcher and Manager update payloads, offer a small framework-dependent Windows build that reuses an installed .NET Desktop Runtime, verify downloads before applying and allow rollback. Don't ship a fragile binary patcher.
+- **D · Smaller downloads (experimental build):** Build separate framework-dependent, single-file Viora and Manager EXEs as a distinct GitHub Actions artifact. They require the Windows .NET Desktop Runtime 8 (x64) to already be installed, unlike the existing larger self-contained installer. No runtime downloads or installation are performed automatically.
+- **D · Lightweight updating (planned):** Separate Launcher and Manager update payloads, verify downloads before applying and allow rollback. Don't ship a fragile binary patcher.
 - **E · UI & customisation (planned):** Harmonise the near-black/lilac surfaces, improve navigation/layout consistency and responsiveness, refine animation/performance without reintroducing white panels.
 - **Release gate:** Keep the current working two-instance Manager unchanged; don't merge or ask users to download another package until a coherent test milestone is ready.
 
