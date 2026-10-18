@@ -205,6 +205,51 @@ public partial class MainWindow
         catch (Exception ex) { OnlineLeaderboardStatus.Text = "Leaderboard unavailable: " + ex.Message; }
     }
 
+    private async void OnlineAccountDelete_Click(object sender, RoutedEventArgs e)
+    {
+        if (_onlineService?.IsSignedIn != true || _onlineProfile is null) return;
+        if (MessageBox.Show(this,
+            "Permanently delete your Viora Online account, public username, ID, role and online playtime? " +
+            "This cannot be undone. Your local Viora settings will stay on this PC.",
+            "Delete Viora Online account", MessageBoxButton.YesNo,
+            MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+
+        var confirmation = new Window
+        {
+            Title = "Confirm permanent deletion", Owner = this,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Width = 375, Height = 180, ResizeMode = ResizeMode.NoResize,
+            Background = (System.Windows.Media.Brush)Application.Current.Resources["Panel"]
+        };
+        var layout = new StackPanel { Margin = new Thickness(18) };
+        layout.Children.Add(new TextBlock { Text = "Type DELETE to confirm:", Margin = new Thickness(0, 0, 0, 9) });
+        var entry = new TextBox { MaxLength = 6, Height = 32 };
+        layout.Children.Add(entry);
+        var button = new Button { Content = "Delete account", HorizontalAlignment = HorizontalAlignment.Right,
+            Width = 130, Margin = new Thickness(0, 10, 0, 0) };
+        button.Click += (_, _) =>
+        {
+            if (entry.Text == "DELETE") confirmation.DialogResult = true;
+        };
+        layout.Children.Add(button);
+        confirmation.Content = layout;
+        confirmation.Loaded += (_, _) => entry.Focus();
+        if (confirmation.ShowDialog() != true) return;
+
+        try
+        {
+            await _onlineService.DeleteAccountAsync();
+            SignOut_Click(this, new RoutedEventArgs());
+            SetStatus("Your online account was deleted. Local settings were preserved.");
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, "Online account deletion failed: " + ex.Message +
+                "\nYour account may still exist. Do not assume it was deleted.",
+                "Could not delete account", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
     private void StartOnlinePlaytimeMonitor()
     {
         if (_onlineProfile is null || _onlineService is null) return;
