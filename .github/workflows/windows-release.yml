@@ -3,6 +3,8 @@ name: Windows EXE build and release
 on:
   workflow_dispatch:
   push:
+    branches:
+      - 'feature/v1.1-installer-onboarding'
     tags:
       - 'v*'
 
