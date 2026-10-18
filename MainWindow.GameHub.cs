@@ -268,16 +268,22 @@ public partial class MainWindow
     {
         bool previous = game.Favorite;
         if (previous == favourite) return true;
+        CrashDiagnostics.Mark("Favourite: click");
         try
         {
             game.Favorite = favourite;
+            CrashDiagnostics.Mark("Favourite: flag updated");
             Storage.Save(_state);
+            CrashDiagnostics.Mark("Favourite: state saved");
             RefreshGameHub(force: true);
+            CrashDiagnostics.Mark("Favourite: Game Hub refreshed");
             SetStatus(favourite ? "Favourite saved." : "Favourite removed.");
+            CrashDiagnostics.Mark("Favourite: completed");
             return true;
         }
         catch (Exception ex)
         {
+            CrashDiagnostics.Record("Favourite operation", ex);
             game.Favorite = previous;
             // Attempt to restore the original local state. Preserve the
             // original exception for the user if rollback also fails.
