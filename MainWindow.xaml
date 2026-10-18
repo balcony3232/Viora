@@ -1227,7 +1227,7 @@
                         <TextBlock Text="EMAIL ADDRESS" FontSize="11" Foreground="{DynamicResource Accent}" FontWeight="SemiBold"/>
                         <TextBox x:Name="AuthEmail" Margin="0,7,0,16" MaxLength="254"/>
                     </StackPanel>
-                    <TextBlock Text="PASSWORD" FontSize="11" Foreground="{DynamicResource Accent}" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="AuthPasswordLabel" Text="PASSWORD" FontSize="11" Foreground="{DynamicResource Accent}" FontWeight="SemiBold"/>
                     <PasswordBox x:Name="AuthPassword" Margin="0,7,0,16" MaxLength="256"/>
                     <StackPanel x:Name="AuthConfirmPanel">
                         <TextBlock Text="CONFIRM PASSWORD" FontSize="11" Foreground="{DynamicResource Accent}" FontWeight="SemiBold"/>
