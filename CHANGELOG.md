@@ -1,5 +1,12 @@
 # Viora — major releases
 
+## v1.4 Online preview — Account card, leaderboard and Owner tools (unreleased)
+- Show the permanent public User ID below the signed-in online username in the sidebar, alongside the server-assigned Member/Tester/Developer/Admin/Owner tag.
+- Move the opt-in global playtime leaderboard into a dedicated page with an obvious button immediately above the sidebar account card, readable formatted playtime and public IDs.
+- Add an Owner-only Developer Panel to search exact usernames, verify IDs and apply Member/Tester/Developer/Admin display tags. Every lookup and change requires a freshly authenticated, database-verified Owner; tag changes are audited. The panel cannot assign Owner or change Owner accounts.
+- **Security gate:** An authenticated, verified Viora account must be promoted to Owner once from the trusted Supabase SQL Editor using the correct Auth UUID. The public launcher never bootstraps its own Owner.
+- **Deployment gate:** Apply the separate `20261018_owner_tags_and_audit.sql` migration after the original account schema. No public release before verifying migration, role restrictions, Windows UI and real online login.
+
 ## v1.4 — Game Workspaces Lite & reliability (draft, not released)
 - **Game Workspaces Lite:** Existing Quick Launcher folders are now filterable workspaces. Switch between grouped game shortcuts, rename a workspace (with confirmation for merging names), and retain each game's assigned profile, FPS and graphics options. New workspaces are created by entering a new workspace name when saving a game; no migration or extra data store is required.
 - **Smaller UI footprint:** Added one compact workspace selector and rename button to Quick Launcher. No new dashboard or redesigned navigation.
