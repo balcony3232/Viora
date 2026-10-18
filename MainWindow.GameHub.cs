@@ -30,8 +30,15 @@ public partial class MainWindow
     private async void BeginGameIconRefresh()
     {
         if (!_gameHubReady || _iconRefreshBusy) return;
-        var ids = _state.Stats.Games.Where(g => g.PlaceId > 0 && !_iconAttempts.Contains(g.PlaceId))
-            .OrderByDescending(g => g.LastPlayedUtc)
+        // Only resolve artwork that a visible page can use: the five top games
+        // on Overview, or the full list when Game Hub is actually open.
+        var candidates = _currentPage == "dashboard"
+            ? _state.Stats.Games.Where(g => g.ObservedSeconds > 0)
+                .OrderByDescending(g => g.ObservedSeconds).Take(5).ToList()
+            : _currentPage == "gamehub"
+                ? _state.Stats.Games.OrderByDescending(g => g.LastPlayedUtc).ToList()
+                : new List<GameActivityRecord>();
+        var ids = candidates.Where(g => g.PlaceId > 0 && !_iconAttempts.Contains(g.PlaceId))
             .Take(25).Select(g => g.PlaceId).ToArray();
         if (ids.Length == 0) return;
         _iconRefreshBusy = true;
@@ -45,7 +52,7 @@ public partial class MainWindow
                 var game = _state.Stats.Games.FirstOrDefault(g => g.PlaceId == id);
                 if (game is not null) game.Icon = RobloxGameIcons.TryLoadCached(id);
             }
-            RefreshSelectedGameInfo(); // Selected-game portrait is set directly, unlike bound card images.
+            if (_currentPage == "gamehub") RefreshSelectedGameInfo(); // The portrait is not bound.
         }
         catch (Exception)
         {
@@ -55,7 +62,8 @@ public partial class MainWindow
         {
             _iconRefreshBusy = false;
             // Continue loading remaining games without blocking the UI.
-            if (_state.Stats.Games.Any(g => g.PlaceId > 0 && !_iconAttempts.Contains(g.PlaceId)))
+            if (_currentPage == "gamehub" &&
+                _state.Stats.Games.Any(g => g.PlaceId > 0 && !_iconAttempts.Contains(g.PlaceId)))
                 BeginGameIconRefresh();
         }
     }
@@ -143,6 +151,7 @@ public partial class MainWindow
     private void RefreshGameHub(bool force = false)
     {
         if (_refreshingGameHub || !_gameHubReady || GameHubGamesGrid is null || _state?.Stats is null) return;
+        if (_currentPage is not ("dashboard" or "gamehub")) return;
         var now = DateTimeOffset.UtcNow;
         if (!force && now - _lastHubRefresh < TimeSpan.FromSeconds(10)) return;
         _lastHubRefresh = now;
@@ -159,6 +168,13 @@ public partial class MainWindow
         HomeGamesCount.Text = ranked.Count.ToString(CultureInfo.InvariantCulture);
         HomeTopGameName.Text = ranked.FirstOrDefault()?.DisplayName ?? "No game data yet";
         HomeTopGamesList.ItemsSource = ranked.Take(5).ToList();
+        // Overview needs only summary values. Avoid rebuilding the hidden
+        // Game Hub list, charts and selection on every background observation.
+        if (_currentPage != "gamehub")
+        {
+            BeginGameIconRefresh();
+            return;
+        }
         GameHubCount.Text = ranked.Count.ToString(CultureInfo.InvariantCulture);
         GameHubTracked.Text = DisplayDuration(ranked.Sum(g => g.ObservedSeconds));
         GameHubRecentCount.Text = _state.Stats.GameSessions.Count.ToString(CultureInfo.InvariantCulture);
