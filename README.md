@@ -1,6 +1,6 @@
 # Viora
 
-**Viora v1.1.2 — preview branch (installer, onboarding, privacy, polish).** Unofficial Windows desktop companion for Roblox (formerly Violetstrap).
+**Viora v1.2.0 — Viora Manager prototype branch (NOT a public release).** Unofficial Windows desktop companion for Roblox (formerly Violetstrap).
 
 ## Features
 
@@ -12,12 +12,24 @@
 - First-run wizard: Roblox detection, theme, experimental performance profile and Discord privacy preference
 - Optional local account or password-free guest mode
 
+## Viora Manager (v1.2 preview)
+
+Viora Manager is a **separate Windows EXE**, available as an optional component in Viora Setup. It can also be run independently from the testing build artifact. The interface mirrors the dark-purple Viora concept, with instance cards, process memory, status and session runtime.
+
+This initial prototype only observes **official, unmodified Roblox Player processes** with visible windows. **Open Roblox** opens the official Roblox website, not another client instance. **Manage windows** focuses one existing Player window or, with user confirmation, tiles multiple already-running Player windows on screen. No injection, anti-cheat modification, instance-lock removal or account cookies are used.
+
+**Simultaneous Roblox Player sessions are NOT confirmed**. Do not advertise multi-instance launching until independent user testing demonstrates it remains compatible with the official client. Roblox Studio's supported multi-client test mode is a separate future integration.
+
+The workflow now publishes `VioraManager-v1.2.0.exe` as a third distributable, alongside the portable Viora and combined installer. Check that the installer allows Viora Manager to be deselected, that its Start menu and optional desktop shortcut appear correctly, and that uninstall removes both application EXEs without deleting personal AppData.
+
+**Update caveat:** the current Viora in-app updater replaces only the main `Viora.exe`. Manager updates require rerunning a future installer or replacing the separately distributed manager EXE. Full coordinated updates are planned before public v1.2.
+
 ## Installer
 
-The Windows workflow builds two distributions from the same source:
+The Windows workflow builds three distributions from the same source:
 
-- `Viora-v1.1.2-Setup.exe`: per-user installer with Start menu shortcut, optional desktop shortcut and uninstaller.
-- `Viora-v1.1.2.exe`: portable EXE for users who prefer not to install.
+- `Viora-v1.2.0-Setup.exe`: per-user installer with Start menu shortcut, optional desktop shortcut and uninstaller.
+- `Viora-v1.2.0.exe`: portable EXE for users who prefer not to install.
 
 The installer writes to `%LOCALAPPDATA%\Programs\Viora` without requiring administrator rights. Uninstallation removes the program but deliberately **does not delete** `%LOCALAPPDATA%\Viora` (local settings and histories). Users may delete that folder separately once backups are made.
 
