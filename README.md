@@ -4,7 +4,7 @@
 
 ## Features
 
-- Roblox quick launch, favourites, supported FastFlag presets and graphics preferences
+- Roblox Quick Launcher, supported FastFlag presets and graphics preferences
 - Game Hub: local playtime and recent session history
 - Opt-in Discord Rich Presence (a Discord Application ID is needed, no Discord password)
 - Custom splash GIF/image, compact forest default, dark themes, tray controls and backups
