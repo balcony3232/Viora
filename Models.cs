@@ -76,6 +76,8 @@ public sealed class GameActivityRecord : INotifyPropertyChanged
     public long ObservedSeconds { get; set; }
     public int Sessions { get; set; }
     public DateTimeOffset? LastPlayedUtc { get; set; }
+    // Legacy data retained for loading previous Viora settings without deleting user preferences.
+    // No v1.3 feature writes, filters or displays this historical flag.
     public bool Favorite { get; set; }
     // v0.7: quick-launch clicks initiated from Viora (not confirmed Roblox joins).
     public int QuickLaunchRequests { get; set; }
@@ -84,7 +86,6 @@ public sealed class GameActivityRecord : INotifyPropertyChanged
     [JsonIgnore] public string DisplayName => string.IsNullOrWhiteSpace(Name) ? $"Place #{PlaceId}" : Name;
     [JsonIgnore] public string PlaytimeLabel => FormatDuration(ObservedSeconds);
     [JsonIgnore] public string LastPlayedLabel => LastPlayedUtc?.ToLocalTime().ToString("dd MMM yyyy, HH:mm") ?? "Not tracked yet";
-    [JsonIgnore] public string FavoriteLabel => Favorite ? "★" : "☆";
     private static string FormatDuration(long seconds) => seconds >= 3600 ? $"{seconds/3600}h {(seconds%3600)/60}m" : $"{seconds/60}m {seconds%60}s";
 }
 
@@ -156,7 +157,7 @@ public sealed class LaunchShortcut
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public string Name { get; set; } = "";
     public long PlaceId { get; set; }
-    public string Folder { get; set; } = "Favourites";
+    public string Folder { get; set; } = "Games";
     public string ProfileId { get; set; } = "";
     // Set either to zero for no saved Roblox graphics changes.
     public int Fps { get; set; }
