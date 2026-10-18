@@ -20,6 +20,8 @@ public partial class MainWindow
         _initializingV08 = true;
         UpdatesRepo.Text = _state.Updates.GitHubRepository;
         UpdatesAtStartup.IsChecked = _state.Updates.CheckAtStartup;
+        UpdatesIncludeManager.IsChecked = false;
+        UpdatesIncludeManager.IsEnabled = false;
         TrayEnabled.IsChecked = _state.MinimizeToTray;
         QuickProfile.ItemsSource = _state.Profiles;
         QuickFps.SelectedIndex = 0;
@@ -240,44 +242,129 @@ public partial class MainWindow
         _latestRelease = null; UpdatesDownload.IsEnabled = false;
         Persist(); UpdatesResult.Text = "Update source saved. Click Check for updates.";
     }
+    private static string? InstalledManagerPath()
+    {
+        string? current = Environment.ProcessPath;
+        if (string.IsNullOrWhiteSpace(current)) return null;
+        string candidate = Path.Combine(Path.GetDirectoryName(current)!, "VioraManager.exe");
+        return File.Exists(candidate) ? candidate : null;
+    }
+
+    private static bool ManagerUpdateNeeded(string targetVersion)
+    {
+        var path = InstalledManagerPath();
+        if (path is null || !Version.TryParse(targetVersion, out var latest)) return false;
+        try
+        {
+            var installed = FileVersionInfo.GetVersionInfo(path).FileVersion;
+            return !Version.TryParse(installed, out var current) || current < latest;
+        }
+        catch { return false; }
+    }
+
+    private void RefreshUpdateOffer()
+    {
+        if (_latestRelease is null) { UpdatesDownload.IsEnabled = false; return; }
+        bool mainNew = ReleaseUpdateService.IsNewer(_latestRelease.Version);
+        bool managerNew = UpdatesIncludeManager.IsChecked == true && UpdatesIncludeManager.IsEnabled;
+        UpdatesDownload.IsEnabled = mainNew || managerNew;
+    }
+
+    private void UpdatesIncludeManager_Changed(object sender, RoutedEventArgs e)
+    {
+        if (!_initializingV08) RefreshUpdateOffer();
+    }
+
     private async void UpdatesCheck_Click(object sender, RoutedEventArgs e) => await CheckForUpdatesAsync();
     private async Task CheckForUpdatesAsync(bool silent = false)
     {
         if (_checkingUpdates || !_isSignedIn) return;
         _checkingUpdates = true;
         UpdatesDownload.IsEnabled = false;
-        UpdatesResult.Text = "Checking GitHub Releases…";
+        UpdatesIncludeManager.IsEnabled = false;
+        UpdatesResult.Text = "Checking published GitHub Releases…";
         try
         {
             _latestRelease = await ReleaseUpdateService.GetLatestAsync(_state.Updates.GitHubRepository);
-            bool newer = ReleaseUpdateService.IsNewer(_latestRelease.Version);
-            UpdatesResult.Text = newer ?
-                "Viora v" + _latestRelease.Version + " is available. Installation is ready after confirmation." :
-                "Up to date. Latest published release: v" + _latestRelease.Version + ".";
-            UpdatesDownload.IsEnabled = newer;
-            if (silent && newer) SetStatus("Viora v" + _latestRelease.Version + " is available in Utilities.");
+            bool mainNew = ReleaseUpdateService.IsNewer(_latestRelease.Version);
+            bool managerNew = _latestRelease.SelectManager() is not null &&
+                ManagerUpdateNeeded(_latestRelease.Version);
+            UpdatesIncludeManager.IsEnabled = managerNew;
+            UpdatesIncludeManager.IsChecked = managerNew;
+            RefreshUpdateOffer();
+
+            var launcherAsset = _latestRelease.SelectLauncher();
+            bool lite = launcherAsset.FileName.Contains("-Lite.exe", StringComparison.OrdinalIgnoreCase);
+            UpdatesPayloadInfo.Text = lite
+                ? "The smaller .NET Desktop Runtime 8 package is available. Launcher and Manager are downloaded separately."
+                : ReleaseUpdateService.HasDesktopRuntime8
+                    ? "This release has no lightweight Launcher file; using a full self-contained download."
+                    : ".NET Desktop Runtime 8 (x64) was not detected; using a full self-contained download. No runtime is installed automatically.";
+            if (managerNew) UpdatesPayloadInfo.Text += " A Manager update is also available (close Manager before installing).";
+            UpdatesResult.Text = mainNew || managerNew
+                ? "Viora v" + _latestRelease.Version + " is available. Confirm your selected components to continue."
+                : "Up to date. Latest published release: v" + _latestRelease.Version + ".";
+            if (silent && (mainNew || managerNew))
+                SetStatus("Viora v" + _latestRelease.Version + " is available in Utilities.");
         }
         catch (Exception ex)
         {
             _latestRelease = null;
+            UpdatesIncludeManager.IsChecked = false;
+            UpdatesIncludeManager.IsEnabled = false;
             UpdatesResult.Text = "Couldn't check for updates: " + ex.Message;
             if (!silent) Alert(UpdatesResult.Text);
         }
         finally { _checkingUpdates = false; }
     }
+
     private async void UpdatesDownload_Click(object sender, RoutedEventArgs e)
     {
-        if (_downloadingUpdate || _latestRelease is null || !ReleaseUpdateService.IsNewer(_latestRelease.Version)) return;
+        if (_downloadingUpdate || _latestRelease is null) return;
         if (!ReleaseUpdateService.TryNormalizeRepo(_state.Updates.GitHubRepository, out var repo) ||
             !repo.Equals("balcony3232/Viora", StringComparison.OrdinalIgnoreCase))
         {
             Alert("One-click installation is supported only for the official balcony3232/Viora release feed.");
             return;
         }
-        if (MessageBox.Show("Install Viora v" + _latestRelease.Version + "?\n\n" +
-            "The update will be downloaded and SHA-256 verified. Viora will close, replace its current executable, and reopen. " +
-            "A backup of the previous executable will be retained. Local settings and statistics are not changed.",
-            "Viora update", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+
+        bool updateMain = ReleaseUpdateService.IsNewer(_latestRelease.Version);
+        bool updateManager = UpdatesIncludeManager.IsChecked == true &&
+            UpdatesIncludeManager.IsEnabled && ManagerUpdateNeeded(_latestRelease.Version);
+        if (!updateMain && !updateManager) return;
+
+        if (updateManager)
+        {
+            var processes = Process.GetProcessesByName("VioraManager");
+            try
+            {
+                if (processes.Any(p => { try { return !p.HasExited; } catch { return false; } }))
+                {
+                    Alert("Close Viora Manager before updating it. Reopen it once Viora restarts.");
+                    return;
+                }
+            }
+            finally { foreach (var process in processes) process.Dispose(); }
+        }
+
+        UpdateAsset? managerAsset = updateManager ? _latestRelease.SelectManager() : null;
+        if (updateManager && managerAsset is null)
+        {
+            Alert("This release does not provide a Manager update package.");
+            return;
+        }
+        string components = updateMain && updateManager ? "Launcher and Manager" :
+            updateManager ? "Manager" : "Launcher";
+        if (MessageBox.Show(this,
+            "Update Viora " + components + " to v" + _latestRelease.Version + "?\n\n" +
+            "Each download is SHA-256 verified. The updater waits for Viora to close, retains a " +
+            ".previous rollback copy of each replaced EXE, then restarts Viora. " +
+            "Existing settings and statistics are preserved. Staged copies are deleted after success.\n\n" +
+            (ReleaseUpdateService.HasDesktopRuntime8
+                ? "Smaller .NET Desktop Runtime 8 files will be preferred if available in this release."
+                : "Full self-contained files will be downloaded because the required desktop runtime was not detected."),
+            "Viora verified update", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+            return;
 
         _downloadingUpdate = true;
         UpdatesDownload.IsEnabled = false;
@@ -285,26 +372,37 @@ public partial class MainWindow
         bool installing = false;
         try
         {
-            var progress = new Progress<int>(percentage =>
-                UpdatesResult.Text = "Downloading Viora v" + _latestRelease.Version + "… " + percentage + "%");
-            VerifiedUpdate staged = await ReleaseUpdateService.DownloadVerifiedAsync(_latestRelease, progress);
-            UpdatesResult.Text = "Download verified. Installing and restarting…";
+            VerifiedUpdate? main = null, manager = null;
+            if (updateMain)
+            {
+                var asset = _latestRelease.SelectLauncher();
+                var progress = new Progress<int>(p =>
+                    UpdatesResult.Text = "Downloading Launcher (" + asset.FileName + ")… " + p + "%");
+                main = await ReleaseUpdateService.DownloadVerifiedAsync(asset, progress);
+            }
+            if (updateManager)
+            {
+                var asset = managerAsset!;
+                var progress = new Progress<int>(p =>
+                    UpdatesResult.Text = "Downloading Manager (" + asset.FileName + ")… " + p + "%");
+                manager = await ReleaseUpdateService.DownloadVerifiedAsync(asset, progress);
+            }
+            UpdatesResult.Text = "Checksums verified. Restarting to apply update…";
             Storage.Save(_state);
-            UpdateInstallerService.Start(staged);
+            UpdateInstallerService.Start(main, manager);
             installing = true;
-            // Window_Closing stops tracking and Discord and disposes the system tray.
             Close();
         }
         catch (Exception ex)
         {
-            UpdatesResult.Text = "Update could not start: " + ex.Message +
-                "\nThe current Viora installation was not intentionally changed.";
+            UpdatesResult.Text = "Could not start update: " + ex.Message +
+                "\nCurrent EXEs were not intentionally changed. Staged downloads may be reused.";
             Alert(UpdatesResult.Text);
         }
         finally
         {
             _downloadingUpdate = false;
-            if (!installing) UpdatesDownload.IsEnabled = _latestRelease is not null;
+            if (!installing) RefreshUpdateOffer();
         }
     }
 
