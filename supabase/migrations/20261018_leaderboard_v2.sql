@@ -5,7 +5,8 @@ begin;
 alter table public.viora_profiles
   add column if not exists avatar_version integer not null default 0
     check (avatar_version >= 0),
-  add column if not exists leaderboard_consent_seen boolean not null default false;
+  add column if not exists leaderboard_consent_seen boolean not null default false,
+  add column if not exists avatar_visible boolean not null default false;
 
 -- A one-time explicit choice (yes/no) is stored server-side, even if declined.
 create or replace function public.viora_leaderboard_consent()
@@ -44,7 +45,7 @@ returns table(rank bigint, public_id bigint, username text, role text,
 language sql stable security definer set search_path = ''
 as $$
   select row_number() over (order by t.seconds desc, p.public_id asc) as rank,
-         p.public_id, p.username, p.role, t.seconds, p.avatar_version
+         p.public_id, p.username, p.role, t.seconds, case when p.avatar_visible then p.avatar_version else 0 end
   from public.viora_profiles p
   join public.viora_playtime t on t.id = p.id
   where p.leaderboard_opt_in = true
@@ -67,7 +68,8 @@ as $$
     where p.leaderboard_opt_in = true
   )
   select case when p.leaderboard_opt_in then r.rank else null::bigint end,
-         p.public_id, p.username, p.role, t.seconds, p.avatar_version,
+         p.public_id, p.username, p.role, t.seconds,
+         case when p.avatar_visible then p.avatar_version else 0 end,
          p.leaderboard_opt_in
   from public.viora_profiles p
   join public.viora_playtime t on t.id=p.id
@@ -104,6 +106,9 @@ create policy "viora avatars update own" on storage.objects
   for update to authenticated
   using (bucket_id='viora-avatars' and (select public.viora_owns_avatar(name)))
   with check (bucket_id='viora-avatars' and (select public.viora_owns_avatar(name)));
+create policy "viora avatars delete own" on storage.objects
+  for delete to authenticated
+  using (bucket_id='viora-avatars' and (select public.viora_owns_avatar(name)));
 create policy "viora avatars select own for update" on storage.objects
   for select to authenticated
   using (bucket_id='viora-avatars' and (select public.viora_owns_avatar(name)));
@@ -130,22 +135,51 @@ begin
       raise exception 'Avatar upload not found' using errcode='P0002';
     end if;
     update public.viora_profiles p
-    set avatar_version = p.avatar_version + 1
+    set avatar_version = p.avatar_version + 1, avatar_visible = true
     where p.id=(select auth.uid())
     returning p.avatar_version into new_version;
     return new_version;
 end;
 $$;
 
+-- Only called after the authenticated client removes its own Storage object.
+create function public.viora_avatar_removed()
+returns integer
+language plpgsql volatile security definer set search_path = ''
+as $
+declare
+    new_version integer;
+begin
+    if (select auth.uid()) is null then
+        raise exception 'Authentication required' using errcode='28000';
+    end if;
+    -- Do not report removed while image bytes are still present.
+    if exists(
+      select 1 from storage.objects o
+      join public.viora_profiles p on o.name = p.public_id::text || '.png'
+      where p.id=(select auth.uid()) and o.bucket_id='viora-avatars'
+    ) then
+      raise exception 'Avatar file must be deleted first' using errcode='23514';
+    end if;
+    update public.viora_profiles p
+    set avatar_visible=false, avatar_version=p.avatar_version+1
+    where p.id=(select auth.uid())
+    returning p.avatar_version into new_version;
+    return new_version;
+end;
+$;
+
 revoke all on function public.viora_leaderboard_consent() from public,anon,authenticated;
 revoke all on function public.viora_leaderboard_v2(integer) from public,anon,authenticated;
 revoke all on function public.viora_my_leaderboard_rank() from public,anon,authenticated;
 revoke all on function public.viora_owns_avatar(text) from public,anon,authenticated;
 revoke all on function public.viora_avatar_uploaded() from public,anon,authenticated;
+revoke all on function public.viora_avatar_removed() from public,anon,authenticated;
 grant execute on function public.viora_leaderboard_consent() to authenticated;
 grant execute on function public.viora_leaderboard_v2(integer) to authenticated;
 grant execute on function public.viora_my_leaderboard_rank() to authenticated;
 grant execute on function public.viora_avatar_uploaded() to authenticated;
+grant execute on function public.viora_avatar_removed() to authenticated;
 -- For RLS policy evaluation, authenticated must execute this narrow boolean check.
 grant execute on function public.viora_owns_avatar(text) to authenticated;
 
