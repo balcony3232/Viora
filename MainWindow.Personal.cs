@@ -132,7 +132,11 @@ public partial class MainWindow
     private void ShowFirstRunWizard(bool force = false)
     {
         if (!force && _state.SetupWizardCompleted) return;
-        var wizard = new FirstRunSetupWindow { Owner = this };
+        string preset = ActiveProfile.PerformancePreset.StartsWith("Maximum performance", StringComparison.OrdinalIgnoreCase)
+            ? PerformancePresets.Max
+            : ActiveProfile.PerformancePreset.StartsWith("Balanced", StringComparison.OrdinalIgnoreCase)
+                ? PerformancePresets.Balanced : PerformancePresets.Default;
+        var wizard = new FirstRunSetupWindow(_state.ColorTheme, preset, _state.Discord.Enabled) { Owner = this };
         if (wizard.ShowDialog() != true) return;
 
         _state.ColorTheme = wizard.SelectedTheme;
