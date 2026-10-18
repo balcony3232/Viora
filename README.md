@@ -1,6 +1,6 @@
 # Viora
 
-**Viora v1.3.0 — C + D + E development preview (NOT a public release).** Unofficial Windows desktop companion for Roblox (formerly Violetstrap).
+**Viora v1.3.0 — C + D + E release-candidate source (NOT YET publicly released).** Unofficial Windows desktop companion for Roblox (formerly Violetstrap).
 
 ## Features
 
@@ -12,6 +12,14 @@
 - First-run wizard: Roblox detection, theme, experimental performance profile and Discord privacy preference
 - Optional local account or password-free guest mode
 
+## v1.3 lightweight updating and testing
+
+- In **Utilities → Viora updates**, the updater can select Launcher and (if installed and outdated) Viora Manager separately. You must close Manager to update it; closing Manager also ends its experimental multi-instance compatibility mode.
+- v1.3 automatically prefers small framework-dependent packages when **Microsoft .NET Desktop Runtime 8 (x64)** is installed in Program Files. If the runtime is missing or the Lite asset is unavailable, Viora falls back to a full self-contained EXE. The updater **does not** download or install .NET for you.
+- Downloads are verified against their individual release SHA-256 files, checked again before replacing, and replaced with one retained `.previous` backup per EXE. Staged EXEs are removed after successful installation, so multiple temporary full copies do not accumulate.
+- The automatic updater uses published **GitHub Releases**, not GitHub Actions artifacts. v1.3 build artifacts are testing previews until the release is approved and published.
+- GitHub CI tests that the EXEs and setup compile, but Windows testing of actual updates, rollback, installation, multi-instance sessions, game tracking and UI navigation is still required.
+
 ## Viora Manager (v1.2 preview)
 
 Viora Manager is a **separate Windows EXE**, available as an optional component in Viora Setup. It can also be run independently from the testing build artifact. The interface mirrors the dark-purple Viora concept, with instance cards, process memory, status, session runtime and **per-instance Roblox game names**.
@@ -22,18 +30,19 @@ The Manager monitors **official Roblox Player processes** with visible windows. 
 
 **Experimental multi-instance compatibility (opt-in):** Viora Manager now offers a checkbox to keep a legacy Windows named mutex open for its lifetime. The mechanism influences Roblox's single-instance detection, but **does not patch Roblox, inject code, access cookies, or store Roblox credentials**. This does not guarantee that two Player windows will remain open or that Roblox permits the technique. The checkbox is off by default, is not persisted, requires explicit acknowledgment, and must be enabled before Roblox launches. Closing the Manager or unticking the box releases the mutex. This build does **not** apply Error 773 cookie locking or automatic account switching.
 
-**Simultaneous Roblox Player sessions are NOT confirmed**. Roblox does not officially support simultaneous Player clients, and its client behaviour can change at any time. Do not advertise working or risk-free multi-instance support until real testing has established its behaviour. Roblox Studio's supported multi-client test mode remains a separate alternative.
+**Experimental mode was successfully tested on one Windows PC:** two independently usable Roblox Player windows remained open and Manager identified their experiences as Catalog Avatar Creator and Tower of Hell. This is not official Roblox multi-client support or a guarantee of future compatibility, permitted use, or account safety. Roblox Studio's supported multi-client testing remains a separate alternative.
 
-The workflow now publishes `VioraManager-v1.2.0.exe` as a third distributable, alongside the portable Viora and combined installer. Check that the installer allows Viora Manager to be deselected, that its Start menu and optional desktop shortcut appear correctly, and that uninstall removes both application EXEs without deleting personal AppData.
+The workflow builds `VioraManager-v1.3.0.exe` as a separate distributable, alongside the portable Viora and combined installer. Check that the installer allows Viora Manager to be deselected, that its Start menu and optional desktop shortcut appear correctly, and that uninstall removes both application EXEs without deleting personal AppData.
 
-**Update caveat:** the current Viora in-app updater replaces only the main `Viora.exe`. Manager updates require rerunning a future installer or replacing the separately distributed manager EXE. Full coordinated updates are planned before public v1.2.
+**Updater caveat:** the new v1.3 updater can stage a separate Manager update and replace it when Manager is closed, but this combined update flow still needs end-to-end testing on Windows before public release.
 
 ## Installer
 
 The Windows workflow builds three distributions from the same source:
 
-- `Viora-v1.2.0-Setup.exe`: per-user installer with Start menu shortcut, optional desktop shortcut and uninstaller.
-- `Viora-v1.2.0.exe`: portable EXE for users who prefer not to install.
+- `Viora-v1.3.0-Setup.exe`: per-user installer with Start menu shortcut, optional desktop shortcut and uninstaller.
+- `Viora-v1.3.0.exe`: self-contained portable EXE.
+- `Viora-v1.3.0-Lite.exe` and `VioraManager-v1.3.0-Lite.exe`: optional small EXEs requiring the preinstalled .NET Desktop Runtime 8 (x64).
 
 The installer writes to `%LOCALAPPDATA%\Programs\Viora` without requiring administrator rights. Uninstallation removes the program but deliberately **does not delete** `%LOCALAPPDATA%\Viora` (local settings and histories). Users may delete that folder separately once backups are made.
 
@@ -59,7 +68,7 @@ Diagnostic exports contain only the application version, Windows platform and wh
 
 ### Multi-instance research
 
-As of October 2026, simultaneously running two normal Roblox Player clients is **not a verified Viora feature**. Bloxstrap removed its previous multi-instance launching after Roblox tightened client behaviour. Viora does not bypass single-instance locks, inject DLLs or alter anti-cheat. The Help Centre includes a simple read-only compatibility test using the official Roblox launcher. A successful test requires two independently usable Windows Player windows. Roblox Studio officially supports up to eight simulated test clients for game developers.
+The original v1.1 information describes read-only multi-instance compatibility testing. Starting in the v1.2 Manager prototype, the experimental, session-only Windows mutex switch has been observed working with two official Roblox Player windows on one tester's computer. It does not edit Roblox binaries, inject DLLs or access Roblox credentials. Roblox does not officially support simultaneous Player windows; behaviour may change. Roblox Studio also offers a separate supported multiplayer testing workflow for developers.
 
 ## First-run setup
 

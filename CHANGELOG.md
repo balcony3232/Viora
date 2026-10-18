@@ -2,11 +2,11 @@
 
 ## v1.3 — Stability, smaller updates and visual refinement (development)
 - **C · Performance & stability:** Remove the crashing favourites interface and all favourite mutation/filter/import paths from Game Hub and Quick Launcher. Keep normal saved game shortcuts and read historical favourite values without deleting existing user settings or game history. Retire the experimental crash-diagnostics popup cascade; prioritise controlled testing and fixes backed by error traces.
-- **C · Performance & stability (next):** Audit redundant UI refreshes, settings persistence, background CPU/RAM and session-statistics correctness; benchmark against the v1.2.1 baseline.
+- **C · Performance & stability:** Keep the primary observed Roblox process stable when multiple Player instances are running (eliminates phantom session resets from enumeration order). Persist settings without refreshing every hidden page. Preserve PC-wide elapsed time rather than multiplying total playtime by instance count. Further performance benchmarking remains a Windows acceptance test.
 - **D · Smaller downloads (experimental build):** Build separate framework-dependent, single-file Viora and Manager EXEs as a distinct GitHub Actions artifact. They require the Windows .NET Desktop Runtime 8 (x64) to already be installed, unlike the existing larger self-contained installer. No runtime downloads or installation are performed automatically.
-- **D · Lightweight updating (planned):** Separate Launcher and Manager update payloads, verify downloads before applying and allow rollback. Don't ship a fragile binary patcher.
+- **D · Lightweight updating (code complete, pending Windows runtime testing):** Utilities selects Launcher and optional Manager payloads separately, prefers Lite if .NET Desktop Runtime 8 is installed, and otherwise falls back to the full self-contained build. Checksums are verified twice, previous EXEs are retained, and staged payloads are cleaned after a successful install. Future version tags publish both Lite assets and checksums. No binary patcher is used.
 - **E · UI & customisation:** Replace bright default system scrollbars with compact dark lilac scrollbars across Viora, retaining mouse-wheel, drag and page scrolling. The Game Hub now uses a calmer history-focused panel without favourites controls.
-- **E · Further refinement (next):** Harmonise remaining dialogs, navigation/layout responsiveness and animations without reintroducing white panels.
+- **E · Further refinement:** Added dark lilac scrollbars, cleared the removed favourites controls and improved the update settings panel. Remaining Windows DPI/layout checks are part of the release test gate.
 - **Release gate:** Keep the current working two-instance Manager unchanged; don't merge or ask users to download another package until a coherent test milestone is ready.
 
 ## v1.2 — Viora Manager & performance pass (testing only)
