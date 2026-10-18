@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Windows.Interop;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -17,6 +18,23 @@ public partial class MainWindow : Window
     }
 
     private readonly DispatcherTimer _refresh = new() { Interval = TimeSpan.FromSeconds(3) };
+
+    [DllImport("dwmapi.dll", PreserveSig = true)]
+    private static extern int DwmSetWindowAttribute(nint hwnd, int attribute, ref int value, int size);
+
+    private void ApplyDarkTitleBar()
+    {
+        // Keep the Windows chrome in the same dark theme as the Manager surface.
+        try
+        {
+            int enabled = 1;
+            var window = new WindowInteropHelper(this).Handle;
+            if (DwmSetWindowAttribute(window, 20, ref enabled, sizeof(int)) != 0)
+                _ = DwmSetWindowAttribute(window, 19, ref enabled, sizeof(int));
+        }
+        catch (DllNotFoundException) { } // Old Windows build: retain system title bar.
+        catch (EntryPointNotFoundException) { }
+    }
     private List<RunningWindow> _instances = new();
 
     [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)]
@@ -35,6 +53,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        SourceInitialized += (_, _) => ApplyDarkTitleBar();
         _refresh.Tick += (_, _) => RefreshWindows();
         Loaded += (_, _) => { RefreshWindows(); _refresh.Start(); };
         Closed += (_, _) => _refresh.Stop();
