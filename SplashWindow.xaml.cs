@@ -8,7 +8,7 @@ using System.Windows.Threading;
 
 namespace Viora;
 
-/// <summary>Default full-screen forest splash; optional custom media uses a compact window.</summary>
+/// <summary>Compact forest splash; optional custom image/GIF uses the same floating-window layout.</summary>
 public partial class SplashWindow : Window
 {
     private readonly SplashOptions _options;
@@ -39,17 +39,19 @@ public partial class SplashWindow : Window
         InitializeComponent();
         SourceInitialized += (_, _) =>
         {
-            if (_options.Mode != "Default") PreferNativeRoundedCorners();
+            PreferNativeRoundedCorners();
         };
         _options = options.Clone();
         _reduceMotion = reduceMotion;
         bool defaultSplash = string.Equals(options.Mode, "Default", StringComparison.OrdinalIgnoreCase);
-        DefaultFullScreen.Visibility = defaultSplash ? Visibility.Visible : Visibility.Collapsed;
+        DefaultForest.Visibility = defaultSplash ? Visibility.Visible : Visibility.Collapsed;
         Outer.Visibility = defaultSplash ? Visibility.Collapsed : Visibility.Visible;
         if (defaultSplash)
         {
-            // Borderless maximised window covers the primary display, independent of saved compact size.
-            WindowState = WindowState.Maximized;
+            // Keep the branded default compact, regardless of a previously saved splash size.
+            WindowState = WindowState.Normal;
+            Width = 460;
+            Height = 340;
             KeyDown += (_, e) =>
             {
                 if (e.Key == System.Windows.Input.Key.Escape) Close();
