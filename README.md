@@ -1,6 +1,6 @@
 # Viora
 
-**Viora v1.1.0 — installer and onboarding preview branch.** Unofficial Windows desktop companion for Roblox (formerly Violetstrap).
+**Viora v1.1.1 — installer, onboarding, privacy and help preview branch.** Unofficial Windows desktop companion for Roblox (formerly Violetstrap).
 
 ## Features
 
@@ -16,14 +16,26 @@
 
 The Windows workflow builds two distributions from the same source:
 
-- `Viora-v1.1.0-Setup.exe`: per-user installer with Start menu shortcut, optional desktop shortcut and uninstaller.
-- `Viora-v1.1.0.exe`: portable EXE for users who prefer not to install.
+- `Viora-v1.1.1-Setup.exe`: per-user installer with Start menu shortcut, optional desktop shortcut and uninstaller.
+- `Viora-v1.1.1.exe`: portable EXE for users who prefer not to install.
 
 The installer writes to `%LOCALAPPDATA%\Programs\Viora` without requiring administrator rights. Uninstallation removes the program but deliberately **does not delete** `%LOCALAPPDATA%\Viora` (local settings and histories). Users may delete that folder separately once backups are made.
 
 Viora's existing one-click updater can replace the installed `Viora.exe` when the current user has write permission. New releases are downloaded only after approval. Portable and installed distributions share local settings.
 
 **Unsigned software:** Neither EXE is code-signed. A checksum detects accidental corruption, but a release-supplied checksum alone does not authenticate the publisher. Only run binaries from the official repository and inspect warnings rather than broadly disabling security protections.
+
+## Privacy and Getting Started (v1.1.1)
+
+Under **Personalise → Utilities**, the **Getting Started tutorial** provides basic installation, launch, graphics, profiles, optional Discord and update guidance. **Privacy & diagnostics** explains which files Viora stores locally and offers a reviewed, optional JSON diagnostic export.
+
+For safety, local account sign-in now requires the password on each new app startup. Viora no longer uses a plaintext stay-signed-in flag to bypass authentication. These are convenience-only local profiles: someone who can alter files in the Windows user profile can reset them. Windows account security remains essential.
+
+Diagnostic exports contain only the application version, Windows platform and whether Roblox was detected. They contain no password hashes, usernames, file paths, process IDs, tokens or game history, and nothing is sent automatically. Full configuration backups **do include private data**, and should never be posted to a Discord server or GitHub issue.
+
+### Multi-instance research
+
+As of October 2026, simultaneously running two normal Roblox Player clients is **not a verified Viora feature**. Bloxstrap removed its previous multi-instance launching after Roblox tightened client behaviour. Viora does not bypass single-instance locks, inject DLLs or alter anti-cheat. The Help Centre includes a simple read-only compatibility test using the official Roblox launcher. A successful test requires two independently usable Windows Player windows. Roblox Studio officially supports up to eight simulated test clients for game developers.
 
 ## First-run setup
 
