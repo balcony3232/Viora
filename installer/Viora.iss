@@ -31,12 +31,13 @@ ChangesAssociations=no
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Types]
-Name: "full"; Description: "Viora + Viora Manager"
-Name: "compact"; Description: "Viora only"
+; One custom installation type removes the Full/Compact dropdown.
+; The optional Manager appears as a normal check box, checked by default.
+Name: "custom"; Description: "Select components"; Flags: iscustom
 
 [Components]
-Name: "main"; Description: "Viora Launcher (required)"; Types: full compact; Flags: fixed
-Name: "manager"; Description: "Viora Manager (optional session companion)"; Types: full
+Name: "main"; Description: "Viora Launcher (required)"; Types: custom; Flags: fixed
+Name: "manager"; Description: "Install Viora Manager (optional)"; Types: custom
 
 [Tasks]
 Name: "desktopicon"; Description: "Create desktop shortcuts"; GroupDescription: "Additional shortcuts:"
