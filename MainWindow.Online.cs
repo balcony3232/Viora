@@ -145,6 +145,7 @@ public partial class MainWindow
         _onlineClaimUsername = false;
         await FinishSignInAsync(profile.Username);
         RefreshOnlineAccountUI();
+        await OfferLeaderboardConsentAsync();
         _ = RefreshOnlineLeaderboardAsync();
     }
 
@@ -207,11 +208,13 @@ public partial class MainWindow
         {
             var rows = await _onlineService.LeaderboardAsync();
             if (!_isSignedIn || _onlineProfile is null) return;
-            OnlineLeaderboardList.ItemsSource = rows;
-            OnlineLeaderboardStatus.Text = rows.Count == 0
-                ? "No players have opted into the leaderboard yet."
-                : "Top " + rows.Count + " opted-in players. Credited online time is approximate.";
-            _onlineProfile = await _onlineService.MyProfileAsync();
+            var currentAccountId = _onlineProfile.PublicId;
+            var myRank = await _onlineService.MyLeaderboardRankAsync();
+            var profile = await _onlineService.MyProfileAsync();
+            if (!_isSignedIn || _onlineProfile?.PublicId != currentAccountId || profile is null) return;
+            _onlineProfile = profile;
+            RenderLeaderboardV2(rows);
+            UpdateMyRank(myRank);
             RefreshOnlineAccountUI();
         }
         catch (Exception ex) { OnlineLeaderboardStatus.Text = "Leaderboard unavailable: " + ex.Message; }
@@ -298,7 +301,7 @@ public partial class MainWindow
     {
         StopOnlinePlaytimeMonitor();
         _onlineProfile = null;
-        OnlineLeaderboardList.ItemsSource = null;
+        ClearLeaderboardV2();
         OnlineStatsPanel.Visibility = Visibility.Collapsed;
         SidebarUserId.Text = "";
         SidebarUserId.Visibility = Visibility.Collapsed;
