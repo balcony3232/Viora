@@ -134,6 +134,8 @@ public partial class MainWindow : Window
         };
         if (changedPage && _ready && page == "performance") RefreshRobloxGraphics();
         if (changedPage && _ready && page == "gamehub") RefreshGameHub(force: true);
+        if (changedPage && _ready && page == "stats") RefreshStatsUI();
+        if (changedPage && _ready && page == "dashboard") RefreshGameHub(force: true);
         if (changedPage && _ready) AnimatePage(page);
     }
     private string _openNavigationGroup = "";

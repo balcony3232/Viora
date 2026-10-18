@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -18,6 +20,30 @@ public partial class MainWindow : Window
         public string Detail => $"{Math.Max(0, (int)(DateTime.Now - Started).TotalMinutes)}m runtime · {Memory / (1024 * 1024)} MB RAM";
     }
 
+    // Stable binding objects: avoid tearing down/recreating every WPF instance
+    // card on each poll, which can cause flicker and unnecessary layout work.
+    private sealed class InstanceCard : INotifyPropertyChanged
+    {
+        public int Pid { get; }
+        private string _label = "";
+        private string _gameName = "";
+        private string _detail = "";
+        public string Label => _label;
+        public string GameName => _gameName;
+        public string Detail => _detail;
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        public InstanceCard(int pid) => Pid = pid;
+
+        public void Update(string label, string gameName, string detail)
+        {
+            if (_label != label) { _label = label; PropertyChanged?.Invoke(this, new(nameof(Label))); }
+            if (_gameName != gameName) { _gameName = gameName; PropertyChanged?.Invoke(this, new(nameof(GameName))); }
+            if (_detail != detail) { _detail = detail; PropertyChanged?.Invoke(this, new(nameof(Detail))); }
+        }
+    }
+
+    private readonly ObservableCollection<InstanceCard> _cards = new();
     private readonly DispatcherTimer _refresh = new() { Interval = TimeSpan.FromSeconds(3) };
     private readonly MultiInstanceExperiment _experiment = new();
     private readonly RobloxInstanceGames _games;
@@ -56,6 +82,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        InstanceList.ItemsSource = _cards;
         _games = new RobloxInstanceGames(() => Dispatcher.BeginInvoke(new Action(RefreshWindows)));
         SourceInitialized += (_, _) => ApplyDarkTitleBar();
         _refresh.Tick += (_, _) => RefreshWindows();
@@ -94,11 +121,41 @@ public partial class MainWindow : Window
                 Label = $"Instance {i + 1:00}",
                 GameName = _games.GetGameName(x.Pid)
             }).ToList();
-        InstanceCount.Text = _instances.Count.ToString();
+        // Only create/remove/move visual cards when the actual processes change.
+        // Preserve binding objects for unchanged PIDs and notify on changed fields.
+        var activeIds = _instances.Select(x => x.Pid).ToHashSet();
+        for (int i = _cards.Count - 1; i >= 0; i--)
+            if (!activeIds.Contains(_cards[i].Pid)) _cards.RemoveAt(i);
+
+        for (int i = 0; i < _instances.Count; i++)
+        {
+            var window = _instances[i];
+            var card = _cards.FirstOrDefault(x => x.Pid == window.Pid);
+            if (card is null)
+            {
+                card = new InstanceCard(window.Pid);
+                _cards.Insert(i, card);
+            }
+            else
+            {
+                int oldIndex = _cards.IndexOf(card);
+                if (oldIndex != i) _cards.Move(oldIndex, i);
+            }
+            card.Update(window.Label, window.GameName, window.Detail);
+        }
+
+        string instanceCount = _instances.Count.ToString();
+        if (InstanceCount.Text != instanceCount) InstanceCount.Text = instanceCount;
         long total = _instances.Sum(x => x.Memory);
-        MemoryText.Text = total >= 1073741824 ? $"{total / 1073741824d:0.0} GB" : $"{total / 1048576d:0} MB";
-        StatusText.Text = _instances.Count > 0 ? "Active" : "Idle";
-        InstanceList.ItemsSource = _instances;
+        string memory = total >= 1073741824 ? $"{total / 1073741824d:0.0} GB" : $"{total / 1048576d:0} MB";
+        if (MemoryText.Text != memory) MemoryText.Text = memory;
+        string status = _instances.Count > 0 ? "Active" : "Idle";
+        if (StatusText.Text != status) StatusText.Text = status;
+
+        // Poll less often when Roblox isn't running; return to the normal
+        // three-second cadence once a visible session is detected.
+        var wantedInterval = TimeSpan.FromSeconds(_instances.Count == 0 ? 5 : 3);
+        if (_refresh.Interval != wantedInterval) _refresh.Interval = wantedInterval;
     }
 
     private void MultiInstanceToggle_Click(object sender, RoutedEventArgs e)

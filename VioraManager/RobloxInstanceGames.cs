@@ -25,6 +25,8 @@ internal sealed class RobloxInstanceGames
         public required DateTime StartedUtc { get; init; }
         public string? LogPath { get; set; }
         public DateTime LastLogWriteUtc { get; set; }
+        public long LastReadLength { get; set; }
+        public bool Reading { get; set; }
         public long? PlaceId { get; set; }
         public long? UniverseId { get; set; }
     }
@@ -70,7 +72,7 @@ internal sealed class RobloxInstanceGames
         foreach (var session in _sessions.Values)
         {
             if (session.LogPath is not null)
-                ReadLatestGameJoin(session);
+                StartLogReadIfChanged(session);
             if (session.PlaceId is long placeId && placeId > 0) QueueLookup(placeId, isUniverse: false);
             else if (session.UniverseId is long universeId && universeId > 0) QueueLookup(universeId, isUniverse: true);
         }
@@ -123,40 +125,94 @@ internal sealed class RobloxInstanceGames
         }
     }
 
-    private static void ReadLatestGameJoin(Session session)
+    private sealed record LogObservation(
+        long Length, DateTime LastWriteUtc, long? PlaceId, long? UniverseId);
+
+    private void StartLogReadIfChanged(Session session)
     {
+        if (session.Reading || session.LogPath is null) return;
+        string path = session.LogPath;
         try
         {
-            var file = new FileInfo(session.LogPath!);
-            if (!file.Exists || file.Length == 0 || file.LastWriteTimeUtc == session.LastLogWriteUtc)
-                return;
-            using var stream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read,
-                FileShare.ReadWrite | FileShare.Delete);
-            stream.Seek(-Math.Min(stream.Length, 256 * 1024), SeekOrigin.End);
-            using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
-            string tail = reader.ReadToEnd();
-            session.LastLogWriteUtc = file.LastWriteTimeUtc;
-
-            var places = PlaceJoin.Matches(tail);
-            var universes = UniverseJoin.Matches(tail);
-            // Read the latest place (preferred), not a stale join from the start
-            // of the session after a Roblox teleport or experience change.
-            if (places.Count > 0 && long.TryParse(places[^1].Groups[1].Value, out long place) && place > 0)
-            {
-                session.PlaceId = place;
-                session.UniverseId = null;
-            }
-            else if (universes.Count > 0 &&
-                long.TryParse(universes[^1].Groups[1].Value, out long universe) && universe > 0)
-            {
-                session.PlaceId = null;
-                session.UniverseId = universe;
-            }
+            // Cheap metadata check on the UI thread; the log read and regex
+            // scanning happen off-thread so Roblox log bursts don't stall WPF.
+            var info = new FileInfo(path);
+            if (!info.Exists || info.Length <= 0) return;
+            if (info.Length == session.LastReadLength &&
+                info.LastWriteTimeUtc == session.LastLogWriteUtc) return;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
         {
-            // Roblox can rotate or lock logs; never fail the Manager.
+            return;
         }
+
+        session.Reading = true;
+        _ = ReadLogAsync(session, path, session.LastReadLength);
+    }
+
+    private async Task ReadLogAsync(Session session, string path, long previousLength)
+    {
+        try
+        {
+            var change = await Task.Run(() => ReadIncrementalLog(path, previousLength));
+            if (change is null || !string.Equals(session.LogPath, path, StringComparison.OrdinalIgnoreCase) ||
+                !_sessions.Values.Contains(session)) return;
+
+            // Only set state once the file was successfully read. If Roblox
+            // appends more lines during the read, the next poll will pick them up.
+            session.LastReadLength = change.Length;
+            session.LastLogWriteUtc = change.LastWriteUtc;
+            bool updated = false;
+            if (change.PlaceId is long placeId && placeId > 0)
+            {
+                updated = session.PlaceId != placeId;
+                session.PlaceId = placeId;
+                session.UniverseId = null;
+            }
+            else if (change.UniverseId is long universeId && universeId > 0)
+            {
+                updated = session.UniverseId != universeId || session.PlaceId is not null;
+                session.PlaceId = null;
+                session.UniverseId = universeId;
+            }
+            if (updated) _onNamesChanged();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            // The official client may rotate files while we read them.
+        }
+        finally
+        {
+            session.Reading = false;
+        }
+    }
+
+    private static LogObservation? ReadIncrementalLog(string path, long previousLength)
+    {
+        var file = new FileInfo(path);
+        if (!file.Exists || file.Length == 0) return null;
+        using var stream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read,
+            FileShare.ReadWrite | FileShare.Delete);
+        // Initial read: recent 256 KB. Subsequent reads: newly appended data,
+        // with a short overlap for joins split across consecutive reads.
+        // Truncated/rotated logs are treated as new.
+        long readFrom = previousLength <= 0 || previousLength > stream.Length
+            ? Math.Max(0, stream.Length - 256 * 1024)
+            : Math.Max(0, Math.Max(previousLength - 1024, stream.Length - 256 * 1024));
+        stream.Seek(readFrom, SeekOrigin.Begin);
+        using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+        string recent = reader.ReadToEnd();
+        long lengthRead = stream.Length;
+        DateTime lastWrite = File.GetLastWriteTimeUtc(path);
+        var placeMatches = PlaceJoin.Matches(recent);
+        var universeMatches = UniverseJoin.Matches(recent);
+        long? place = placeMatches.Count > 0 &&
+            long.TryParse(placeMatches[^1].Groups[1].Value, out long placeId) && placeId > 0
+                ? placeId : null;
+        long? universe = !place.HasValue && universeMatches.Count > 0 &&
+            long.TryParse(universeMatches[^1].Groups[1].Value, out long universeId) && universeId > 0
+                ? universeId : null;
+        return new LogObservation(lengthRead, lastWrite, place, universe);
     }
 
     public string GetGameName(int pid)

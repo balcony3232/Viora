@@ -307,10 +307,20 @@ public partial class MainWindow
         }
 
         _lastMonitorTime = now;
-        RefreshStatsUI();
+
+        // Keep collecting precise local activity data, but do not rebuild hidden
+        // statistics, charts or game cards every five seconds.
+        if (_currentPage == "stats") RefreshStatsUI();
+        if (_currentPage == "dashboard" && DashboardActivityText is not null)
+            DashboardActivityText.Text = running
+                ? "● Roblox running · tracking this session"
+                : "○ No active Roblox session detected";
         OnRobloxMonitoringTick(running);
-        UpdateGameTrackingIndicator();
-        RefreshGameHub();
+        if (_currentPage == "gamehub" || _currentPage == "dashboard")
+        {
+            UpdateGameTrackingIndicator();
+            RefreshGameHub();
+        }
         if ((now - _lastStatsSave).TotalSeconds >= 30)
         {
             Storage.Save(_state);
@@ -343,7 +353,6 @@ public partial class MainWindow
             DashboardActivityText.Text = _sawRobloxRunning ? "● Roblox running · tracking this session" : "○ No active Roblox session detected";
         RefreshWeeklyBars();
         RefreshEnhancedStats();
-        RefreshGameHub();
     }
 
     private void RefreshWeeklyBars()
