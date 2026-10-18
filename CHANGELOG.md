@@ -1,22 +1,24 @@
 # Viora — major releases
 
-## v1.0.0 — Public beta (first shareable build)
-- Prepared Viora's first publicly shareable Windows x64 executable release under the v1.0.0 version.
-- Changed the default splash to a **small centred** purple-forest window with the restrained lilac Viora wordmark, replacing the previous full-screen default.
-- Kept custom GIF and image splash modes, personalised profiles and settings intact.
-- Updated the release checker to recognise versioned GitHub **pre-releases** as well as regular releases so beta testers can receive updates.
-- Preserved the one-click, user-approved updater with staged SHA-256 download, previous-EXE backup and restart.
-- Kept the public repository lean: one major changelog and no personal AppData or build artifacts.
-- **Status:** release candidate source; Windows build, startup, friend-installation and automatic-update smoke tests required before calling the beta release verified.
+## v1.1.0 — Installer and first-run experience (preview)
+- Added a per-user Inno Setup installer, Start menu entry, optional desktop shortcut, registered uninstaller and post-install launch.
+- Kept the existing portable EXE as an alternative download.
+- Updated Windows CI to compile and checksum both EXEs, with both assets intended for GitHub Releases.
+- Introduced a four-page first-run wizard for Roblox installation detection, theme selection, experimental graphics profile and optional Discord presence preference.
+- Made the local account optional for new users with password-free guest entry; guest mode cannot bypass an existing password-protected local account screen.
+- Kept the prior user-data folder intact across installation/uninstallation. Older user profiles skip the first-run wizard unless reopened from Utilities.
+- Discord remains disconnected until a valid Application ID is configured; graphics presets are staged in the Viora profile without modifying Roblox during setup.
+- **Release state: Windows build/runtime verification pending.** Changes live on feature branch for beta testing.
+
+## v1.0.0 — Public beta
+- Published the first versioned user-shareable Windows x64 app, retaining the FastFlag Explorer, Game Hub, local stats, Discord Rich Presence and custom themes.
+- Added the compact default purple-forest splash with a lilac wordmark.
+- Added beta/pre-release awareness to GitHub's release update checker.
 
 ## v0.9 — Viora rebrand
-- Renamed Violetstrap to Viora, with refreshed app logo, Windows icon and GitHub identity.
-- Added legacy data migration without deleting existing Violetstrap files.
-- Retained launcher, FastFlag editing, FPS options, game statistics, rich presence, themes and custom media splashes.
-- Later v0.9 maintenance added the forest splash design, improved wording and the self-update installer.
+- Renamed Violetstrap to Viora, refreshed the icon and branding, and preserved local data through the transition.
 
 ## v0.8 — Workspace update
-- Added advanced quick launch and assigned per-game performance profiles.
-- Introduced theme studio, system tray integration, backups/recovery and GitHub release checking.
+- Added quick-launch folders, assigned performance profiles, custom theme colours, system tray support, backup/recovery and GitHub Releases checking.
 
-Minor maintenance changes are included in the next major release summary, not separate changelog files.
+Minor maintenance changes are recorded in relevant major-release notes rather than separate files.
