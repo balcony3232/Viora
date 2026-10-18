@@ -208,6 +208,19 @@ public sealed class VioraOnlineService : IDisposable
         return result.RootElement.GetInt64();
     }
 
+    public async Task DeleteAccountAsync()
+    {
+        // Authenticated, server-verified Edge Function. Never send a user ID,
+        // service key or any admin credential from a desktop installation.
+        using var response = await SendAsync(HttpMethod.Post,
+            "functions/v1/delete-viora-account", new { confirm = "DELETE" },
+            await TokenAsync());
+        if (!response.RootElement.TryGetProperty("deleted", out var deleted) ||
+            deleted.ValueKind != JsonValueKind.True)
+            throw new InvalidOperationException("The server did not confirm account deletion.");
+        ForgetSession();
+    }
+
     public async Task SignOutAsync()
     {
         var token = _accessToken;
