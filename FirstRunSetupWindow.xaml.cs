@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace Viora;
 
@@ -34,6 +35,7 @@ public partial class FirstRunSetupWindow : Window
         DiscordChoice.IsChecked = discordEnabled;
         ThemeChoice.SelectionChanged += (_, _) => PreviewAppearance();
         StyleChoice.SelectionChanged += (_, _) => PreviewAppearance();
+        PreviewAppearance();
         _steps = new UIElement[] { WelcomeStep, DetectionStep, PreferencesStep, PrivacyStep };
         ShowStep();
     }
@@ -45,7 +47,22 @@ public partial class FirstRunSetupWindow : Window
         if (match != null) combo.SelectedItem = match;
     }
 
-    private void PreviewAppearance() => _appearancePreview?.Invoke(SelectedTheme, SelectedStyle);
+    private void PreviewAppearance()
+    {
+        string colour = SelectedTheme switch
+        {
+            "Amethyst" => "#C29BFF",
+            "Midnight" => "#B092FF",
+            "Rose" => "#F38CCB",
+            "Emerald" => "#71DDB4",
+            _ => "#AE83FF"
+        };
+        var brush = (SolidColorBrush)new BrushConverter().ConvertFromString(colour)!;
+        ThemePreviewCard.BorderBrush = brush;
+        ThemePreviewLabel.Foreground = brush;
+        ThemePreviewLabel.Text = "Viora theme preview · " + SelectedTheme + " · " + SelectedStyle;
+        _appearancePreview?.Invoke(SelectedTheme, SelectedStyle);
+    }
 
     private void RefreshRobloxButton_Click(object sender, RoutedEventArgs e) => DetectRoblox();
 
