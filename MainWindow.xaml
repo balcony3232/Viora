@@ -169,19 +169,6 @@
                                         </Border>
                                     </DataTemplate></ItemsControl.ItemTemplate>
                                 </ItemsControl>
-                                <TextBlock Text="YOUR FAVOURITES  ·  QUICK LAUNCH" Style="{StaticResource Hint}" FontSize="10" Margin="0,12,0,8"/>
-                                <ItemsControl x:Name="HomeFavoriteQuickList">
-                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-                                    <ItemsControl.ItemTemplate><DataTemplate>
-                                        <Button Tag="{Binding PlaceId}" Click="DashboardQuickLaunch_Click" Margin="0,0,8,8" Padding="9,7" ToolTip="Open official Roblox game page">
-                                            <StackPanel Orientation="Horizontal">
-                                                <Grid Width="26" Height="26"><TextBlock Text="◇" FontSize="20" Foreground="{DynamicResource Accent}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                    <Image Source="{Binding Icon}" Stretch="Uniform"/></Grid>
-                                                <TextBlock Text="{Binding DisplayName}" Margin="7,0,0,0" MaxWidth="145" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </Button>
-                                    </DataTemplate></ItemsControl.ItemTemplate>
-                                </ItemsControl>
                             </StackPanel>
                         </Border>
                         <Border Style="{StaticResource PanelBorder}">
@@ -223,8 +210,8 @@
                                 <TextBlock x:Name="GameHubTracked" Text="0m" FontSize="23" FontWeight="SemiBold" Margin="0,9,0,0"/>
                             </StackPanel></Border>
                             <Border Style="{StaticResource PanelBorder}"><StackPanel>
-                                <TextBlock Text="FAVOURITES" Style="{StaticResource Hint}" FontSize="10"/>
-                                <TextBlock x:Name="GameHubFavouriteCount" Text="0" FontSize="23" FontWeight="SemiBold" Margin="0,9,0,0"/>
+                                <TextBlock Text="RECENT SESSIONS" Style="{StaticResource Hint}" FontSize="10"/>
+                                <TextBlock x:Name="GameHubRecentCount" Text="0" FontSize="23" FontWeight="SemiBold" Margin="0,9,0,0"/>
                             </StackPanel></Border>
                         </UniformGrid>
                         <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,16">
@@ -241,8 +228,7 @@
                                         <ComboBoxItem Content="Recently played"/>
                                         <ComboBoxItem Content="Name (A–Z)"/>
                                     </ComboBox>
-                                    <CheckBox x:Name="GameHubOnlyFavorites" Content="Favourites only" Style="{StaticResource SwitchCheckBox}"
-                                              Checked="GameHubFavoriteFilter_Changed" Unchecked="GameHubFavoriteFilter_Changed" Margin="0,0,8,7"/>
+
                                 </WrapPanel>
                                 <TextBlock x:Name="GameHubTrackingStatus" Text="○ Roblox closed · tracking paused" Foreground="{DynamicResource Accent}" FontSize="12" Margin="0,0,0,8"/>
                                 <TextBlock Text="Select a game for charts and session insights. Stats reflect time observed by Viora only." Style="{StaticResource Hint}" FontSize="11" Margin="0,0,0,12"/>
@@ -282,16 +268,12 @@
                                             </Border>
                                             <TextBlock Text="{Binding DisplayName}" FontSize="13" FontWeight="SemiBold" Margin="2,10,2,6" TextTrimming="CharacterEllipsis"
                                                        ToolTip="{Binding DisplayName}"/>
-                                            <Grid Margin="2,0,2,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                                <TextBlock Text="{Binding PlaytimeLabel}" Foreground="{DynamicResource Accent}" FontSize="12"/>
-                                                <TextBlock Text="{Binding FavoriteLabel}" Grid.Column="1" Foreground="{DynamicResource Accent}" FontSize="14"/>
-                                            </Grid>
+                                            <TextBlock Text="{Binding PlaytimeLabel}" Foreground="{DynamicResource Accent}" FontSize="12" Margin="2,0,2,0"/>
                                             <TextBlock Text="{Binding Sessions, StringFormat={}{0} sessions}" Foreground="{DynamicResource Muted}" FontSize="10" Margin="2,4,0,0"/>
                                         </StackPanel>
                                     </DataTemplate></ListBox.ItemTemplate>
                                 </ListBox>
                                 <WrapPanel Margin="0,12,0,0">
-                                    <Button Content="★  Toggle favourite" Click="ToggleFavorite_Click" Margin="0,0,9,9"/>
                                     <Button Content="▶  Open game page" Style="{StaticResource PrimaryButton}" Click="OpenSelectedGame_Click" Margin="0,0,9,9"/>
                                     <Button Content="Copy official link" Click="CopySelectedGameLink_Click" Margin="0,0,9,9"/>
                                     <Button Content="Export game history CSV" Click="ExportGameHistory_Click" Margin="0,0,9,9"/>
@@ -300,37 +282,15 @@
                         </Border>
                         <Grid Margin="0,0,0,16">
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Style="{StaticResource PanelBorder}"><StackPanel>
-                                <TextBlock Text="Favourites &amp; quick launch" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,9"/>
-                                <TextBlock Text="Add a public Roblox place ID or URL. Recently opened favourites appear first; private servers are never joined automatically." Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,0,0,10"/>
-                                <TextBox x:Name="GameHubAddUrl" ToolTip="Paste https://www.roblox.com/games/12345 or place ID" Margin="0,0,0,9"/>
-                                <Button Content="+  Add favourite" Style="{StaticResource PrimaryButton}" Click="AddFavorite_Click" HorizontalAlignment="Left" Margin="0,0,0,12"/>
-                                <ListBox x:Name="GameHubFavoritesList" Height="184" Margin="0,0,0,10" Background="Transparent" BorderThickness="0"
-                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto">
-                                    <ListBox.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ListBox.ItemsPanel>
-                                    <ListBox.ItemContainerStyle><Style TargetType="ListBoxItem">
-                                        <Setter Property="Margin" Value="0,0,8,8"/><Setter Property="Padding" Value="3"/>
-                                        <Setter Property="Background" Value="{DynamicResource PanelRaised}"/>
-                                        <Setter Property="BorderBrush" Value="{DynamicResource Stroke}"/>
-                                        <Setter Property="BorderThickness" Value="1"/>
-                                        <Style.Triggers><Trigger Property="IsSelected" Value="True"><Setter Property="BorderBrush" Value="{DynamicResource Accent}"/></Trigger></Style.Triggers>
-                                    </Style></ListBox.ItemContainerStyle>
-                                    <ListBox.ItemTemplate><DataTemplate>
-                                        <StackPanel Width="126">
-                                            <Grid Height="75"><TextBlock Text="◇" Foreground="{DynamicResource Accent}" FontSize="31" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                <Image Source="{Binding Icon}" Stretch="Uniform"/></Grid>
-                                            <TextBlock Text="{Binding DisplayName}" FontSize="11" TextTrimming="CharacterEllipsis" Margin="2,6,0" ToolTip="{Binding DisplayName}"/>
-                                            <TextBlock Text="{Binding QuickLaunchRequests, StringFormat='Opened {0}× from Viora'}" Style="{StaticResource Hint}" FontSize="9" Margin="2,0,0,4" TextTrimming="CharacterEllipsis"/>
-                                            <Button Tag="{Binding PlaceId}" Content="▶  Open" Click="DashboardQuickLaunch_Click" Padding="8,4" FontSize="10" HorizontalAlignment="Stretch"/>
-                                        </StackPanel>
-                                    </DataTemplate></ListBox.ItemTemplate>
-                                </ListBox>
-                                <WrapPanel>
-                                    <Button Content="▶  Open selected" Click="LaunchFavorite_Click" Margin="0,0,8,7"/>
-                                    <Button Content="Copy official link" Click="CopyFavoriteGameLink_Click" Margin="0,0,8,7"/>
-                                    <Button Content="Remove favourite" Click="RemoveFavorite_Click" Margin="0,0,8,7"/>
-                                </WrapPanel>
-                            </StackPanel></Border>
+                            <Border Grid.Column="0" Style="{StaticResource PanelBorder}">
+                                <StackPanel>
+                                    <TextBlock Text="Quick Launcher" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,9"/>
+                                    <TextBlock Text="Save Roblox game links and assign launch profiles in Workspace → Quick Launcher." 
+                                               Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,0,0,12"/>
+                                    <TextBlock Text="Game Hub tracks your observed playtime and sessions. It no longer changes or sorts favourite flags."
+                                               Style="{StaticResource Hint}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
                             <Border Grid.Column="2" Style="{StaticResource PanelBorder}"><StackPanel>
                                 <TextBlock Text="Selected game" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,9"/>
                                 <Grid Margin="0,2,0,12">
@@ -1031,7 +991,7 @@
                         </Border>
                     </Grid>
                 </ScrollViewer>
-                <!-- v0.8: Launcher, presets and favourites share a compact workspace page. -->
+                <!-- v1.3: Quick Launcher is independent from removed favourite controls. -->
                 <ScrollViewer x:Name="LauncherPage" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" Margin="0,8,0,10">
                     <StackPanel Margin="0,0,8,12">
                         <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,14">
@@ -1042,13 +1002,12 @@
                                 <TextBox x:Name="QuickName" Margin="0,5,0,10" MaxLength="80"/>
                                 <TextBlock Text="PLACE ID OR ROBLOX GAME URL" Style="{StaticResource Hint}" FontSize="10"/>
                                 <TextBox x:Name="QuickPlace" Margin="0,5,0,10" MaxLength="400"/>
-                                <TextBlock Text="FOLDER (E.G. FAVOURITES, SIMULATORS, OBBIES)" Style="{StaticResource Hint}" FontSize="10"/>
-                                <TextBox x:Name="QuickFolder" Text="Favourites" Margin="0,5,0,12" MaxLength="40"/>
+                                <TextBlock Text="FOLDER (E.G. GAMES, SIMULATORS, OBBIES)" Style="{StaticResource Hint}" FontSize="10"/>
+                                <TextBox x:Name="QuickFolder" Text="Games" Margin="0,5,0,12" MaxLength="40"/>
                                 <WrapPanel>
                                     <Button Content="Save new game" Style="{StaticResource PrimaryButton}" Click="QuickSave_Click" Margin="0,0,8,8"/>
                                     <Button Content="Update selected" Click="QuickUpdate_Click" Margin="0,0,8,8"/>
                                     <Button Content="Remove selected" Click="QuickRemove_Click" Margin="0,0,8,8"/>
-                                    <Button Content="Import Game Hub favourites" Click="QuickImport_Click" Margin="0,0,8,8"/>
                                 </WrapPanel>
                             </StackPanel>
                         </Border>
