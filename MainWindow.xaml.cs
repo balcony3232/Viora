@@ -60,6 +60,7 @@ public partial class MainWindow : Window
         InitializePersonalFeatures();
         InitializeGameHub();
         InitializeV08();
+        InitializePolish();
     }
 
     private void SetStatus(string message) => StatusText.Text = message;
