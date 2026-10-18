@@ -78,7 +78,8 @@ public sealed class VioraOnlineService : IDisposable
             };
             throw new InvalidOperationException(message);
         }
-        return JsonDocument.Parse(raw);
+        // Supabase /auth/v1/logout may return HTTP 204 with no JSON body.
+        return JsonDocument.Parse(string.IsNullOrWhiteSpace(raw) ? "{}" : raw);
     }
 
     public static void ValidateUsername(string username)
