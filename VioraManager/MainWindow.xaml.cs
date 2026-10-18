@@ -13,7 +13,7 @@ public partial class MainWindow : Window
     private sealed record RunningWindow(int Pid, nint Handle, DateTime Started, long Memory)
     {
         public string Label { get; init; } = "";
-        public string Detail => $"Roblox Player · {(DateTime.Now - Started):hh\\:mm} runtime · {Memory / (1024 * 1024)} MB";
+        public string Detail => $"Roblox Player · {Math.Max(0, (int)(DateTime.Now - Started).TotalMinutes)}m runtime · {Memory / (1024 * 1024)} MB";
     }
 
     private readonly DispatcherTimer _refresh = new() { Interval = TimeSpan.FromSeconds(3) };
