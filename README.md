@@ -31,4 +31,6 @@ Use the repository's [Issues](https://github.com/balcony3232/Viora/issues) page.
 Alternatively join the discord server and DM any Admins or Owners, Or create a ticket in the server and describe your issue.
 For direct contact with the owner DM/add @bbalcony on discord. <@1255858849282523182>
 
+Discord Server: https://discord.gg/fuVjSqHA5
+
 I hope you have fun playing my custom Bootstrapper :P
