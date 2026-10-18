@@ -151,7 +151,10 @@ public partial class MainWindow
         {
             PerformancePresets.Clear(ActiveProfile);
         }
-        _state.Discord.Enabled = wizard.EnableDiscordPresence;
+        // Do not attempt a Discord connection until a valid Application ID has been configured.
+        _state.Discord.Enabled = wizard.EnableDiscordPresence &&
+            System.Text.RegularExpressions.Regex.IsMatch(_state.Discord.ApplicationId ?? "", @"^\d{15,25}$");
+        DiscordEnabled.IsChecked = _state.Discord.Enabled;
         _state.SetupWizardCompleted = true;
         Persist();
         SetStatus("First-run preferences saved locally.");
