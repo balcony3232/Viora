@@ -20,3 +20,5 @@ catalog-extra.json
 *.tmp
 Violetstrap-data/
 Viora-data/
+# Build-time public Supabase project configuration (not required for offline previews)
+Assets/OnlineConfig.json

@@ -67,14 +67,24 @@
                     </StackPanel>
                 </StackPanel>
                 <StackPanel DockPanel.Dock="Bottom" VerticalAlignment="Bottom" Margin="7,20,7,0">
+                    <Button x:Name="NavLeaderboard" Content="★   Global Leaderboard"
+                            Style="{StaticResource NavButton}" Visibility="Collapsed"
+                            Click="NavLeaderboard_Click" Margin="0,0,0,5"
+                            ToolTip="View Viora players who opted into public playtime ranking"/>
+                    <Button x:Name="NavOwnerPanel" Content="◆   Developer Panel"
+                            Style="{StaticResource NavButton}" Visibility="Collapsed"
+                            Click="NavOwnerPanel_Click" Margin="0,0,0,7"
+                            ToolTip="Owner-only tools for assigning verified account tags"/>
                     <Border Background="{DynamicResource Panel}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1" CornerRadius="12" Padding="13">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                 <Ellipse Width="37" Height="37" Stroke="{DynamicResource Accent}" StrokeThickness="1.5" Margin="0,0,10,0" x:Name="SidebarAvatar"/>
                                 <TextBlock Text="ACCOUNT" Foreground="{DynamicResource Muted}" FontSize="10" VerticalAlignment="Center"/>
                             </StackPanel>
-                            <TextBlock x:Name="SidebarAccountLabel" Text="●  Local account" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
-
+                            <TextBlock x:Name="SidebarAccountLabel" Text="●  Local account" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock x:Name="SidebarUserId" Text="" Visibility="Collapsed"
+                                       Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,4,0,0"
+                                       ToolTip="Permanent Viora Online account ID"/>
                         </StackPanel>
                     </Border>
                     <TextBlock x:Name="FooterVersionText" Text="VIORA" FontSize="10" Foreground="{DynamicResource Muted}" HorizontalAlignment="Center" Margin="0,16,0,0"/>
@@ -358,6 +368,117 @@
                         </StackPanel></Border>
                     </StackPanel>
                 </ScrollViewer>
+                <!-- Leaderboard is an easy-to-find page above the account card. -->
+                <ScrollViewer x:Name="LeaderboardPage" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" Margin="0,8,0,10">
+                    <StackPanel Margin="0,0,10,18">
+                        <Border Background="{DynamicResource PanelRaised}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1" CornerRadius="16" Padding="24" Margin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="★  Global Playtime Leaderboard" FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
+                                <TextBlock Text="Viora Online members who choose to share their estimated observed Roblox playtime."
+                                           Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border x:Name="OnlineStatsPanel" Visibility="Collapsed"
+                                Style="{StaticResource PanelBorder}" Margin="0,0,0,14">
+                            <StackPanel>
+                                <DockPanel Margin="0,0,0,8">
+                                    <Button DockPanel.Dock="Right" Content="Refresh rankings"
+                                            Click="OnlineLeaderboardRefresh_Click" Margin="9,0,0,0"/>
+                                    <StackPanel>
+                                        <TextBlock Text="Your Viora Online profile" FontSize="17" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource Accent}"/>
+                                        <TextBlock x:Name="OnlineAccountStatus" Text="Loading online profile…"
+                                                   Style="{StaticResource Hint}" Margin="0,5,0,0" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </DockPanel>
+                                <CheckBox x:Name="OnlineLeaderboardVisible"
+                                          Content="Share my Roblox playtime on the public leaderboard"
+                                          Checked="OnlineLeaderboardVisible_Changed"
+                                          Unchecked="OnlineLeaderboardVisible_Changed" Margin="0,4,0,7"/>
+                                <TextBlock Text="Optional. Your username, ID, tag, avatar and approximate playtime are visible to other signed-in users only if you join. Turn this off any time."
+                                           Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,0,0,9"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,3,0,7">
+                                    <Button Content="Upload profile picture" Click="OnlineAvatarUpload_Click"
+                                            Margin="0,0,8,0"
+                                            ToolTip="Optional. Uploaded images become publicly accessible. PNG and JPEG accepted, sanitised to small PNG."/>
+                                    <Button Content="Remove picture" Click="OnlineAvatarRemove_Click" Margin="0,0,8,0"
+                                            ToolTip="Delete your public avatar from Storage; initials will be used instead"/>
+                                    <Button Content="Delete my online account" Click="OnlineAccountDelete_Click"
+                                            ToolTip="Permanently remove this account; local Viora settings remain"/>
+                                </StackPanel>
+                                <TextBlock x:Name="OnlineAvatarStatus" Text="Optional: use a profile picture or an initials avatar."
+                                           Style="{StaticResource Hint}" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                        <Grid Margin="0,4,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <ContentControl x:Name="PodiumSecondSlot" Grid.Column="0" VerticalAlignment="Bottom" Margin="0,45,8,0"/>
+                            <ContentControl x:Name="PodiumFirstSlot" Grid.Column="1" VerticalAlignment="Bottom" Margin="0,0,8,0"/>
+                            <ContentControl x:Name="PodiumThirdSlot" Grid.Column="2" VerticalAlignment="Bottom" Margin="0,62,0,0"/>
+                        </Grid>
+                        <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="Your ranking" FontSize="17" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource Accent}" Margin="0,0,0,5"/>
+                                <TextBlock x:Name="LeaderboardYourRank" Text="Sign in to see your rank."
+                                           FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                <TextBlock Text="This is based on server-tracked activity and can differ from local statistics."
+                                           Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource PanelBorder}">
+                            <StackPanel>
+                                <TextBlock Text="All other players" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <TextBlock Text="Ranked players from #4 onward. Top 3 appear on the podium."
+                                           Style="{StaticResource Hint}" Margin="0,0,0,12"/>
+                                <TextBlock x:Name="OnlineLeaderboardStatus"
+                                           Text="Open this page to refresh the global leaderboard."
+                                           Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,0,0,9"/>
+                                <StackPanel x:Name="LeaderboardRowsHost"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+                <!-- Owner-only panel: all permissions are checked again by Postgres. -->
+                <ScrollViewer x:Name="OwnerPanelPage" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" Margin="0,8,0,10">
+                    <StackPanel Margin="0,0,10,18">
+                        <Border Background="{DynamicResource PanelRaised}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1" CornerRadius="16" Padding="24" Margin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="◆  Developer Panel" FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
+                                <TextBlock Text="Private tools for the verified Viora owner. Tag changes require server permission and are recorded."
+                                           Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="Manage account tags" FontSize="18" FontWeight="SemiBold"/>
+                                <TextBlock Text="Find someone by their exact Viora username, check their permanent ID, then assign a tag. Admin, Developer and Tester are display tags; only Owner can change them."
+                                           Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,7,0,16"/>
+                                <TextBlock Text="EXACT USERNAME" Style="{StaticResource Hint}" FontSize="10"/>
+                                <WrapPanel Margin="0,6,0,10">
+                                    <TextBox x:Name="OwnerSearchUsername" Width="240" MaxLength="24" Margin="0,0,10,8"
+                                             ToolTip="Search exact Viora Online username"/>
+                                    <Button x:Name="OwnerLookupButton" Content="Find user" Click="OwnerLookup_Click" Margin="0,0,0,8"/>
+                                </WrapPanel>
+                                <TextBlock x:Name="OwnerSelectedAccount" Text="Search for a user before changing their tag."
+                                           FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,12"/>
+                                <TextBlock Text="SET ACCOUNT TAG" Style="{StaticResource Hint}" FontSize="10" Margin="0,0,0,6"/>
+                                <ComboBox x:Name="OwnerRoleChoice" Width="230" HorizontalAlignment="Left" SelectedIndex="0" Margin="0,0,0,12">
+                                    <ComboBoxItem Content="Member (remove tag)" Tag="member"/>
+                                    <ComboBoxItem Content="Tester" Tag="tester"/>
+                                    <ComboBoxItem Content="Developer" Tag="developer"/>
+                                    <ComboBoxItem Content="Administrator" Tag="administrator"/>
+                                </ComboBox>
+                                <Button x:Name="OwnerAssignButton" Content="Apply tag" Style="{StaticResource PrimaryButton}"
+                                        Click="OwnerAssign_Click" HorizontalAlignment="Left" IsEnabled="False"/>
+                                <TextBlock x:Name="OwnerPanelStatus" Text="Only accounts approved by the server can use this panel."
+                                           Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,12,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
                 <!-- Stats: measured locally only while Viora runs -->
                 <ScrollViewer x:Name="StatsPage" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" Margin="0,8,0,10">
                     <StackPanel Margin="0,0,10,18">
@@ -365,7 +486,7 @@
                             <StackPanel>
                                 <TextBlock Text="YOUR ACTIVITY" Foreground="{DynamicResource Accent}" FontSize="10" FontWeight="Bold"/>
                                 <TextBlock Text="Roblox, in numbers." FontSize="25" FontWeight="SemiBold" Margin="0,8,0,8"/>
-                                <TextBlock Text="Private statistics saved on this PC. Tracking works while Viora is open, including in the background." Style="{StaticResource Hint}"/>
+                                <TextBlock Text="Local statistics stay on this PC. Online leaderboard sharing is optional." Style="{StaticResource Hint}"/>
                             </StackPanel>
                         </Border>
                         <UniformGrid Columns="3" Margin="0,0,0,16">
@@ -1185,30 +1306,39 @@
             </Grid>
             <Grid Grid.Row="2"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                 <TextBlock x:Name="StatusText" Text="Ready." Foreground="{DynamicResource Muted}" FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                <TextBlock Grid.Column="1" Text="LOCAL ONLY  ·  WINDOWS" FontSize="10" Foreground="{DynamicResource Muted}" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="VIORA  ·  WINDOWS" FontSize="10" Foreground="{DynamicResource Muted}" VerticalAlignment="Center"/>
             </Grid>
         </Grid>
-        <!-- Local account: never asks for a Roblox login. -->
+        <!-- Viora Online or legacy local account; never asks for a Roblox login. -->
         <Grid x:Name="AuthOverlay" Grid.ColumnSpan="2" Panel.ZIndex="30" Background="#0B0912" Visibility="Visible">
             <Border Background="#181222" BorderBrush="#433057" BorderThickness="1" CornerRadius="20" Width="440" Padding="36" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <StackPanel>
                     <TextBlock Text="◆  Viora" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource Accent}" Margin="0,0,0,26"/>
                     <TextBlock x:Name="AuthTitle" Text="Create local account" FontSize="25" FontWeight="SemiBold" Margin="0,0,0,9"/>
                     <TextBlock x:Name="AuthSubtitle" Text="One private profile on this Windows PC." Style="{StaticResource Hint}" Margin="0,0,0,24"/>
-                    <TextBlock Text="USERNAME" FontSize="11" Foreground="{DynamicResource Accent}" FontWeight="SemiBold"/>
-                    <TextBox x:Name="AuthUsername" Margin="0,7,0,16" MaxLength="24"/>
-                    <TextBlock Text="PASSWORD" FontSize="11" Foreground="{DynamicResource Accent}" FontWeight="SemiBold"/>
+                    <StackPanel x:Name="AuthUsernameGroup">
+                        <TextBlock x:Name="AuthUsernameLabel" Text="USERNAME" FontSize="11" Foreground="{DynamicResource Accent}" FontWeight="SemiBold"/>
+                        <TextBox x:Name="AuthUsername" Margin="0,7,0,16" MaxLength="24"/>
+                    </StackPanel>
+                    <StackPanel x:Name="AuthEmailGroup" Visibility="Collapsed">
+                        <TextBlock Text="EMAIL ADDRESS" FontSize="11" Foreground="{DynamicResource Accent}" FontWeight="SemiBold"/>
+                        <TextBox x:Name="AuthEmail" Margin="0,7,0,16" MaxLength="254"/>
+                    </StackPanel>
+                    <TextBlock x:Name="AuthPasswordLabel" Text="PASSWORD" FontSize="11" Foreground="{DynamicResource Accent}" FontWeight="SemiBold"/>
                     <PasswordBox x:Name="AuthPassword" Margin="0,7,0,16" MaxLength="256"/>
                     <StackPanel x:Name="AuthConfirmPanel">
                         <TextBlock Text="CONFIRM PASSWORD" FontSize="11" Foreground="{DynamicResource Accent}" FontWeight="SemiBold"/>
                         <PasswordBox x:Name="AuthConfirm" Margin="0,7,0,16" MaxLength="256"/>
                     </StackPanel>
-                    <TextBlock Text="Local accounts require a password each time Viora starts. Guest mode is available only if no local account exists." Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,1,0,17"/>
+                    <TextBlock x:Name="AuthAccountHint" Text="Local accounts require a password each time Viora starts." Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,1,0,17"/>
                     <TextBlock x:Name="AuthError" Foreground="#FFB3C5" TextWrapping="Wrap" Margin="0,0,0,9"/>
                     <Button x:Name="AuthSubmit" Content="Create local account" Style="{StaticResource PrimaryButton}" Click="AuthSubmit_Click" Padding="14,12"/>
+                    <Button x:Name="AuthRegisterMode" Content="Create an online account" Visibility="Collapsed" Click="AuthRegisterMode_Click" Margin="0,10,0,0" Padding="13,9"/>
+                    <Button x:Name="AuthLegacyMode" Content="Use existing local account" Visibility="Collapsed" Click="AuthLegacyMode_Click" Margin="0,8,0,0" Padding="13,9"/>
                     <Button x:Name="AuthGuest" Content="Continue without an account" Click="AuthGuest_Click" Margin="0,10,0,0" Padding="13,9"/>
-                    <TextBlock Text="Guest mode saves settings locally without a password." Foreground="{DynamicResource Muted}" TextWrapping="Wrap" FontSize="11" Margin="0,9,0,0"/>
-                    <TextBlock Text="Local authentication only, separate from Roblox. A salted password hash is stored on this PC; no online account or sync is created." Foreground="{DynamicResource Muted}" TextWrapping="Wrap" FontSize="11" Margin="0,22,0,0"/>
+                    <TextBlock x:Name="AuthGuestHint" Text="Guest mode saves settings locally without a password." Foreground="{DynamicResource Muted}" TextWrapping="Wrap" FontSize="11" Margin="0,9,0,0"/>
+                    <TextBlock x:Name="AuthPrivacyHint" Text="Local authentication only, separate from Roblox. A salted password hash is stored on this PC."
+                               Foreground="{DynamicResource Muted}" TextWrapping="Wrap" FontSize="11" Margin="0,22,0,0"/>
                 </StackPanel>
             </Border>
         </Grid>

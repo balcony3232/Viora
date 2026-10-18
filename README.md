@@ -1,5 +1,8 @@
 # Viora
 
+> **v1.4 Online Accounts preview (unreleased):** A separate draft branch adds Supabase Auth email verification, unique global usernames, permanent public IDs, server-assigned developer/admin tags and an opt-in leaderboard. It is **not enabled** unless a validated Supabase project URL and public publishable key are embedded at build time. Backend setup and live tests are required: [setup and test gates](docs/v1.4-online-accounts-setup.md). Legacy local account data and local Roblox settings are not automatically uploaded. Viora Manager is unchanged. **Do not release this branch yet.**
+
+
 **Viora v1.3.0 — C + D + E release-candidate source (NOT YET publicly released).** Unofficial Windows desktop companion for Roblox (formerly Violetstrap).
 
 ## Features
@@ -81,7 +84,7 @@ After sign-in or guest entry, the initial wizard:
 3. Offers theme and experimental performance preset choices
 4. Asks whether the user intends to configure Discord Rich Presence
 
-The performance selection is saved into the active profile but is **not written to Roblox client files during onboarding**. Discord remains disconnected unless a valid Application ID is configured, even if selected in the wizard. Tracking records local Roblox activity; there is no Viora server or cloud account.
+The performance selection is saved into the active profile but is **not written to Roblox client files during onboarding**. Discord remains disconnected unless a valid Application ID is configured, even if selected in the wizard. Historical local-account builds had no cloud account; the optional v1.4 online-preview branch adds Supabase-backed accounts when a project is configured.
 
 The wizard does **not automatically run for existing v1.0.0 accounts/settings**. It is available later from **Personalise → Utilities → Open setup wizard**.
 

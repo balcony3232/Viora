@@ -75,6 +75,7 @@ public partial class MainWindow
             }
             catch { /* Older Windows builds may not support dark caption bars. */ }
         };
+        InitializeOnlineUI();
         RefreshAuthenticationScreen();
         InitializeSplashEditor();
         RefreshStatsUI();
@@ -85,6 +86,21 @@ public partial class MainWindow
 
     private void RefreshAuthenticationScreen()
     {
+        if (OnlineLoginActive)
+        {
+            RefreshOnlineAuthenticationScreen();
+            return;
+        }
+        AuthEmailGroup.Visibility = Visibility.Collapsed;
+        AuthUsernameGroup.Visibility = Visibility.Visible;
+        AuthPassword.Visibility = Visibility.Visible;
+        AuthRegisterMode.Visibility = Visibility.Collapsed;
+        AuthLegacyMode.Visibility = _onlineService is null ? Visibility.Collapsed : Visibility.Visible;
+        AuthLegacyMode.Content = "Back to Viora Online";
+        AuthAccountHint.Text = "Local accounts require a password each time Viora starts.";
+        AuthPrivacyHint.Text = "This is a legacy offline account. It is not synced with the global username database.";
+        AuthGuestHint.Visibility = Visibility.Visible;
+        AuthUsernameLabel.Text = "USERNAME";
         var existing = LocalAccountService.Exists;
         AuthTitle.Text = existing ? "Local account sign-in" : "Create local account";
         AuthSubtitle.Text = existing ? "Sign in to the existing local Viora profile." : "Set up a private profile on this Windows PC.";
@@ -101,6 +117,11 @@ public partial class MainWindow
     private void AuthSubmit_Click(object sender, RoutedEventArgs e)
     {
         if (_isSignedIn) return;
+        if (OnlineLoginActive)
+        {
+            _ = AuthOnlineSubmitAsync();
+            return;
+        }
         var username = AuthUsername.Text.Trim();
         var password = AuthPassword.Password;
         try
@@ -191,9 +212,10 @@ public partial class MainWindow
         AuthOverlay.Visibility = Visibility.Collapsed;
         SwitchPage("dashboard");
         StartMonitor();
+        if (_onlineProfile is not null) StartOnlinePlaytimeMonitor();
         await ShowSplashAsync();
         if (!_state.SetupWizardCompleted) ShowFirstRunWizard();
-        SetStatus("Local workspace ready · " + username);
+        SetStatus((_onlineProfile is null ? "Local workspace ready · " : "Viora Online ready · ") + username);
         if (_state.Updates.CheckAtStartup && !string.IsNullOrWhiteSpace(_state.Updates.GitHubRepository))
             _ = CheckForUpdatesAsync(silent: true);
     }
@@ -203,6 +225,7 @@ public partial class MainWindow
         if (!_isSignedIn) return;
         StopMonitor();
         CloseDiscordSession();
+        SignOutOnlineAccount();
         // Persistent auto sign-in is disabled; signing out only ends this session.
         _isSignedIn = false;
         _currentUsername = "";
@@ -235,7 +258,7 @@ public partial class MainWindow
         _monitorTimer?.Stop();
         _monitorTimer = null;
         EndObservedRobloxSession(DateTimeOffset.UtcNow);
-        Storage.Save(_state);
+        if (!_settingsReadOnly) Storage.Save(_state);
         RefreshStatsUI();
     }
 
@@ -249,7 +272,7 @@ public partial class MainWindow
             _state.Stats.LongestObservedSessionSeconds = Math.Max(
                 _state.Stats.LongestObservedSessionSeconds, (long)_currentSessionSeconds);
             // Persist the finished segment immediately rather than waiting for the 30s interval.
-            Storage.Save(_state);
+            if (!_settingsReadOnly) Storage.Save(_state);
         }
         _sawRobloxRunning = false;
         _activeRobloxProcessId = null;
@@ -330,7 +353,7 @@ public partial class MainWindow
         }
         if ((now - _lastStatsSave).TotalSeconds >= 30)
         {
-            Storage.Save(_state);
+            if (!_settingsReadOnly) Storage.Save(_state);
             _lastStatsSave = now;
         }
     }
@@ -429,6 +452,7 @@ public partial class MainWindow
     {
         try
         {
+            StopOnlinePlaytimeMonitor();
             if (_monitorTimer is not null) StopMonitor();
             CloseDiscordSession();
         }

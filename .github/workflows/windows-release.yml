@@ -11,6 +11,7 @@ on:
       - 'feature/v1.2-performance-pass'
       - 'feature/v1.3-stability-updater-ui'
       - 'feature/v1.4-workspaces-lite-polish'
+      - 'feature/v1.4-online-accounts-supabase'
     tags:
       - 'v*'
 
@@ -30,6 +31,29 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
+
+      - name: Configure optional Viora Online backend
+        shell: pwsh
+        env:
+          VIORA_SUPABASE_URL: ${{ vars.VIORA_SUPABASE_URL }}
+          VIORA_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VIORA_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $url = $env:VIORA_SUPABASE_URL
+          $key = $env:VIORA_SUPABASE_PUBLISHABLE_KEY
+          if ($url -and $key) {
+            if ($url -notmatch '^https://[a-z0-9-]+\.supabase\.co/?$' -or
+                $key -notmatch '^sb_publishable_[A-Za-z0-9_-]{10,}$') {
+              throw 'Invalid backend configuration. Only the public publishable key is supported.'
+            }
+            @{ supabaseUrl = $url; publishableKey = $key } |
+              ConvertTo-Json -Compress | Set-Content 'Assets/OnlineConfig.json' -Encoding utf8
+            Write-Host 'Viora Online public project configuration embedded.'
+          } elseif ($env:GITHUB_REF_TYPE -eq 'tag') {
+            throw 'Public release is blocked until Viora Online repository variables are configured.'
+          } else {
+            Write-Host 'Online project not configured; producing legacy-offline preview.'
+          }
 
       - name: Publish portable single-file executable
         shell: pwsh
