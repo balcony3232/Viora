@@ -1093,6 +1093,16 @@
                     <StackPanel>
                         <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,16">
                             <StackPanel>
+                                <TextBlock Text="Help, privacy &amp; safe diagnostics" FontSize="18" FontWeight="SemiBold"/>
+                                <TextBlock Text="Getting Started, local data information and a reviewed diagnostic report for troubleshooting. No report is uploaded automatically." Style="{StaticResource Hint}" Margin="0,8,0,12"/>
+                                <WrapPanel>
+                                    <Button Content="Getting Started tutorial" Click="GettingStarted_Click" Margin="0,0,9,8" Style="{StaticResource PrimaryButton}"/>
+                                    <Button Content="Privacy &amp; diagnostics" Click="PrivacyGuide_Click" Margin="0,0,9,8"/>
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,16">
+                            <StackPanel>
                                 <TextBlock Text="First-run setup" FontSize="18" FontWeight="SemiBold"/>
                                 <TextBlock Text="Reopen the initial setup wizard to review appearance, graphics preferences and Discord activity options." Style="{StaticResource Hint}" Margin="0,8,0,12"/>
                                 <Button Content="Open setup wizard" Click="OpenSetupWizard_Click" HorizontalAlignment="Left"/>
@@ -1202,7 +1212,7 @@
                         <TextBlock Text="CONFIRM PASSWORD" FontSize="11" Foreground="{DynamicResource Accent}" FontWeight="SemiBold"/>
                         <PasswordBox x:Name="AuthConfirm" Margin="0,7,0,16" MaxLength="256"/>
                     </StackPanel>
-                    <CheckBox x:Name="AuthRemember" Style="{StaticResource SwitchCheckBox}" Content="Keep me signed in on this PC" IsChecked="True" Margin="0,1,0,17"/>
+                    <TextBlock Text="Local accounts require a password each time Viora starts. Guest mode is available only if no local account exists." Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,1,0,17"/>
                     <TextBlock x:Name="AuthError" Foreground="#FFB3C5" TextWrapping="Wrap" Margin="0,0,0,9"/>
                     <Button x:Name="AuthSubmit" Content="Create local account" Style="{StaticResource PrimaryButton}" Click="AuthSubmit_Click" Padding="14,12"/>
                     <Button x:Name="AuthGuest" Content="Continue without an account" Click="AuthGuest_Click" Margin="0,10,0,0" Padding="13,9"/>
