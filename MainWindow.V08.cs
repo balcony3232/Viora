@@ -55,13 +55,17 @@ public partial class MainWindow
             folder.Equals(previous, StringComparison.OrdinalIgnoreCase)) ?? AllQuickWorkspaces;
         var choices = new[] { AllQuickWorkspaces }.Concat(folders).ToList();
         // Suppress SelectionChanged callbacks while replacing ComboBox items.
-        _updatingQuickWorkspaceChoices = true;
-        try
+        if (!QuickWorkspaceFilter.Items.OfType<string>().SequenceEqual(choices, StringComparer.Ordinal) ||
+            !string.Equals(QuickWorkspaceFilter.SelectedItem as string, chosen, StringComparison.Ordinal))
         {
-            QuickWorkspaceFilter.ItemsSource = choices;
-            QuickWorkspaceFilter.SelectedItem = chosen;
+            _updatingQuickWorkspaceChoices = true;
+            try
+            {
+                QuickWorkspaceFilter.ItemsSource = choices;
+                QuickWorkspaceFilter.SelectedItem = chosen;
+            }
+            finally { _updatingQuickWorkspaceChoices = false; }
         }
-        finally { _updatingQuickWorkspaceChoices = false; }
 
         string filter = QuickSearch?.Text?.Trim() ?? "";
         var matched = _state.LaunchShortcuts
@@ -124,6 +128,11 @@ public partial class MainWindow
             previous == AllQuickWorkspaces) return;
         var updated = PromptWorkspaceRename(previous);
         if (updated is null || string.Equals(previous, updated, StringComparison.Ordinal)) return;
+        if (updated.Equals(AllQuickWorkspaces, StringComparison.OrdinalIgnoreCase))
+        {
+            Alert("'All workspaces' is reserved for the workspace filter.");
+            return;
+        }
         if (updated.Length == 0 || updated.Length > 40)
         {
             Alert("Workspace names must contain 1 to 40 characters.");
@@ -166,8 +175,11 @@ public partial class MainWindow
             var id = ParsePlace(QuickPlace.Text);
             if (_state.LaunchShortcuts.Any(q => q.PlaceId == id))
                 throw new InvalidOperationException("This place is already saved. Select it to update its settings.");
+            var folder = string.IsNullOrWhiteSpace(QuickFolder.Text) ? "Games" : QuickFolder.Text.Trim();
+            if (folder.Equals(AllQuickWorkspaces, StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("'All workspaces' is reserved for the workspace filter.");
             var entry = new LaunchShortcut { PlaceId = id, Name = QuickName.Text.Trim(),
-                Folder = string.IsNullOrWhiteSpace(QuickFolder.Text) ? "Games" : QuickFolder.Text.Trim(),
+                Folder = folder,
                 ProfileId = (QuickProfile.SelectedItem as UserProfile)?.Id ?? "",
                 Fps = SelectedFps(), Quality = SelectedQuality() };
             _state.LaunchShortcuts.Add(entry);
@@ -186,7 +198,10 @@ public partial class MainWindow
                 throw new ArgumentException("Another shortcut already has this place ID.");
             entry.PlaceId = id;
             entry.Name = QuickName.Text.Trim();
-            entry.Folder = string.IsNullOrWhiteSpace(QuickFolder.Text) ? "Games" : QuickFolder.Text.Trim();
+            var folder = string.IsNullOrWhiteSpace(QuickFolder.Text) ? "Games" : QuickFolder.Text.Trim();
+            if (folder.Equals(AllQuickWorkspaces, StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("'All workspaces' is reserved for the workspace filter.");
+            entry.Folder = folder;
             entry.ProfileId = (QuickProfile.SelectedItem as UserProfile)?.Id ?? "";
             entry.Fps = SelectedFps(); entry.Quality = SelectedQuality();
             Persist(); RefreshQuickList(entry.Folder); QuickList.SelectedItem = entry;
