@@ -13,8 +13,10 @@ alter table public.viora_profiles
 
 create table public.viora_role_audit (
     id bigint generated always as identity primary key,
-    actor_id uuid not null references auth.users(id),
-    target_id uuid not null references auth.users(id),
+    -- Drop account identifiers from audit rows when a user deletes their account
+    -- so the existing authenticated deletion flow is not blocked by audit FKs.
+    actor_id uuid references auth.users(id) on delete set null,
+    target_id uuid references auth.users(id) on delete set null,
     previous_role text not null,
     assigned_role text not null,
     changed_at timestamptz not null default now()
