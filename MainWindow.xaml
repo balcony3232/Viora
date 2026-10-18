@@ -1002,7 +1002,7 @@
                                 <TextBox x:Name="QuickName" Margin="0,5,0,10" MaxLength="80"/>
                                 <TextBlock Text="PLACE ID OR ROBLOX GAME URL" Style="{StaticResource Hint}" FontSize="10"/>
                                 <TextBox x:Name="QuickPlace" Margin="0,5,0,10" MaxLength="400"/>
-                                <TextBlock Text="FOLDER (E.G. GAMES, SIMULATORS, OBBIES)" Style="{StaticResource Hint}" FontSize="10"/>
+                                <TextBlock Text="GAME WORKSPACE (E.G. GAMES, SIMULATORS, OBBIES)" Style="{StaticResource Hint}" FontSize="10"/>
                                 <TextBox x:Name="QuickFolder" Text="Games" Margin="0,5,0,12" MaxLength="40"/>
                                 <WrapPanel>
                                     <Button Content="Save new game" Style="{StaticResource PrimaryButton}" Click="QuickSave_Click" Margin="0,0,8,8"/>
@@ -1013,8 +1013,20 @@
                         </Border>
                         <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,14">
                             <StackPanel>
-                                <TextBlock Text="Game library" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,9"/>
-                                <TextBox x:Name="QuickSearch" TextChanged="QuickSearch_Changed" Margin="0,0,0,10" ToolTip="Search games and folders"/>
+                                <TextBlock Text="Game Workspaces Lite" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                <TextBlock Text="Your existing folders are workspaces. Pick one to see its games, or set a new workspace name when saving a shortcut. Your profiles stay with each game."
+                                           Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,0,0,12"/>
+                                <WrapPanel Margin="0,0,0,8">
+                                    <ComboBox x:Name="QuickWorkspaceFilter" Width="205" Margin="0,0,10,8"
+                                              SelectionChanged="QuickWorkspaceFilter_Changed"
+                                              ToolTip="Only show games belonging to the selected workspace"/>
+                                    <Button x:Name="QuickWorkspaceRename" Content="Rename workspace" Margin="0,0,10,8"
+                                            Click="QuickWorkspaceRename_Click" ToolTip="Rename the selected group without changing any game settings"/>
+                                    <TextBlock x:Name="QuickWorkspaceCount" Text="0 shown · 0 workspaces"
+                                               Style="{StaticResource Hint}" Margin="0,6,0,8" VerticalAlignment="Center"/>
+                                </WrapPanel>
+                                <TextBlock Text="SAVED GAMES" Style="{StaticResource Hint}" FontSize="10" Margin="0,0,0,6"/>
+                                <TextBox x:Name="QuickSearch" TextChanged="QuickSearch_Changed" Margin="0,0,0,10" ToolTip="Search names, workspace names and Roblox place IDs"/>
                                 <ListBox x:Name="QuickList" Height="225" SelectionChanged="QuickList_SelectionChanged" Background="{DynamicResource Panel}" BorderBrush="{DynamicResource Stroke}">
                                     <ListBox.ItemTemplate><DataTemplate>
                                         <Border Padding="10" Margin="2" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource Stroke}">
