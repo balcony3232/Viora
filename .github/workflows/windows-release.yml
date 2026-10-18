@@ -11,6 +11,7 @@ on:
       - 'feature/v1.2-performance-pass'
       - 'feature/v1.3-stability-updater-ui'
       - 'feature/v1.4-workspaces-lite-polish'
+      - 'feature/v1.4-online-accounts-supabase'
     tags:
       - 'v*'
 
@@ -30,6 +31,347 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
+
+      - name: Configure optional Viora Online backend
+        shell: pwsh
+        env:
+          VIORA_SUPABASE_URL: ${{ vars.VIORA_SUPABASE_URL }}
+          VIORA_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VIORA_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $url = $env:VIORA_SUPABASE_URL
+          $key = $env:VIORA_SUPABASE_PUBLISHABLE_KEY
+          if ($url -and $key) {
+            if ($url -notmatch '^https://[a-z0-9-]+\.supabase\.co/?
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          [xml]$project = Get-Content 'Viora.csproj'
+          $version = [string]$project.Project.PropertyGroup.Version
+          if ([string]::IsNullOrWhiteSpace($version)) { throw 'Missing project version' }
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "v$version") {
+            throw "Git tag $env:GITHUB_REF_NAME does not match project version v$version"
+          }
+          dotnet restore 'Viora.csproj' --runtime win-x64
+          if ($LASTEXITCODE -ne 0) { throw 'Restore failed' }
+          dotnet publish 'Viora.csproj' -c Release -r win-x64 --self-contained true --no-restore `
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:EnableCompressionInSingleFile=true -p:DebugType=None -p:DebugSymbols=false `
+            -o publish
+          if ($LASTEXITCODE -ne 0) { throw 'Publish failed' }
+          $outputFile = "publish/Viora-v$version.exe"
+          if (!(Test-Path 'publish/Viora.exe')) { throw 'Missing build output: Viora.exe' }
+          Move-Item 'publish/Viora.exe' $outputFile -Force
+          $hash = (Get-FileHash -Algorithm SHA256 $outputFile).Hash.ToLowerInvariant()
+          [IO.File]::WriteAllText("$outputFile.sha256", "$hash  Viora-v$version.exe`n")
+          if ((Get-Item $outputFile).Length -lt 1000000) { throw 'Output looks unexpectedly small' }
+          Write-Host "Built $outputFile ($((Get-Item $outputFile).Length) bytes)"
+
+      - name: Publish separate Viora Manager
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          [xml]$project = Get-Content 'Viora.csproj'
+          $version = [string]$project.Project.PropertyGroup.Version
+          dotnet restore 'VioraManager/VioraManager.csproj' --runtime win-x64
+          if ($LASTEXITCODE -ne 0) { throw 'Manager restore failed' }
+          dotnet publish 'VioraManager/VioraManager.csproj' -c Release -r win-x64 --self-contained true --no-restore `
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:EnableCompressionInSingleFile=true -p:DebugType=None -p:DebugSymbols=false `
+            -o manager-publish
+          if ($LASTEXITCODE -ne 0) { throw 'Manager publish failed' }
+          if (!(Test-Path 'manager-publish/VioraManager.exe')) { throw 'Missing Manager EXE' }
+          $output = "publish/VioraManager-v$version.exe"
+          Move-Item 'manager-publish/VioraManager.exe' $output -Force
+          $hash = (Get-FileHash -Algorithm SHA256 $output).Hash.ToLowerInvariant()
+          [IO.File]::WriteAllText("$output.sha256", "$hash  VioraManager-v$version.exe`n")
+          Write-Host "Built $output"
+
+      # Experimental developer-only download: requires Microsoft.WindowsDesktop.App
+      # 8.x on the recipient PC. Keeps the fully self-contained installer intact.
+      - name: Publish lightweight framework-dependent EXEs
+        if: github.ref == 'refs/heads/feature/v1.3-stability-updater-ui' || startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          [xml]$project = Get-Content 'Viora.csproj'
+          $version = [string]$project.Project.PropertyGroup.Version
+          New-Item -ItemType Directory -Force -Path 'publish-lite' | Out-Null
+          dotnet publish 'Viora.csproj' -c Release -r win-x64 --self-contained false `
+            -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false `
+            -o publish-lite/launcher
+          if ($LASTEXITCODE -ne 0) { throw 'Lightweight Viora build failed' }
+          dotnet publish 'VioraManager/VioraManager.csproj' -c Release -r win-x64 --self-contained false `
+            -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false `
+            -o publish-lite/manager
+          if ($LASTEXITCODE -ne 0) { throw 'Lightweight Manager build failed' }
+          $launcher = "publish-lite/Viora-v$version-Lite.exe"
+          $manager = "publish-lite/VioraManager-v$version-Lite.exe"
+          Move-Item 'publish-lite/launcher/Viora.exe' $launcher -Force
+          Move-Item 'publish-lite/manager/VioraManager.exe' $manager -Force
+          foreach ($file in @($launcher, $manager)) {
+            $hash = (Get-FileHash -Algorithm SHA256 $file).Hash.ToLowerInvariant()
+            $filename = Split-Path -Leaf $file
+            [IO.File]::WriteAllText("$file.sha256", "$hash  $filename`n")
+            Write-Host "$filename : $((Get-Item $file).Length) bytes"
+          }
+          [IO.File]::WriteAllLines('publish-lite/README.txt', @(
+            'VIORA LIGHTWEIGHT DEVELOPMENT PREVIEW - Windows x64',
+            'Requires Microsoft .NET Desktop Runtime 8 (x64) installed once.',
+            'Run: dotnet --list-runtimes',
+            'Look for: Microsoft.WindowsDesktop.App 8.x',
+            'The fully self-contained installer remains available.',
+            'This development preview has not yet been Windows-user-tested.'
+          ))
+
+      - name: Save lightweight EXEs as separate artifact
+        if: github.ref == 'refs/heads/feature/v1.3-stability-updater-ui' || startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@v4
+        with:
+          name: Viora-Windows-lite-development
+          path: |
+            publish-lite/*.exe
+            publish-lite/*.sha256
+            publish-lite/README.txt
+          if-no-files-found: error
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          choco install innosetup --yes --no-progress
+          if ($LASTEXITCODE -ne 0) { throw 'Inno Setup installation failed' }
+
+      - name: Build per-user Windows installer
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          [xml]$project = Get-Content 'Viora.csproj'
+          $version = [string]$project.Project.PropertyGroup.Version
+          $env:VIORA_VERSION = $version
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (!(Test-Path $iscc)) { $iscc = "${env:ProgramFiles}\Inno Setup 6\ISCC.exe" }
+          if (!(Test-Path $iscc)) { throw 'Inno Setup compiler was not found' }
+          & $iscc 'installer\Viora.iss'
+          if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed' }
+          $setup = "publish/Viora-v$version-Setup.exe"
+          if (!(Test-Path $setup)) { throw "Missing installer: $setup" }
+          $hash = (Get-FileHash -Algorithm SHA256 $setup).Hash.ToLowerInvariant()
+          [IO.File]::WriteAllText("$setup.sha256", "$hash  Viora-v$version-Setup.exe`n")
+          Write-Host "Built $setup"
+
+      - name: Save EXE as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Viora-Windows-exe
+          path: |
+            publish/Viora-v*.exe
+            publish/Viora-v*.exe.sha256
+            publish/VioraManager-v*.exe
+            publish/VioraManager-v*.exe.sha256
+          if-no-files-found: error
+
+      - name: Publish direct EXE download on GitHub Releases
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tag = $env:GITHUB_REF_NAME
+          $exe = "publish/Viora-$tag.exe"
+          $hash = "$exe.sha256"
+          $setup = "publish/Viora-$tag-Setup.exe"
+          $setupHash = "$setup.sha256"
+          $manager = "publish/VioraManager-$tag.exe"
+          $managerHash = "$manager.sha256"
+          $lite = "publish-lite/Viora-$tag-Lite.exe"
+          $liteHash = "$lite.sha256"
+          $liteManager = "publish-lite/VioraManager-$tag-Lite.exe"
+          $liteManagerHash = "$liteManager.sha256"
+          foreach ($file in @($lite, $liteHash, $liteManager, $liteManagerHash)) {
+            if (!(Test-Path $file)) { throw "Missing small release asset: $file" }
+          }
+          if (!(Test-Path $manager) -or !(Test-Path $managerHash)) { throw 'Missing Manager release assets' }
+          if (!(Test-Path $setup) -or !(Test-Path $setupHash)) { throw 'Missing installer release assets' }
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $tag $exe $hash $setup $setupHash $manager $managerHash $lite $liteHash $liteManager $liteManagerHash --clobber
+          } else {
+            gh release create $tag $exe $hash $setup $setupHash $manager $managerHash $lite $liteHash $liteManager $liteManagerHash --title "Viora $tag" --generate-notes --verify-tag
+          }
+          if ($LASTEXITCODE -ne 0) { throw 'Publishing GitHub Release failed' }
+ -or
+                $key -notmatch '^sb_publishable_[A-Za-z0-9_-]{10,}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          [xml]$project = Get-Content 'Viora.csproj'
+          $version = [string]$project.Project.PropertyGroup.Version
+          if ([string]::IsNullOrWhiteSpace($version)) { throw 'Missing project version' }
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "v$version") {
+            throw "Git tag $env:GITHUB_REF_NAME does not match project version v$version"
+          }
+          dotnet restore 'Viora.csproj' --runtime win-x64
+          if ($LASTEXITCODE -ne 0) { throw 'Restore failed' }
+          dotnet publish 'Viora.csproj' -c Release -r win-x64 --self-contained true --no-restore `
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:EnableCompressionInSingleFile=true -p:DebugType=None -p:DebugSymbols=false `
+            -o publish
+          if ($LASTEXITCODE -ne 0) { throw 'Publish failed' }
+          $outputFile = "publish/Viora-v$version.exe"
+          if (!(Test-Path 'publish/Viora.exe')) { throw 'Missing build output: Viora.exe' }
+          Move-Item 'publish/Viora.exe' $outputFile -Force
+          $hash = (Get-FileHash -Algorithm SHA256 $outputFile).Hash.ToLowerInvariant()
+          [IO.File]::WriteAllText("$outputFile.sha256", "$hash  Viora-v$version.exe`n")
+          if ((Get-Item $outputFile).Length -lt 1000000) { throw 'Output looks unexpectedly small' }
+          Write-Host "Built $outputFile ($((Get-Item $outputFile).Length) bytes)"
+
+      - name: Publish separate Viora Manager
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          [xml]$project = Get-Content 'Viora.csproj'
+          $version = [string]$project.Project.PropertyGroup.Version
+          dotnet restore 'VioraManager/VioraManager.csproj' --runtime win-x64
+          if ($LASTEXITCODE -ne 0) { throw 'Manager restore failed' }
+          dotnet publish 'VioraManager/VioraManager.csproj' -c Release -r win-x64 --self-contained true --no-restore `
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:EnableCompressionInSingleFile=true -p:DebugType=None -p:DebugSymbols=false `
+            -o manager-publish
+          if ($LASTEXITCODE -ne 0) { throw 'Manager publish failed' }
+          if (!(Test-Path 'manager-publish/VioraManager.exe')) { throw 'Missing Manager EXE' }
+          $output = "publish/VioraManager-v$version.exe"
+          Move-Item 'manager-publish/VioraManager.exe' $output -Force
+          $hash = (Get-FileHash -Algorithm SHA256 $output).Hash.ToLowerInvariant()
+          [IO.File]::WriteAllText("$output.sha256", "$hash  VioraManager-v$version.exe`n")
+          Write-Host "Built $output"
+
+      # Experimental developer-only download: requires Microsoft.WindowsDesktop.App
+      # 8.x on the recipient PC. Keeps the fully self-contained installer intact.
+      - name: Publish lightweight framework-dependent EXEs
+        if: github.ref == 'refs/heads/feature/v1.3-stability-updater-ui' || startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          [xml]$project = Get-Content 'Viora.csproj'
+          $version = [string]$project.Project.PropertyGroup.Version
+          New-Item -ItemType Directory -Force -Path 'publish-lite' | Out-Null
+          dotnet publish 'Viora.csproj' -c Release -r win-x64 --self-contained false `
+            -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false `
+            -o publish-lite/launcher
+          if ($LASTEXITCODE -ne 0) { throw 'Lightweight Viora build failed' }
+          dotnet publish 'VioraManager/VioraManager.csproj' -c Release -r win-x64 --self-contained false `
+            -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false `
+            -o publish-lite/manager
+          if ($LASTEXITCODE -ne 0) { throw 'Lightweight Manager build failed' }
+          $launcher = "publish-lite/Viora-v$version-Lite.exe"
+          $manager = "publish-lite/VioraManager-v$version-Lite.exe"
+          Move-Item 'publish-lite/launcher/Viora.exe' $launcher -Force
+          Move-Item 'publish-lite/manager/VioraManager.exe' $manager -Force
+          foreach ($file in @($launcher, $manager)) {
+            $hash = (Get-FileHash -Algorithm SHA256 $file).Hash.ToLowerInvariant()
+            $filename = Split-Path -Leaf $file
+            [IO.File]::WriteAllText("$file.sha256", "$hash  $filename`n")
+            Write-Host "$filename : $((Get-Item $file).Length) bytes"
+          }
+          [IO.File]::WriteAllLines('publish-lite/README.txt', @(
+            'VIORA LIGHTWEIGHT DEVELOPMENT PREVIEW - Windows x64',
+            'Requires Microsoft .NET Desktop Runtime 8 (x64) installed once.',
+            'Run: dotnet --list-runtimes',
+            'Look for: Microsoft.WindowsDesktop.App 8.x',
+            'The fully self-contained installer remains available.',
+            'This development preview has not yet been Windows-user-tested.'
+          ))
+
+      - name: Save lightweight EXEs as separate artifact
+        if: github.ref == 'refs/heads/feature/v1.3-stability-updater-ui' || startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@v4
+        with:
+          name: Viora-Windows-lite-development
+          path: |
+            publish-lite/*.exe
+            publish-lite/*.sha256
+            publish-lite/README.txt
+          if-no-files-found: error
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          choco install innosetup --yes --no-progress
+          if ($LASTEXITCODE -ne 0) { throw 'Inno Setup installation failed' }
+
+      - name: Build per-user Windows installer
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          [xml]$project = Get-Content 'Viora.csproj'
+          $version = [string]$project.Project.PropertyGroup.Version
+          $env:VIORA_VERSION = $version
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (!(Test-Path $iscc)) { $iscc = "${env:ProgramFiles}\Inno Setup 6\ISCC.exe" }
+          if (!(Test-Path $iscc)) { throw 'Inno Setup compiler was not found' }
+          & $iscc 'installer\Viora.iss'
+          if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed' }
+          $setup = "publish/Viora-v$version-Setup.exe"
+          if (!(Test-Path $setup)) { throw "Missing installer: $setup" }
+          $hash = (Get-FileHash -Algorithm SHA256 $setup).Hash.ToLowerInvariant()
+          [IO.File]::WriteAllText("$setup.sha256", "$hash  Viora-v$version-Setup.exe`n")
+          Write-Host "Built $setup"
+
+      - name: Save EXE as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Viora-Windows-exe
+          path: |
+            publish/Viora-v*.exe
+            publish/Viora-v*.exe.sha256
+            publish/VioraManager-v*.exe
+            publish/VioraManager-v*.exe.sha256
+          if-no-files-found: error
+
+      - name: Publish direct EXE download on GitHub Releases
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tag = $env:GITHUB_REF_NAME
+          $exe = "publish/Viora-$tag.exe"
+          $hash = "$exe.sha256"
+          $setup = "publish/Viora-$tag-Setup.exe"
+          $setupHash = "$setup.sha256"
+          $manager = "publish/VioraManager-$tag.exe"
+          $managerHash = "$manager.sha256"
+          $lite = "publish-lite/Viora-$tag-Lite.exe"
+          $liteHash = "$lite.sha256"
+          $liteManager = "publish-lite/VioraManager-$tag-Lite.exe"
+          $liteManagerHash = "$liteManager.sha256"
+          foreach ($file in @($lite, $liteHash, $liteManager, $liteManagerHash)) {
+            if (!(Test-Path $file)) { throw "Missing small release asset: $file" }
+          }
+          if (!(Test-Path $manager) -or !(Test-Path $managerHash)) { throw 'Missing Manager release assets' }
+          if (!(Test-Path $setup) -or !(Test-Path $setupHash)) { throw 'Missing installer release assets' }
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $tag $exe $hash $setup $setupHash $manager $managerHash $lite $liteHash $liteManager $liteManagerHash --clobber
+          } else {
+            gh release create $tag $exe $hash $setup $setupHash $manager $managerHash $lite $liteHash $liteManager $liteManagerHash --title "Viora $tag" --generate-notes --verify-tag
+          }
+          if ($LASTEXITCODE -ne 0) { throw 'Publishing GitHub Release failed' }
+) {
+              throw 'Online configuration is invalid. Use a public publishable key, never a secret/service-role key.'
+            }
+            @{ supabaseUrl = $url; publishableKey = $key } |
+              ConvertTo-Json -Compress | Set-Content 'Assets/OnlineConfig.json' -Encoding utf8
+            Write-Host 'Viora Online Supabase project embedded (public configuration only).'
+          } elseif ($env:GITHUB_REF_TYPE -eq 'tag') {
+            throw 'Public release cannot be built until both Viora Online repository variables are configured.'
+          } else {
+            Write-Host 'Supabase variables not configured; building legacy offline preview only.'
+          }
 
       - name: Publish portable single-file executable
         shell: pwsh
