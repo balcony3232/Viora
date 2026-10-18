@@ -1101,6 +1101,13 @@
                     <StackPanel>
                         <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,16">
                             <StackPanel>
+                                <TextBlock Text="Viora Manager" FontSize="18" FontWeight="SemiBold"/>
+                                <TextBlock Text="An optional companion application for monitoring official Roblox Player windows, memory usage and window layouts." Style="{StaticResource Hint}" Margin="0,8,0,12"/>
+                                <Button Content="Open Viora Manager" Click="OpenVioraManager_Click" HorizontalAlignment="Left"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,16">
+                            <StackPanel>
                                 <TextBlock Text="Help, privacy &amp; safe diagnostics" FontSize="18" FontWeight="SemiBold"/>
                                 <TextBlock Text="Getting Started, local data information and a reviewed diagnostic report for troubleshooting. No report is uploaded automatically." Style="{StaticResource Hint}" Margin="0,8,0,12"/>
                                 <WrapPanel>

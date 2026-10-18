@@ -1,5 +1,15 @@
 # Viora — major releases
 
+## v1.2 — Viora Manager prototype (testing only)
+- Created **Viora Manager**, a separate dark-purple WPF Windows EXE featuring live official Roblox Player window detection, process runtime, memory total and individually labelled instance cards.
+- Added per-instance game titles with best-effort unique matching of Roblox Player process start times to local log files, extraction of public place/universe IDs and optional public Roblox name lookups. Missing or ambiguous data shows an unknown game, never an invented title.
+- Added manual refresh, official Roblox website launch, and user-approved tiling of existing Player windows. These functions do not require modifications to Roblox.
+- Made Manager an optional Windows Setup component with Start menu and desktop shortcut choices.
+- Extended the Windows build to package Viora EXE, Viora Manager EXE and combined Setup, each with SHA-256 checksum files.
+- Added an **off-by-default, explicitly acknowledged experimental mutex compatibility switch** for investigating simultaneous official Player sessions. It holds a legacy Windows singleton mutex only while Manager is open; it performs no client injection, Roblox file changes, cookie access or credential storage.
+- **Multi-instance launching is not verified or officially supported.** The switch is a local test, not a reliable public launcher. Studio multiplayer testing remains a distinct workflow.
+- **Coordinated self-update for both EXEs is not complete.** Windows runtime testing is required before publishing this as a public release.
+
 ## v1.1 — Installer, onboarding and appearance (preview)
 - **v1.1.2:** Added Glossy (new default), Opaque and layered Glass surface styles, kept independent of colour themes. The Glass style is translucency within Viora rather than desktop acrylic.
 - **v1.1.2:** Fixed onboarding theme selection with immediate visual preview, persistence on Finish and rollback when cancelled.

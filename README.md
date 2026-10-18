@@ -1,6 +1,6 @@
 # Viora
 
-**Viora v1.1.2 — preview branch (installer, onboarding, privacy, polish).** Unofficial Windows desktop companion for Roblox (formerly Violetstrap).
+**Viora v1.2.0 — Viora Manager prototype branch (NOT a public release).** Unofficial Windows desktop companion for Roblox (formerly Violetstrap).
 
 ## Features
 
@@ -12,12 +12,28 @@
 - First-run wizard: Roblox detection, theme, experimental performance profile and Discord privacy preference
 - Optional local account or password-free guest mode
 
+## Viora Manager (v1.2 preview)
+
+Viora Manager is a **separate Windows EXE**, available as an optional component in Viora Setup. It can also be run independently from the testing build artifact. The interface mirrors the dark-purple Viora concept, with instance cards, process memory, status, session runtime and **per-instance Roblox game names**.
+
+Manager identifies a game's public place ID by matching each Roblox Player process start time to a distinct local Player log file and reading only recent join lines. It then resolves the experience name using public Roblox place/universe endpoints, sending only public IDs. No Roblox credentials, cookies, player names, whole logs or session histories are transmitted. This best-effort feature may show **Game not detected** if logs are absent, names cannot be fetched or process/log matching is ambiguous; it does not guess a title. Each instance has its own log association, including after game teleports.
+
+The Manager monitors **official Roblox Player processes** with visible windows. **Open Roblox** opens the official Roblox website; **Manage windows** focuses one existing Player window or (with user confirmation) tiles already-running windows.
+
+**Experimental multi-instance compatibility (opt-in):** Viora Manager now offers a checkbox to keep a legacy Windows named mutex open for its lifetime. The mechanism influences Roblox's single-instance detection, but **does not patch Roblox, inject code, access cookies, or store Roblox credentials**. This does not guarantee that two Player windows will remain open or that Roblox permits the technique. The checkbox is off by default, is not persisted, requires explicit acknowledgment, and must be enabled before Roblox launches. Closing the Manager or unticking the box releases the mutex. This build does **not** apply Error 773 cookie locking or automatic account switching.
+
+**Simultaneous Roblox Player sessions are NOT confirmed**. Roblox does not officially support simultaneous Player clients, and its client behaviour can change at any time. Do not advertise working or risk-free multi-instance support until real testing has established its behaviour. Roblox Studio's supported multi-client test mode remains a separate alternative.
+
+The workflow now publishes `VioraManager-v1.2.0.exe` as a third distributable, alongside the portable Viora and combined installer. Check that the installer allows Viora Manager to be deselected, that its Start menu and optional desktop shortcut appear correctly, and that uninstall removes both application EXEs without deleting personal AppData.
+
+**Update caveat:** the current Viora in-app updater replaces only the main `Viora.exe`. Manager updates require rerunning a future installer or replacing the separately distributed manager EXE. Full coordinated updates are planned before public v1.2.
+
 ## Installer
 
-The Windows workflow builds two distributions from the same source:
+The Windows workflow builds three distributions from the same source:
 
-- `Viora-v1.1.2-Setup.exe`: per-user installer with Start menu shortcut, optional desktop shortcut and uninstaller.
-- `Viora-v1.1.2.exe`: portable EXE for users who prefer not to install.
+- `Viora-v1.2.0-Setup.exe`: per-user installer with Start menu shortcut, optional desktop shortcut and uninstaller.
+- `Viora-v1.2.0.exe`: portable EXE for users who prefer not to install.
 
 The installer writes to `%LOCALAPPDATA%\Programs\Viora` without requiring administrator rights. Uninstallation removes the program but deliberately **does not delete** `%LOCALAPPDATA%\Viora` (local settings and histories). Users may delete that folder separately once backups are made.
 

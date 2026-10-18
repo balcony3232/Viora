@@ -7,13 +7,17 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <AssemblyName>Viora</AssemblyName>
-    <Version>1.1.2</Version>
-    <FileVersion>1.1.2.0</FileVersion>
-    <AssemblyVersion>1.1.2.0</AssemblyVersion>
+    <Version>1.2.0</Version>
+    <FileVersion>1.2.0.0</FileVersion>
+    <AssemblyVersion>1.2.0.0</AssemblyVersion>
     <RootNamespace>Viora</RootNamespace>
     <ApplicationIcon>Assets\Viora.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <!-- The optional manager is a separate WPF application, not source for the main EXE. -->
+    <Compile Remove="VioraManager\**\*.cs" />
+    <Page Remove="VioraManager\**\*.xaml" />
+    <ApplicationDefinition Remove="VioraManager\**\*.xaml" />
     <None Remove="Assets\FlagCatalog.json" />
     <EmbeddedResource Include="Assets\FlagCatalog.json" />
     <Resource Include="Assets\Viora-logo.png" />
