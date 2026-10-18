@@ -282,6 +282,17 @@ public sealed class VioraOnlineService : IDisposable
         return verified.RootElement.GetInt32();
     }
 
+    public async Task RemoveAvatarAsync(long publicId)
+    {
+        if (publicId < 1) throw new ArgumentException("Invalid account.");
+        // Supabase Storage removal API deletes actual bytes (SQL alone does not).
+        using var response = await SendAsync(HttpMethod.Post,
+            "storage/v1/object/remove/viora-avatars",
+            new { prefixes = new[] { publicId.ToString(System.Globalization.CultureInfo.InvariantCulture) + ".png" } },
+            await TokenAsync());
+        using var verified = await RpcAsync("viora_avatar_removed", new { });
+    }
+
     private static VioraManagedAccount ReadManagedAccount(JsonElement element) => new(
         element.GetProperty("public_id").GetInt64(),
         element.GetProperty("username").GetString() ?? "",
