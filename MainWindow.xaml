@@ -287,7 +287,7 @@
                                     <TextBlock Text="Quick Launcher" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,9"/>
                                     <TextBlock Text="Save Roblox game links and assign launch profiles in Workspace → Quick Launcher." 
                                                Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,0,0,12"/>
-                                    <TextBlock Text="Game Hub tracks your observed playtime and sessions. It no longer changes or sorts favourite flags."
+                                    <TextBlock Text="Game Hub is now focused on game activity, session history and playtime. Use Quick Launcher for saved game links."
                                                Style="{StaticResource Hint}" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </Border>
