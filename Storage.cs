@@ -67,7 +67,12 @@ public static class Storage
             catch (IOException) { /* Best-effort backup. Do not block normal startup. */ }
             catch (UnauthorizedAccessException) { /* Existing settings still load normally. */ }
         }
-        var state = File.Exists(StatePath) ? JsonSerializer.Deserialize<AppState>(File.ReadAllText(StatePath), JsonOptions) ?? new AppState() : new AppState();
+        string? storedState = File.Exists(StatePath) ? File.ReadAllText(StatePath) : null;
+        var state = storedState is null ? new AppState()
+            : JsonSerializer.Deserialize<AppState>(storedState, JsonOptions) ?? new AppState();
+        // Upgrades from 1.0.0 already have a workspace. Do not interrupt them with first-run setup.
+        if (storedState is not null && !storedState.Contains("\"SetupWizardCompleted\"", StringComparison.Ordinal))
+            state.SetupWizardCompleted = true;
         state.Updates ??= new();
         if (string.IsNullOrWhiteSpace(state.Updates.GitHubRepository) ||
             state.Updates.GitHubRepository.Equals("balcony3232/Violetstrap", StringComparison.OrdinalIgnoreCase))

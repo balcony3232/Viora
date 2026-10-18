@@ -83,6 +83,7 @@ public partial class MainWindow
         AuthTitle.Text = existing ? "Local account sign-in" : "Create local account";
         AuthSubtitle.Text = existing ? "Sign in to the existing local Viora profile." : "Set up a private profile on this Windows PC.";
         AuthConfirmPanel.Visibility = existing ? Visibility.Collapsed : Visibility.Visible;
+        AuthGuest.Visibility = existing ? Visibility.Collapsed : Visibility.Visible;
         AuthSubmit.Content = existing ? "Sign in" : "Create local account";
         AuthUsername.Text = LocalAccountService.ExistingUsername() ?? "";
         AuthPassword.Clear();
@@ -122,6 +123,49 @@ public partial class MainWindow
         }
     }
 
+    private void AuthGuest_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isSignedIn || LocalAccountService.Exists) return;
+        _ = FinishSignInAsync("Guest");
+    }
+
+    private void ShowFirstRunWizard(bool force = false)
+    {
+        if (!force && _state.SetupWizardCompleted) return;
+        string preset = ActiveProfile.PerformancePreset.StartsWith("Maximum performance", StringComparison.OrdinalIgnoreCase)
+            ? PerformancePresets.Max
+            : ActiveProfile.PerformancePreset.StartsWith("Balanced", StringComparison.OrdinalIgnoreCase)
+                ? PerformancePresets.Balanced : PerformancePresets.Default;
+        var wizard = new FirstRunSetupWindow(_state.ColorTheme, preset, _state.Discord.Enabled) { Owner = this };
+        if (wizard.ShowDialog() != true) return;
+
+        _state.ColorTheme = wizard.SelectedTheme;
+        var theme = AppearanceThemeCombo.Items.OfType<System.Windows.Controls.ComboBoxItem>()
+            .FirstOrDefault(x => string.Equals(x.Tag?.ToString(), _state.ColorTheme, StringComparison.OrdinalIgnoreCase));
+        if (theme is not null) AppearanceThemeCombo.SelectedItem = theme;
+        ApplyPalette(_state.ColorTheme);
+
+        // Presets are saved only; Roblox files are not modified by the wizard.
+        try
+        {
+            PerformancePresets.Apply(ActiveProfile, wizard.SelectedPerformancePreset, false,
+                _catalog.Where(x => x.IsAllowlisted).Select(x => x.Name).ToArray());
+        }
+        catch (InvalidOperationException)
+        {
+            PerformancePresets.Clear(ActiveProfile);
+        }
+        // Do not attempt a Discord connection until a valid Application ID has been configured.
+        _state.Discord.Enabled = wizard.EnableDiscordPresence &&
+            System.Text.RegularExpressions.Regex.IsMatch(_state.Discord.ApplicationId ?? "", @"^\d{15,25}$");
+        DiscordEnabled.IsChecked = _state.Discord.Enabled;
+        _state.SetupWizardCompleted = true;
+        Persist();
+        SetStatus("First-run preferences saved locally.");
+    }
+
+    private void OpenSetupWizard_Click(object sender, RoutedEventArgs e) => ShowFirstRunWizard(force: true);
+
     private async Task FinishSignInAsync(string username)
     {
         _currentUsername = username;
@@ -134,6 +178,7 @@ public partial class MainWindow
         SwitchPage("dashboard");
         StartMonitor();
         await ShowSplashAsync();
+        if (!_state.SetupWizardCompleted) ShowFirstRunWizard();
         SetStatus("Local workspace ready · " + username);
         if (_state.Updates.CheckAtStartup && !string.IsNullOrWhiteSpace(_state.Updates.GitHubRepository))
             _ = CheckForUpdatesAsync(silent: true);

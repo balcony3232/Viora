@@ -15,7 +15,7 @@ public static class ReleaseUpdateService
 {
     private static readonly HttpClient Client = new(new HttpClientHandler { AllowAutoRedirect = true })
     { Timeout = TimeSpan.FromSeconds(55) };
-    static ReleaseUpdateService() => Client.DefaultRequestHeaders.UserAgent.ParseAdd("Viora/1.0.0 (+desktop updater)");
+    static ReleaseUpdateService() => Client.DefaultRequestHeaders.UserAgent.ParseAdd("Viora/1.1.0 (+desktop updater)");
     public static bool TryNormalizeRepo(string input, out string repo)
     {
         repo = input.Trim().Trim('/');
