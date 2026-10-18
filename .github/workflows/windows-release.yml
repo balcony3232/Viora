@@ -8,6 +8,7 @@ on:
       - 'feature/v1.1.1-privacy-guide'
       - 'feature/v1.1.2-polish'
       - 'feature/v1.2-instance-manager'
+      - 'feature/v1.2-performance-pass'
     tags:
       - 'v*'
 
