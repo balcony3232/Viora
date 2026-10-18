@@ -18,7 +18,7 @@ public partial class MainWindow
         // Leave combo boxes, sliders and scrollbars to handle their own wheel events.
         foreach (var page in new[] {
             DashboardPage, StatsPage, AppearancePage, GameHubPage, DiscordPage,
-            PerformancePage, FlagsPage, ProfilesPage, ModsPage, SplashPage,
+            PerformancePage, ModsPage, SplashPage,
             LauncherPage, ToolsPage })
         {
             page.PreviewMouseWheel += PagePreviewMouseWheel;
