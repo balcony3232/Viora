@@ -16,9 +16,11 @@
 
 Viora Manager is a **separate Windows EXE**, available as an optional component in Viora Setup. It can also be run independently from the testing build artifact. The interface mirrors the dark-purple Viora concept, with instance cards, process memory, status and session runtime.
 
-This initial prototype only observes **official, unmodified Roblox Player processes** with visible windows. **Open Roblox** opens the official Roblox website, not another client instance. **Manage windows** focuses one existing Player window or, with user confirmation, tiles multiple already-running Player windows on screen. No injection, anti-cheat modification, instance-lock removal or account cookies are used.
+The Manager monitors **official Roblox Player processes** with visible windows. **Open Roblox** opens the official Roblox website; **Manage windows** focuses one existing Player window or (with user confirmation) tiles already-running windows.
 
-**Simultaneous Roblox Player sessions are NOT confirmed**. Do not advertise multi-instance launching until independent user testing demonstrates it remains compatible with the official client. Roblox Studio's supported multi-client test mode is a separate future integration.
+**Experimental multi-instance compatibility (opt-in):** Viora Manager now offers a checkbox to keep a legacy Windows named mutex open for its lifetime. The mechanism influences Roblox's single-instance detection, but **does not patch Roblox, inject code, access cookies, or store Roblox credentials**. This does not guarantee that two Player windows will remain open or that Roblox permits the technique. The checkbox is off by default, is not persisted, requires explicit acknowledgment, and must be enabled before Roblox launches. Closing the Manager or unticking the box releases the mutex. This build does **not** apply Error 773 cookie locking or automatic account switching.
+
+**Simultaneous Roblox Player sessions are NOT confirmed**. Roblox does not officially support simultaneous Player clients, and its client behaviour can change at any time. Do not advertise working or risk-free multi-instance support until real testing has established its behaviour. Roblox Studio's supported multi-client test mode remains a separate alternative.
 
 The workflow now publishes `VioraManager-v1.2.0.exe` as a third distributable, alongside the portable Viora and combined installer. Check that the installer allows Viora Manager to be deselected, that its Start menu and optional desktop shortcut appear correctly, and that uninstall removes both application EXEs without deleting personal AppData.
 
