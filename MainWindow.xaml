@@ -365,7 +365,7 @@
                             <StackPanel>
                                 <TextBlock Text="YOUR ACTIVITY" Foreground="{DynamicResource Accent}" FontSize="10" FontWeight="Bold"/>
                                 <TextBlock Text="Roblox, in numbers." FontSize="25" FontWeight="SemiBold" Margin="0,8,0,8"/>
-                                <TextBlock Text="Private statistics saved on this PC. Tracking works while Viora is open, including in the background." Style="{StaticResource Hint}"/>
+                                <TextBlock Text="Local statistics stay on this PC. Online leaderboard sharing is optional." Style="{StaticResource Hint}"/>
                             </StackPanel>
                         </Border>
                         <UniformGrid Columns="3" Margin="0,0,0,16">
@@ -433,6 +433,30 @@
                                     <Button Content="Export statistics CSV" Style="{StaticResource PrimaryButton}" Click="ExportStats_Click" Margin="0,0,10,0"/>
                                     <Button Content="Reset my statistics" Click="ResetStats_Click"/>
                                 </WrapPanel>
+                            </StackPanel>
+                        </Border>
+                        <Border x:Name="OnlineStatsPanel" Visibility="Collapsed" Style="{StaticResource PanelBorder}" Margin="0,16,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Viora Online" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
+                                <TextBlock x:Name="OnlineAccountStatus" Text="Online profile unavailable" Style="{StaticResource Hint}" Margin="0,7,0,10" TextWrapping="Wrap"/>
+                                <CheckBox x:Name="OnlineLeaderboardVisible" Content="Join public playtime leaderboard (opt-in)"
+                                          Margin="0,0,0,10" Checked="OnlineLeaderboardVisible_Changed"
+                                          Unchecked="OnlineLeaderboardVisible_Changed"/>
+                                <TextBlock Text="If enabled, Viora sends periodic Roblox-running signals to your account. Rankings are approximate and not cheat-proof; local statistics are separate."
+                                           Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,0,0,11"/>
+                                <Button Content="Refresh global leaderboard" Click="OnlineLeaderboardRefresh_Click"
+                                        HorizontalAlignment="Left" Margin="0,0,0,10"/>
+                                <TextBlock x:Name="OnlineLeaderboardStatus" Text="Only accounts that opt in appear here."
+                                           Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                                <DataGrid x:Name="OnlineLeaderboardList" IsReadOnly="True" AutoGenerateColumns="False"
+                                          CanUserAddRows="False" MaxHeight="340" HeadersVisibility="Column">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="RANK" Binding="{Binding Rank}" Width="70"/>
+                                        <DataGridTextColumn Header="USERNAME" Binding="{Binding Username}" Width="2*"/>
+                                        <DataGridTextColumn Header="ROLE" Binding="{Binding Role}" Width="*"/>
+                                        <DataGridTextColumn Header="SECONDS" Binding="{Binding PlaytimeSeconds}" Width="*"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
                             </StackPanel>
                         </Border>
                         <Border Style="{StaticResource PanelBorder}" Margin="0,16,0,0">
@@ -1185,30 +1209,39 @@
             </Grid>
             <Grid Grid.Row="2"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                 <TextBlock x:Name="StatusText" Text="Ready." Foreground="{DynamicResource Muted}" FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                <TextBlock Grid.Column="1" Text="LOCAL ONLY  ·  WINDOWS" FontSize="10" Foreground="{DynamicResource Muted}" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="VIORA  ·  WINDOWS" FontSize="10" Foreground="{DynamicResource Muted}" VerticalAlignment="Center"/>
             </Grid>
         </Grid>
-        <!-- Local account: never asks for a Roblox login. -->
+        <!-- Viora Online or legacy local account; never asks for a Roblox login. -->
         <Grid x:Name="AuthOverlay" Grid.ColumnSpan="2" Panel.ZIndex="30" Background="#0B0912" Visibility="Visible">
             <Border Background="#181222" BorderBrush="#433057" BorderThickness="1" CornerRadius="20" Width="440" Padding="36" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <StackPanel>
                     <TextBlock Text="◆  Viora" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource Accent}" Margin="0,0,0,26"/>
                     <TextBlock x:Name="AuthTitle" Text="Create local account" FontSize="25" FontWeight="SemiBold" Margin="0,0,0,9"/>
                     <TextBlock x:Name="AuthSubtitle" Text="One private profile on this Windows PC." Style="{StaticResource Hint}" Margin="0,0,0,24"/>
-                    <TextBlock Text="USERNAME" FontSize="11" Foreground="{DynamicResource Accent}" FontWeight="SemiBold"/>
-                    <TextBox x:Name="AuthUsername" Margin="0,7,0,16" MaxLength="24"/>
+                    <StackPanel x:Name="AuthUsernameGroup">
+                        <TextBlock x:Name="AuthUsernameLabel" Text="USERNAME" FontSize="11" Foreground="{DynamicResource Accent}" FontWeight="SemiBold"/>
+                        <TextBox x:Name="AuthUsername" Margin="0,7,0,16" MaxLength="24"/>
+                    </StackPanel>
+                    <StackPanel x:Name="AuthEmailGroup" Visibility="Collapsed">
+                        <TextBlock Text="EMAIL ADDRESS" FontSize="11" Foreground="{DynamicResource Accent}" FontWeight="SemiBold"/>
+                        <TextBox x:Name="AuthEmail" Margin="0,7,0,16" MaxLength="254"/>
+                    </StackPanel>
                     <TextBlock Text="PASSWORD" FontSize="11" Foreground="{DynamicResource Accent}" FontWeight="SemiBold"/>
                     <PasswordBox x:Name="AuthPassword" Margin="0,7,0,16" MaxLength="256"/>
                     <StackPanel x:Name="AuthConfirmPanel">
                         <TextBlock Text="CONFIRM PASSWORD" FontSize="11" Foreground="{DynamicResource Accent}" FontWeight="SemiBold"/>
                         <PasswordBox x:Name="AuthConfirm" Margin="0,7,0,16" MaxLength="256"/>
                     </StackPanel>
-                    <TextBlock Text="Local accounts require a password each time Viora starts. Guest mode is available only if no local account exists." Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,1,0,17"/>
+                    <TextBlock x:Name="AuthAccountHint" Text="Local accounts require a password each time Viora starts." Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,1,0,17"/>
                     <TextBlock x:Name="AuthError" Foreground="#FFB3C5" TextWrapping="Wrap" Margin="0,0,0,9"/>
                     <Button x:Name="AuthSubmit" Content="Create local account" Style="{StaticResource PrimaryButton}" Click="AuthSubmit_Click" Padding="14,12"/>
+                    <Button x:Name="AuthRegisterMode" Content="Create an online account" Visibility="Collapsed" Click="AuthRegisterMode_Click" Margin="0,10,0,0" Padding="13,9"/>
+                    <Button x:Name="AuthLegacyMode" Content="Use existing local account" Visibility="Collapsed" Click="AuthLegacyMode_Click" Margin="0,8,0,0" Padding="13,9"/>
                     <Button x:Name="AuthGuest" Content="Continue without an account" Click="AuthGuest_Click" Margin="0,10,0,0" Padding="13,9"/>
-                    <TextBlock Text="Guest mode saves settings locally without a password." Foreground="{DynamicResource Muted}" TextWrapping="Wrap" FontSize="11" Margin="0,9,0,0"/>
-                    <TextBlock Text="Local authentication only, separate from Roblox. A salted password hash is stored on this PC; no online account or sync is created." Foreground="{DynamicResource Muted}" TextWrapping="Wrap" FontSize="11" Margin="0,22,0,0"/>
+                    <TextBlock x:Name="AuthGuestHint" Text="Guest mode saves settings locally without a password." Foreground="{DynamicResource Muted}" TextWrapping="Wrap" FontSize="11" Margin="0,9,0,0"/>
+                    <TextBlock x:Name="AuthPrivacyHint" Text="Local authentication only, separate from Roblox. A salted password hash is stored on this PC."
+                               Foreground="{DynamicResource Muted}" TextWrapping="Wrap" FontSize="11" Margin="0,22,0,0"/>
                 </StackPanel>
             </Border>
         </Grid>
