@@ -1,7 +1,7 @@
-; Viora per-user installer. Build after dotnet publish has produced Viora-vVERSION.exe.
+; Viora per-user installer, with an optional separate Viora Manager application.
 #define AppVersion GetEnv("VIORA_VERSION")
 #if AppVersion == ""
-  #define AppVersion "1.1.0"
+  #define AppVersion "1.2.0"
 #endif
 
 [Setup]
@@ -30,18 +30,28 @@ ChangesAssociations=no
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
+[Types]
+Name: "full"; Description: "Viora + Viora Manager"
+Name: "compact"; Description: "Viora only"
+
+[Components]
+Name: "main"; Description: "Viora Launcher (required)"; Types: full compact; Flags: fixed
+Name: "manager"; Description: "Viora Manager (optional session companion)"; Types: full
+
 [Tasks]
-Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional shortcuts:"
+Name: "desktopicon"; Description: "Create desktop shortcuts"; GroupDescription: "Additional shortcuts:"
 
 [Files]
-Source: "..\publish\Viora-v{#AppVersion}.exe"; DestDir: "{app}"; DestName: "Viora.exe"; Flags: ignoreversion
+Source: "..\publish\Viora-v{#AppVersion}.exe"; DestDir: "{app}"; DestName: "Viora.exe"; Flags: ignoreversion; Components: main
+Source: "..\publish\VioraManager-v{#AppVersion}.exe"; DestDir: "{app}"; DestName: "VioraManager.exe"; Flags: ignoreversion; Components: manager
 
 [Icons]
-Name: "{autoprograms}\Viora"; Filename: "{app}\Viora.exe"
-Name: "{autodesktop}\Viora"; Filename: "{app}\Viora.exe"; Tasks: desktopicon
+Name: "{autoprograms}\Viora"; Filename: "{app}\Viora.exe"; Components: main
+Name: "{autodesktop}\Viora"; Filename: "{app}\Viora.exe"; Components: main; Tasks: desktopicon
+Name: "{autoprograms}\Viora Manager"; Filename: "{app}\VioraManager.exe"; Components: manager
+Name: "{autodesktop}\Viora Manager"; Filename: "{app}\VioraManager.exe"; Components: manager; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\Viora.exe"; Description: "Launch Viora"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\Viora.exe"; Description: "Launch Viora"; Flags: nowait postinstall skipifsilent; Components: main
 
-; AppData is intentionally not removed on uninstall. Users can delete
-; %LOCALAPPDATA%\Viora manually after exporting any wanted settings.
+; Keep existing AppData on uninstall; offer manual deletion after personal backups.
