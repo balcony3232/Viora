@@ -1,13 +1,22 @@
-# Viora — major changes
+# Viora — major releases
+
+## v1.0.0 — Public beta (first shareable build)
+- Prepared Viora's first publicly shareable Windows x64 executable release under the v1.0.0 version.
+- Changed the default splash to a **small centred** purple-forest window with the restrained lilac Viora wordmark, replacing the previous full-screen default.
+- Kept custom GIF and image splash modes, personalised profiles and settings intact.
+- Updated the release checker to recognise versioned GitHub **pre-releases** as well as regular releases so beta testers can receive updates.
+- Preserved the one-click, user-approved updater with staged SHA-256 download, previous-EXE backup and restart.
+- Kept the public repository lean: one major changelog and no personal AppData or build artifacts.
+- **Status:** release candidate source; Windows build, startup, friend-installation and automatic-update smoke tests required before calling the beta release verified.
 
 ## v0.9 — Viora rebrand
-- Renamed Violetstrap to Viora and refreshed the app icon, splash branding, window title and GitHub release identity.
-- Migrated legacy local configuration on first run while retaining the original folder.
-- Preserved FastFlag Explorer, performance controls, saved profiles, activity tracking, Discord Rich Presence, splash GIFs and local backups.
+- Renamed Violetstrap to Viora, with refreshed app logo, Windows icon and GitHub identity.
+- Added legacy data migration without deleting existing Violetstrap files.
+- Retained launcher, FastFlag editing, FPS options, game statistics, rich presence, themes and custom media splashes.
+- Later v0.9 maintenance added the forest splash design, improved wording and the self-update installer.
 
 ## v0.8 — Workspace update
-- Introduced quick-launch folders, assigned per-game performance profiles, custom theme colours, system-tray support, backup/recovery and the GitHub release checker.
+- Added advanced quick launch and assigned per-game performance profiles.
+- Introduced theme studio, system tray integration, backups/recovery and GitHub release checking.
 
-Minor maintenance releases are described in the release notes rather than separate files.
-
-The v0.9.2 maintenance release adds one-click updating, simplified Performance descriptions, and the full-screen forest default splash; custom GIF/image splashes remain supported.
+Minor maintenance changes are included in the next major release summary, not separate changelog files.
