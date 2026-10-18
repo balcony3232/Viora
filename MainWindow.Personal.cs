@@ -258,7 +258,7 @@ public partial class MainWindow
         _monitorTimer?.Stop();
         _monitorTimer = null;
         EndObservedRobloxSession(DateTimeOffset.UtcNow);
-        Storage.Save(_state);
+        if (!_settingsReadOnly) Storage.Save(_state);
         RefreshStatsUI();
     }
 
@@ -272,7 +272,7 @@ public partial class MainWindow
             _state.Stats.LongestObservedSessionSeconds = Math.Max(
                 _state.Stats.LongestObservedSessionSeconds, (long)_currentSessionSeconds);
             // Persist the finished segment immediately rather than waiting for the 30s interval.
-            Storage.Save(_state);
+            if (!_settingsReadOnly) Storage.Save(_state);
         }
         _sawRobloxRunning = false;
         _activeRobloxProcessId = null;
@@ -353,7 +353,7 @@ public partial class MainWindow
         }
         if ((now - _lastStatsSave).TotalSeconds >= 30)
         {
-            Storage.Save(_state);
+            if (!_settingsReadOnly) Storage.Save(_state);
             _lastStatsSave = now;
         }
     }
