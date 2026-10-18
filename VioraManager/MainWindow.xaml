@@ -94,9 +94,16 @@
             </DockPanel>
         </Border>
         <Grid Grid.Row="4">
-            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-            <Button Content="＋  Open Roblox" Background="#A982F4" Foreground="#180D29" FontWeight="SemiBold" Margin="0,0,5,0" Click="OpenRoblox_Click"/>
-            <Button Grid.Column="1" Content="Manage windows" Background="#39274D" FontWeight="SemiBold" Margin="5,0,0,0" Click="ManageWindows_Click"/>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Button Content="＋  Open Roblox" Background="#A982F4" Foreground="#180D29"
+                    FontWeight="SemiBold" Margin="0,0,6,0" Click="OpenRoblox_Click"/>
+            <Button Grid.Column="1" Content="♧  Accounts" Background="#39274D"
+                    FontWeight="SemiBold" Margin="3,0,3,0" Click="Accounts_Click"
+                    ToolTip="Save Roblox account shortcuts in separate browser profiles — never stores Roblox passwords"/>
+            <Button Grid.Column="2" Content="Manage windows" Background="#39274D"
+                    FontWeight="SemiBold" Margin="6,0,0,0" Click="ManageWindows_Click"/>
         </Grid>
         <TextBlock Grid.Row="5" Text="Experimental compatibility does not modify Roblox files, but simultaneous Player support and account safety are not guaranteed."
                    Foreground="{StaticResource Muted}" FontSize="11" Margin="0,12,0,0" TextWrapping="Wrap"/>
