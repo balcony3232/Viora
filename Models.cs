@@ -185,6 +185,8 @@ public sealed class ThemeColours
 
 public sealed class AppState
 {
+    // Set after completing the optional first-run walkthrough.
+    public bool SetupWizardCompleted { get; set; }
     public UpdateOptions Updates { get; set; } = new();
     public List<LaunchShortcut> LaunchShortcuts { get; set; } = new();
     public ThemeColours CustomTheme { get; set; } = new();
