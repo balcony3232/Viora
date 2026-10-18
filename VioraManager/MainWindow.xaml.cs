@@ -212,6 +212,14 @@ public partial class MainWindow : Window
 
     private void Refresh_Click(object sender, RoutedEventArgs e) => RefreshWindows();
 
+    private void Accounts_Click(object sender, RoutedEventArgs e)
+    {
+        // Browser-based shortcuts are separate from the experimental mutex.
+        // No account passwords, Roblox cookies, or injected sessions are used.
+        var dialog = new AccountsWindow { Owner = this };
+        dialog.ShowDialog();
+    }
+
     private void OpenRoblox_Click(object sender, RoutedEventArgs e)
     {
         try
