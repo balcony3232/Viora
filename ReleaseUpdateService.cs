@@ -29,16 +29,34 @@ public static class ReleaseUpdateService
     {
         if (!TryNormalizeRepo(repo, out var normalized))
             throw new ArgumentException("Enter a GitHub repository as owner/repo, or its github.com URL.");
-        var uri = new Uri($"https://api.github.com/repos/{normalized}/releases/latest");
+
+        // The Releases list includes prereleases, unlike /releases/latest.
+        // This allows beta testers to receive versioned Viora updates.
+        var uri = new Uri($"https://api.github.com/repos/{normalized}/releases?per_page=30");
         using var response = await Client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead);
         if (response.StatusCode == HttpStatusCode.NotFound)
-            throw new InvalidOperationException("No published GitHub Release was found. Publish a tagged release first.");
+            throw new InvalidOperationException("GitHub repository or releases could not be found.");
         response.EnsureSuccessStatusCode();
         await using var stream = await response.Content.ReadAsStreamAsync();
         using var json = await JsonDocument.ParseAsync(stream);
-        var root = json.RootElement;
-        var version = root.GetProperty("tag_name").GetString()?.TrimStart('v', 'V') ?? "";
-        if (!Version.TryParse(version, out _)) throw new InvalidDataException("Release tag is not a version number.");
+        if (json.RootElement.ValueKind != JsonValueKind.Array)
+            throw new InvalidDataException("Unexpected GitHub Releases response.");
+
+        var releases = new List<(Version ParsedVersion, JsonElement Data)>();
+        foreach (var item in json.RootElement.EnumerateArray())
+        {
+            if (item.TryGetProperty("draft", out var draft) && draft.GetBoolean()) continue;
+            var rawTag = item.GetProperty("tag_name").GetString() ?? "";
+            var versionText = rawTag.TrimStart('v', 'V');
+            if (Version.TryParse(versionText, out var parsedVersion))
+                releases.Add((parsedVersion, item));
+        }
+        if (releases.Count == 0)
+            throw new InvalidOperationException("No published Viora releases found. Publish a versioned GitHub Release first.");
+
+        var newest = releases.OrderByDescending(x => x.ParsedVersion).First();
+        var root = newest.Data;
+        string version = newest.ParsedVersion.ToString();
         string details = root.GetProperty("html_url").GetString() ?? "";
         if (!IsGithubHttps(details)) throw new InvalidDataException("Invalid release page URL.");
         var assets = root.GetProperty("assets").EnumerateArray().Select(a => (
@@ -48,7 +66,7 @@ public static class ReleaseUpdateService
         var exe = assets.FirstOrDefault(a => a.Name.Equals(expected, StringComparison.OrdinalIgnoreCase));
         var sha = assets.FirstOrDefault(a => a.Name.Equals(expected + ".sha256", StringComparison.OrdinalIgnoreCase));
         if (exe.Name is null || sha.Name is null || !IsGithubHttps(exe.Url) || !IsGithubHttps(sha.Url))
-            throw new InvalidDataException("The release must include Viora-vVERSION.exe and its .sha256 asset.");
+            throw new InvalidDataException("The newest release must include a Viora executable and its .sha256 asset.");
         return new UpdateRelease(version, details, exe.Url, sha.Url, expected);
     }
     private static bool IsGithubHttps(string? url)
