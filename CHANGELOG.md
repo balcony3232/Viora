@@ -1,5 +1,14 @@
 # Viora — major releases
 
+## Leaderboard v2 — Podiums, avatars and personal ranking (draft, unreleased)
+- Replace the leaderboard table with staggered podiums (#2 left, taller #1 centre, #3 right), initials or user-uploaded avatars, and scrollable rows beginning at #4.
+- Show public User IDs, role tags and readable playtime in podiums/rows. Keep the signed-in player's own current rank visible, including ranks outside the Top 100.
+- Existing opt-in decisions remain intact. Prompt each previously undecided online account once with a clear yes/no public-participation choice; the default remains private. Opt-out still works.
+- Support optional, consciously public avatars: re-encode local PNG/JPG into a small metadata-free PNG, store under a public User ID via per-user Supabase Storage policies, and allow explicit removal.
+- New backend migration: `supabase/migrations/20261018_leaderboard_v2.sql`, to be applied **after** the base online and Owner migrations. Fresh RPCs protect opted-out profiles, provide personal rank and avatar version. Private Auth UUIDs never appear in avatar URLs.
+- Account deletion Edge Function must remove public avatar bytes before deleting the Auth account. Developer Panel/Owner role checks and original Viora Manager remain unchanged.
+- Release gate: live Supabase migration/deletion deployment, Windows/UI tests with 1/2/3/4+ participants, consent and avatar privacy tests, two-account RLS tests and owner approval. A successful compile is not a public release.
+
 ## v1.4 Online preview — Account card, leaderboard and Owner tools (unreleased)
 - Show the permanent public User ID below the signed-in online username in the sidebar, alongside the server-assigned Member/Tester/Developer/Admin/Owner tag.
 - Move the opt-in global playtime leaderboard into a dedicated page with an obvious button immediately above the sidebar account card, readable formatted playtime and public IDs.
