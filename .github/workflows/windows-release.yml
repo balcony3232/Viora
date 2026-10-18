@@ -103,14 +103,14 @@ jobs:
             [IO.File]::WriteAllText("$file.sha256", "$hash  $filename`n")
             Write-Host "$filename : $((Get-Item $file).Length) bytes"
           }
-          [IO.File]::WriteAllText('publish-lite/README.txt', @'
-          VIORA LIGHTWEIGHT DEVELOPMENT PREVIEW — Win64
-          Both EXEs require Microsoft .NET Desktop Runtime 8 (x64) installed once.
-          These are NOT self-contained. Check "dotnet --list-runtimes" for
-          Microsoft.WindowsDesktop.App 8.x if the EXE does not launch.
-          Only download/run when testing a coherent development milestone.
-          The self-contained installer remains available.
-          '@)
+          [IO.File]::WriteAllLines('publish-lite/README.txt', @(
+            'VIORA LIGHTWEIGHT DEVELOPMENT PREVIEW - Windows x64',
+            'Requires Microsoft .NET Desktop Runtime 8 (x64) installed once.',
+            'Run: dotnet --list-runtimes',
+            'Look for: Microsoft.WindowsDesktop.App 8.x',
+            'The fully self-contained installer remains available.',
+            'This development preview has not yet been Windows-user-tested.'
+          ))
 
       - name: Save lightweight EXEs as separate artifact
         if: github.ref == 'refs/heads/feature/v1.3-stability-updater-ui'
