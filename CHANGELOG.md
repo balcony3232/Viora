@@ -2,6 +2,7 @@
 
 ## v1.2 — Viora Manager prototype (testing only)
 - Created **Viora Manager**, a separate dark-purple WPF Windows EXE featuring live official Roblox Player window detection, process runtime, memory total and individually labelled instance cards.
+- Added per-instance game titles with best-effort unique matching of Roblox Player process start times to local log files, extraction of public place/universe IDs and optional public Roblox name lookups. Missing or ambiguous data shows an unknown game, never an invented title.
 - Added manual refresh, official Roblox website launch, and user-approved tiling of existing Player windows. These functions do not require modifications to Roblox.
 - Made Manager an optional Windows Setup component with Start menu and desktop shortcut choices.
 - Extended the Windows build to package Viora EXE, Viora Manager EXE and combined Setup, each with SHA-256 checksum files.
