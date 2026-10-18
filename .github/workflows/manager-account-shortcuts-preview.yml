@@ -1,0 +1,47 @@
+name: Viora Manager account-shortcuts preview
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'feature/manager-v1.4.1-account-shortcuts'
+
+permissions:
+  contents: read
+
+jobs:
+  manager-preview:
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Install .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Build standalone Windows Manager
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          [xml]$project = Get-Content 'VioraManager/VioraManager.csproj'
+          $version = [string]$project.Project.PropertyGroup.Version
+          if ([string]::IsNullOrWhiteSpace($version)) { throw 'Missing Manager version' }
+          dotnet restore 'VioraManager/VioraManager.csproj' --runtime win-x64
+          if ($LASTEXITCODE -ne 0) { throw 'Restore failed' }
+          dotnet publish 'VioraManager/VioraManager.csproj' -c Release -r win-x64 --self-contained true --no-restore -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o manager-publish
+          if ($LASTEXITCODE -ne 0) { throw 'Publish failed' }
+          if (!(Test-Path 'manager-publish/VioraManager.exe')) { throw 'Manager EXE not found' }
+          New-Item -ItemType Directory -Force -Path publish | Out-Null
+          $name = "VioraManager-v$version.exe"
+          Move-Item 'manager-publish/VioraManager.exe' "publish/$name"
+          $hash = (Get-FileHash -Algorithm SHA256 "publish/$name").Hash.ToLowerInvariant()
+          [IO.File]::WriteAllText("publish/$name.sha256", "$hash  $name" + [Environment]::NewLine)
+          Write-Host "Built $name with SHA-256."
+      - name: Upload Manager-only build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VioraManager-v1.4.1-account-shortcuts
+          path: |
+            publish/VioraManager-v*.exe
+            publish/VioraManager-v*.exe.sha256
+          if-no-files-found: error
