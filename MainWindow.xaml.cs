@@ -18,6 +18,8 @@ public partial class MainWindow : Window
     private readonly AppState _state;
     private readonly ObservableCollection<FlagDefinition> _catalog;
     private bool _ready;
+    private bool _settingsReadOnly;
+    private bool _readOnlyWarningShown;
     private bool _updatingModSelection;
     private Brush _selectedNavBrush = new SolidColorBrush(Color.FromRgb(82, 49, 128));
     private Brush _idleNavBrush = new SolidColorBrush(Color.FromRgb(33, 24, 47));
@@ -34,6 +36,8 @@ public partial class MainWindow : Window
         try { _state = Storage.Load(); }
         catch (Exception ex)
         {
+            // Keep the original unreadable settings file intact for recovery.
+            _settingsReadOnly = true;
             MessageBox.Show("Settings could not be loaded. Existing files were not modified.\n\n" + ex.Message,
                 "Viora settings", MessageBoxButton.OK, MessageBoxImage.Error);
             _state = new AppState();
@@ -66,6 +70,19 @@ public partial class MainWindow : Window
     private void SetStatus(string message) => StatusText.Text = message;
     private void Persist()
     {
+        if (_settingsReadOnly)
+        {
+            if (!_readOnlyWarningShown)
+            {
+                _readOnlyWarningShown = true;
+                MessageBox.Show(this,
+                    "Your existing settings couldn't be loaded. Changes in this session cannot be saved. " +
+                    "The original settings file has not been overwritten; restore a backup or repair the file.",
+                    "Viora settings are read-only", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            SetStatus("Read-only mode: original settings preserved.");
+            return;
+        }
         Storage.Save(_state);
         RefreshDashboard();
         // Avoid heavy offscreen layout and recursive binding callbacks when
