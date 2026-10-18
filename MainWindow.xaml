@@ -877,7 +877,7 @@
                         <Border Style="{StaticResource PanelBorder}">
                             <StackPanel>
                                 <TextBlock Text="04  Splash Screen" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,10"/>
-                                <TextBlock Text="Full-screen forest splash by default; optional compact image and GIF styles." Style="{StaticResource Hint}" Margin="0,0,0,12"/>
+                                <TextBlock Text="Compact forest splash by default; optional custom image and GIF styles." Style="{StaticResource Hint}" Margin="0,0,0,12"/>
                                 <Button Content="Customise splash screen  ↗" Click="NavSplash_Click" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Left"/>
                             </StackPanel>
                         </Border>
@@ -1018,7 +1018,7 @@
                                     </Grid>
                                 </Border>
                                 <TextBlock x:Name="SplashPreviewInfo" Style="{StaticResource Hint}" Text="Small · 2.0 seconds · Default" Margin="0,12,0,0" FontSize="11"/>
-                                <TextBlock Text="Preview reflects the selected mode. Full-screen default or compact custom media opens with Play preview." Style="{StaticResource Hint}" FontSize="11" Margin="0,12,0,0"/>
+                                <TextBlock Text="Preview reflects the selected mode. Both default and custom splashes open as compact windows." Style="{StaticResource Hint}" FontSize="11" Margin="0,12,0,0"/>
                             </StackPanel>
                         </Border>
                     </Grid>
