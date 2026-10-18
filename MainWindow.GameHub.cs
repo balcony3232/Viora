@@ -314,20 +314,29 @@ public partial class MainWindow
     private async void AddFavorite_Click(object sender, RoutedEventArgs e)
     {
         if (!TryParseRobloxPlace(GameHubAddUrl.Text, out long id))
-        { Alert("Enter a Roblox place ID or an official https://www.roblox.com/games/<id> link."); return; }
-        var game = GetOrCreateGame(id);
-        game.Favorite = true;
-        GameHubAddUrl.Clear();
-        Persist(); RefreshGameHub(force: true);
-        SetStatus("Favourite added. Looking up its public title...");
+        { Alert("Enter a Roblox place ID or an official Roblox game link."); return; }
+
         try
         {
+            var game = GetOrCreateGame(id);
+            if (!TryChangeFavorite(game, true)) return;
+            GameHubAddUrl.Clear();
+            SetStatus("Favourite added. Looking up its public title...");
             var name = await _robloxGameNames.GetNameAsync(id);
             UpdateGameName(id, name);
-            Persist(); RefreshGameHub(force: true);
+            // A name lookup can complete much later; write the resolved name
+            // without refreshing every unrelated page from an async-void handler.
+            Storage.Save(_state);
             SetStatus(name is null ? $"Favourite saved as Place #{id} (name unavailable)." : $"Favourite added: {name}");
         }
-        catch (Exception ex) { SetStatus("Favourite saved; title lookup failed: " + ex.Message); }
+        catch (Exception ex)
+        {
+            SetStatus("Could not add favourite: " + ex.Message);
+            MessageBox.Show(this,
+                "Viora couldn't finish adding the favourite.\n\n" +
+                ex.GetType().Name + ": " + ex.Message,
+                "Viora — Favourite error", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     private static string OfficialGameUrl(long placeId) => $"https://www.roblox.com/games/{placeId}";
