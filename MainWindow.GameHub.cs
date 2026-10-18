@@ -19,6 +19,7 @@ public partial class MainWindow
     private DateTimeOffset _lastHubRefresh = DateTimeOffset.MinValue;
     private bool _gameHubReady;
     private bool _updatingGameGrid;
+    private bool _refreshingGameHub;
     private bool _loadingPresenceFields;
     private string _gameHubFilter = "";
     private int _hubSortMode;
@@ -141,10 +142,15 @@ public partial class MainWindow
 
     private void RefreshGameHub(bool force = false)
     {
-        if (!_gameHubReady || GameHubGamesGrid is null || _state?.Stats is null) return;
+        if (_refreshingGameHub || !_gameHubReady || GameHubGamesGrid is null || _state?.Stats is null) return;
         var now = DateTimeOffset.UtcNow;
         if (!force && now - _lastHubRefresh < TimeSpan.FromSeconds(10)) return;
         _lastHubRefresh = now;
+        // Prevent a WPF selection/binding callback from recursively rebuilding
+        // Game Hub until the call stack is exhausted.
+        _refreshingGameHub = true;
+        try
+        {
         var games = _state.Stats.Games;
         var ranked = games.Where(g => g.ObservedSeconds > 0)
             .OrderByDescending(g => g.ObservedSeconds).ThenBy(g => g.DisplayName).ToList();
@@ -179,6 +185,8 @@ public partial class MainWindow
         RefreshSelectedGameInfo();
         RefreshPresenceGameChoices();
         BeginGameIconRefresh();
+        }
+        finally { _refreshingGameHub = false; }
     }
 
     private void RefreshSelectedGameInfo()
