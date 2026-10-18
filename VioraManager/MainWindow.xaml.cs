@@ -14,11 +14,13 @@ public partial class MainWindow : Window
     private sealed record RunningWindow(int Pid, nint Handle, DateTime Started, long Memory)
     {
         public string Label { get; init; } = "";
-        public string Detail => $"Roblox Player · {Math.Max(0, (int)(DateTime.Now - Started).TotalMinutes)}m runtime · {Memory / (1024 * 1024)} MB";
+        public string GameName { get; init; } = "Game not detected";
+        public string Detail => $"{Math.Max(0, (int)(DateTime.Now - Started).TotalMinutes)}m runtime · {Memory / (1024 * 1024)} MB RAM";
     }
 
     private readonly DispatcherTimer _refresh = new() { Interval = TimeSpan.FromSeconds(3) };
     private readonly MultiInstanceExperiment _experiment = new();
+    private readonly RobloxInstanceGames _games;
 
     [DllImport("dwmapi.dll", PreserveSig = true)]
     private static extern int DwmSetWindowAttribute(nint hwnd, int attribute, ref int value, int size);
@@ -54,6 +56,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        _games = new RobloxInstanceGames(() => Dispatcher.BeginInvoke(new Action(RefreshWindows)));
         SourceInitialized += (_, _) => ApplyDarkTitleBar();
         _refresh.Tick += (_, _) => RefreshWindows();
         Loaded += (_, _) => { RefreshWindows(); _refresh.Start(); };
@@ -82,8 +85,15 @@ public partial class MainWindow : Window
         }
         finally { foreach (var p in processes) p.Dispose(); }
 
+        _games.Observe(result.Select(x =>
+            new RobloxInstanceGames.RunningProcess(x.Pid, x.Started.ToUniversalTime())).ToArray());
+
         _instances = result.OrderBy(x => x.Started).ThenBy(x => x.Pid)
-            .Select((x, i) => x with { Label = $"Instance {i + 1:00}" }).ToList();
+            .Select((x, i) => x with
+            {
+                Label = $"Instance {i + 1:00}",
+                GameName = _games.GetGameName(x.Pid)
+            }).ToList();
         InstanceCount.Text = _instances.Count.ToString();
         long total = _instances.Sum(x => x.Memory);
         MemoryText.Text = total >= 1073741824 ? $"{total / 1073741824d:0.0} GB" : $"{total / 1048576d:0} MB";
