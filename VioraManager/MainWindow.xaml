@@ -25,7 +25,7 @@
                 <TextBlock Text="Instance &amp; Session Control" Foreground="{StaticResource Muted}" FontSize="11" Margin="0,2,0,0"/>
             </StackPanel>
             <Border Grid.Column="2" Padding="10,5" Background="#292033" CornerRadius="12" VerticalAlignment="Center">
-                <TextBlock Text="Early Preview" FontSize="11" Foreground="#CFBBEB"/>
+                <TextBlock x:Name="ManagerVersionText" Text="v1.3 Preview" FontSize="11" Foreground="#CFBBEB"/>
             </Border>
         </Grid>
         <UniformGrid Grid.Row="1" Columns="3" Margin="0,0,0,14">
@@ -59,6 +59,8 @@
                     <TextBlock Text="Detected Roblox Player windows" Foreground="{StaticResource Muted}" FontSize="12"/>
                     <Button Content="Refresh" Click="Refresh_Click" HorizontalAlignment="Right" Padding="11,4" FontSize="11"/>
                 </Grid>
+                <TextBlock x:Name="EmptyInstancesText" DockPanel.Dock="Top" Text="No Roblox Player windows detected. Open a game using Roblox to see its session here."
+                           Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,18,0,0" FontSize="13"/>
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <ItemsControl x:Name="InstanceList">
                         <ItemsControl.ItemTemplate>
