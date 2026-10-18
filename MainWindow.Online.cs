@@ -157,8 +157,20 @@ public partial class MainWindow
         OnlineAccountStatus.Text = p.Username + " · User #" + p.PublicId.ToString("D6") +
             " · " + p.Role + " · " + TimeSpan.FromSeconds(p.PlaytimeSeconds).TotalHours.ToString("0.0") +
             "h credited online";
-        SidebarAccountLabel.Text = "●  " + p.Username +
-            (p.Role == "developer" ? "  ◆ DEV" : p.Role == "administrator" ? "  ◆ ADMIN" : "");
+        string tag = p.Role switch
+        {
+            "owner" => "  ◆ OWNER",
+            "administrator" => "  ◆ ADMIN",
+            "developer" => "  ◆ DEV",
+            "tester" => "  ◆ TESTER",
+            _ => ""
+        };
+        SidebarAccountLabel.Text = "●  " + p.Username + tag;
+        SidebarUserId.Text = "User ID  #" + p.PublicId.ToString("D6");
+        SidebarUserId.Visibility = Visibility.Visible;
+        NavLeaderboard.Visibility = Visibility.Visible;
+        NavOwnerPanel.Visibility = p.Role == "owner" ? Visibility.Visible : Visibility.Collapsed;
+        if (p.Role != "owner" && _currentPage == "owner") SwitchPage("dashboard");
         _onlineUiRefreshing = true;
         try { OnlineLeaderboardVisible.IsChecked = p.LeaderboardOptIn; }
         finally { _onlineUiRefreshing = false; }
@@ -288,6 +300,13 @@ public partial class MainWindow
         _onlineProfile = null;
         OnlineLeaderboardList.ItemsSource = null;
         OnlineStatsPanel.Visibility = Visibility.Collapsed;
+        SidebarUserId.Text = "";
+        SidebarUserId.Visibility = Visibility.Collapsed;
+        NavLeaderboard.Visibility = Visibility.Collapsed;
+        NavOwnerPanel.Visibility = Visibility.Collapsed;
+        _selectedOwnerAccount = null;
+        OwnerSelectedAccount.Text = "Search for a user before changing their tag.";
+        OwnerAssignButton.IsEnabled = false;
         if (_onlineService is not null) _ = _onlineService.SignOutAsync();
         _onlineClaimUsername = false;
     }
