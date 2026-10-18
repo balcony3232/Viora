@@ -1093,6 +1093,13 @@
                     <StackPanel>
                         <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,16">
                             <StackPanel>
+                                <TextBlock Text="First-run setup" FontSize="18" FontWeight="SemiBold"/>
+                                <TextBlock Text="Reopen the initial setup wizard to review appearance, graphics preferences and Discord activity options." Style="{StaticResource Hint}" Margin="0,8,0,12"/>
+                                <Button Content="Open setup wizard" Click="OpenSetupWizard_Click" HorizontalAlignment="Left"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,16">
+                            <StackPanel>
                                 <TextBlock Text="Viora updates" FontSize="18" FontWeight="SemiBold"/>
                                 <TextBlock Text="Viora checks published releases and offers one-click installation after confirmation. Downloads are checksum-verified; the previous executable is retained as a backup." Style="{StaticResource Hint}" Margin="0,8,0,12"/>
                                 <TextBlock Text="GITHUB REPOSITORY (owner/repo)" Style="{StaticResource Hint}" FontSize="10"/>
