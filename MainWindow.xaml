@@ -401,6 +401,8 @@
                                     <Button Content="Upload profile picture" Click="OnlineAvatarUpload_Click"
                                             Margin="0,0,8,0"
                                             ToolTip="Optional. Uploaded images become publicly accessible. PNG and JPEG accepted, sanitised to small PNG."/>
+                                    <Button Content="Remove picture" Click="OnlineAvatarRemove_Click" Margin="0,0,8,0"
+                                            ToolTip="Delete your public avatar from Storage; initials will be used instead"/>
                                     <Button Content="Delete my online account" Click="OnlineAccountDelete_Click"
                                             ToolTip="Permanently remove this account; local Viora settings remain"/>
                                 </StackPanel>
