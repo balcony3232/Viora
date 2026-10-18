@@ -152,7 +152,8 @@ public partial class MainWindow
     {
         public string Game { get; set; } = "";
         public int Pid { get; set; }
-        public DateTime StartedUtc { get; set; }
+        public DateTime ProcessStartedUtc { get; set; }
+        public DateTime FirstObservedUtc { get; set; }
         public DateTime LastSeenUtc { get; set; }
         public long PeakMemoryBytes { get; set; }
         public double PeakCpuPercent { get; set; }
@@ -165,6 +166,7 @@ public partial class MainWindow
     }
 
     private ManagerData _managerData = new();
+    private bool _stateReadOnly;
     private readonly Dictionary<int, StoredSession> _observed = new();
     private Window? _miniWindow;
     private static string DataFile => Path.Combine(
@@ -183,7 +185,8 @@ public partial class MainWindow
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
         {
             _managerData = new();
-            MessageBox.Show(this, "Manager workspace data could not be read. Existing data has not been overwritten.",
+            _stateReadOnly = true;
+            MessageBox.Show(this, "Manager state could not be read. It will be kept unchanged; rename state.json manually to re-enable saving.",
                 "Viora Manager", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
         WorkspaceChoice.ItemsSource = _managerData.Workspaces;
@@ -192,6 +195,7 @@ public partial class MainWindow
 
     private void SaveManagerData()
     {
+        if (_stateReadOnly) return; // Never overwrite a file we could not parse.
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(DataFile)!);
@@ -217,7 +221,7 @@ public partial class MainWindow
         foreach (var old in _observed.Keys.ToArray())
         {
             if (current.TryGetValue(old, out var window) &&
-                _observed[old].StartedUtc == window.Started.ToUniversalTime()) continue;
+                _observed[old].ProcessStartedUtc == window.Started.ToUniversalTime()) continue;
             _managerData.History.Insert(0, _observed[old]);
             _observed.Remove(old);
             dirty = true;
@@ -234,7 +238,8 @@ public partial class MainWindow
                 item = new StoredSession
                 {
                     Pid = window.Pid,
-                    StartedUtc = window.Started.ToUniversalTime(),
+                    ProcessStartedUtc = window.Started.ToUniversalTime(),
+                    FirstObservedUtc = now,
                     Game = window.GameName
                 };
                 _observed[window.Pid] = item;
@@ -339,6 +344,7 @@ public partial class MainWindow
     private void SaveWorkspace_Click(object sender, RoutedEventArgs e)
     {
         RefreshWindows();
+        if (_stateReadOnly) { MessageBox.Show(this, "Manager state is read-only because state.json could not be loaded. Your existing data is untouched.", "Viora Manager"); return; }
         if (_instances.Count == 0) { MessageBox.Show(this, "No Roblox windows to save.", "Viora Manager"); return; }
         var area = ScreenAreaPixels();
         var positions = new List<StoredBox>();
@@ -400,14 +406,14 @@ public partial class MainWindow
     {
         var text = new StringBuilder();
         text.AppendLine("SESSION HISTORY · observed while Manager was open");
-        text.AppendLine("Closed processes are recorded; disappearance does not prove a crash.");
+        text.AppendLine("Previously seen windows are recorded; disappearance does not prove a crash or exit.");
         text.AppendLine();
         if (_managerData.History.Count == 0) text.AppendLine("No completed sessions observed yet.");
         foreach (var row in _managerData.History.Take(75))
         {
-            var seconds = Math.Max(0, (row.LastSeenUtc - row.StartedUtc).TotalSeconds);
+            var seconds = Math.Max(0, (row.LastSeenUtc - row.FirstObservedUtc).TotalSeconds);
             text.AppendLine(row.Game + " · PID " + row.Pid);
-            text.AppendLine("Seen: " + row.StartedUtc.ToLocalTime().ToString("g") +
+            text.AppendLine("Seen: " + row.FirstObservedUtc.ToLocalTime().ToString("g") +
                 " · Duration observed: " + TimeSpan.FromSeconds(seconds).ToString(@"hh\:mm\:ss"));
             text.AppendLine("Peak: " + (row.PeakMemoryBytes / 1048576d).ToString("0") + " MB · CPU " +
                 row.PeakCpuPercent.ToString("0.0") + "%");
