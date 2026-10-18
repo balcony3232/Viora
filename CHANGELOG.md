@@ -5,7 +5,8 @@
 - **C · Performance & stability (next):** Audit redundant UI refreshes, settings persistence, background CPU/RAM and session-statistics correctness; benchmark against the v1.2.1 baseline.
 - **D · Smaller downloads (experimental build):** Build separate framework-dependent, single-file Viora and Manager EXEs as a distinct GitHub Actions artifact. They require the Windows .NET Desktop Runtime 8 (x64) to already be installed, unlike the existing larger self-contained installer. No runtime downloads or installation are performed automatically.
 - **D · Lightweight updating (planned):** Separate Launcher and Manager update payloads, verify downloads before applying and allow rollback. Don't ship a fragile binary patcher.
-- **E · UI & customisation (planned):** Harmonise the near-black/lilac surfaces, improve navigation/layout consistency and responsiveness, refine animation/performance without reintroducing white panels.
+- **E · UI & customisation:** Replace bright default system scrollbars with compact dark lilac scrollbars across Viora, retaining mouse-wheel, drag and page scrolling. The Game Hub now uses a calmer history-focused panel without favourites controls.
+- **E · Further refinement (next):** Harmonise remaining dialogs, navigation/layout responsiveness and animations without reintroducing white panels.
 - **Release gate:** Keep the current working two-instance Manager unchanged; don't merge or ask users to download another package until a coherent test milestone is ready.
 
 ## v1.2 — Viora Manager & performance pass (testing only)
