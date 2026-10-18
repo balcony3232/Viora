@@ -1,6 +1,6 @@
 # Viora
 
-**Viora v1.2.0 — Viora Manager prototype branch (NOT a public release).** Unofficial Windows desktop companion for Roblox (formerly Violetstrap).
+**Viora v1.3.0 — C + D + E development preview (NOT a public release).** Unofficial Windows desktop companion for Roblox (formerly Violetstrap).
 
 ## Features
 
