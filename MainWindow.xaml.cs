@@ -113,6 +113,10 @@ public partial class MainWindow : Window
     }
     private void SwitchPage(string page)
     {
+        // Client-side visibility is for UX, never for privilege enforcement.
+        // All owner actions must also pass database-side permission checks.
+        if (page == "owner" && (!_isSignedIn || _onlineProfile?.Role != "owner")) return;
+        if (page == "leaderboard" && (!_isSignedIn || _onlineProfile is null)) return;
         var changedPage = _currentPage != page;
         _currentPage = page;
         LauncherPage.Visibility = page == "launcher" ? Visibility.Visible : Visibility.Collapsed;
@@ -121,6 +125,8 @@ public partial class MainWindow : Window
         SplashPage.Visibility = page == "splash" ? Visibility.Visible : Visibility.Collapsed;
         DashboardPage.Visibility = page == "dashboard" ? Visibility.Visible : Visibility.Collapsed;
         StatsPage.Visibility = page == "stats" ? Visibility.Visible : Visibility.Collapsed;
+        LeaderboardPage.Visibility = page == "leaderboard" ? Visibility.Visible : Visibility.Collapsed;
+        OwnerPanelPage.Visibility = page == "owner" ? Visibility.Visible : Visibility.Collapsed;
         DiscordPage.Visibility = page == "discord" ? Visibility.Visible : Visibility.Collapsed;
         PerformancePage.Visibility = page == "performance" ? Visibility.Visible : Visibility.Collapsed;
         FlagsPage.Visibility = page == "flags" ? Visibility.Visible : Visibility.Collapsed;
@@ -137,6 +143,8 @@ public partial class MainWindow : Window
         NavAppearance.Background = page == "appearance" ? _selectedNavBrush : _idleNavBrush;
         NavSplash.Background = page == "splash" ? _selectedNavBrush : _idleNavBrush;
         NavStats.Background = page == "stats" ? _selectedNavBrush : _idleNavBrush;
+        NavLeaderboard.Background = page == "leaderboard" ? _selectedNavBrush : _idleNavBrush;
+        NavOwnerPanel.Background = page == "owner" ? _selectedNavBrush : _idleNavBrush;
         NavGameHub.Background = page == "gamehub" ? _selectedNavBrush : _idleNavBrush;
         NavDiscord.Background = page == "discord" ? _selectedNavBrush : _idleNavBrush;
         NavGroupOptimize.Background = page is "performance" or "flags" ? _selectedNavBrush : _idleNavBrush;
@@ -158,7 +166,7 @@ public partial class MainWindow : Window
         PageHeading.Text = page switch
         {
             "flags" => "FastFlag Explorer", "performance" => "Performance", "profiles" => "Profiles", "mods" => "Asset Studio",
-            "launcher" => "Quick Launcher", "tools" => "Utilities", "stats" => "My statistics", "gamehub" => "Game Activity Hub", "discord" => "Discord Presence", "appearance" => "Appearance", "splash" => "Splash Screen", _ => "Overview"
+            "launcher" => "Quick Launcher", "tools" => "Utilities", "stats" => "My statistics", "gamehub" => "Game Activity Hub", "leaderboard" => "Global Leaderboard", "owner" => "Developer Panel", "discord" => "Discord Presence", "appearance" => "Appearance", "splash" => "Splash Screen", _ => "Overview"
         };
         if (changedPage && _ready && page == "performance")
         {
@@ -168,6 +176,7 @@ public partial class MainWindow : Window
         if (changedPage && _ready && page == "flags") ReloadFilter();
         if (changedPage && _ready && page == "gamehub") RefreshGameHub(force: true);
         if (changedPage && _ready && page == "stats") RefreshStatsUI();
+        if (changedPage && _ready && page == "leaderboard") _ = RefreshOnlineLeaderboardAsync();
         if (changedPage && _ready && page == "dashboard") RefreshGameHub(force: true);
         if (changedPage && _ready) AnimatePage(page);
     }
@@ -200,6 +209,8 @@ public partial class MainWindow : Window
     private void NavAppearance_Click(object sender, RoutedEventArgs e) => SwitchPage("appearance");
     private void NavStats_Click(object sender, RoutedEventArgs e) => SwitchPage("stats");
     private void NavGameHub_Click(object sender, RoutedEventArgs e) => SwitchPage("gamehub");
+    private void NavLeaderboard_Click(object sender, RoutedEventArgs e) => SwitchPage("leaderboard");
+    private void NavOwnerPanel_Click(object sender, RoutedEventArgs e) => SwitchPage("owner");
     private void NavDiscord_Click(object sender, RoutedEventArgs e) => SwitchPage("discord");
     private void GoStats_Click(object sender, RoutedEventArgs e) => SwitchPage("stats");
     private void GoFlags_Click(object sender, RoutedEventArgs e) => SwitchPage("flags");
