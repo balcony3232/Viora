@@ -1,47 +1,51 @@
 # Viora
 
-**Viora v1.0.0 (public beta)** — an unofficial Windows desktop companion for Roblox, formerly known as Violetstrap.
-
-![Viora](Assets/Viora-logo.png)
+**Viora v1.1.0 — installer and onboarding preview branch.** Unofficial Windows desktop companion for Roblox (formerly Violetstrap).
 
 ## Features
 
-- Roblox quick launch, favourite games and assigned per-game performance profiles
-- FastFlag Explorer, saved profiles and supported Roblox graphics preferences
-- Game Hub with locally observed playtime, sessions and game artwork
-- Optional Discord Rich Presence with game and AFK status
-- Local profile, dark-purple themes, custom GIF splash and compact forest default splash
-- System tray controls, backup/recovery and a versioned GitHub Releases updater
+- Roblox quick launch, favourites, supported FastFlag presets and graphics preferences
+- Game Hub: local playtime and recent session history
+- Opt-in Discord Rich Presence (a Discord Application ID is needed, no Discord password)
+- Custom splash GIF/image, compact forest default, dark themes, tray controls and backups
+- Per-user Windows installer **or** portable single-file EXE
+- First-run wizard: Roblox detection, theme, experimental performance profile and Discord privacy preference
+- Optional local account or password-free guest mode
 
-**Compatibility:** Roblox controls which local FastFlags it honours. Not every flag or graphics preference is effective across Roblox versions. This is not an official Roblox product.
+## Installer
 
-## Downloads for testers
+The Windows workflow builds two distributions from the same source:
 
-After the v1.0.0 Windows build passes a manual launch test, download **Viora-v1.0.0.exe** from [GitHub Releases](https://github.com/balcony3232/Viora/releases). The release also provides its SHA-256 checksum. This Windows executable is self-contained; extract it from any downloaded ZIP before running it.
+- `Viora-v1.1.0-Setup.exe`: per-user installer with Start menu shortcut, optional desktop shortcut and uninstaller.
+- `Viora-v1.1.0.exe`: portable EXE for users who prefer not to install.
 
-The application is currently in public beta. Windows may show an unknown-publisher or SmartScreen warning because the EXE is **not code-signed**. Do not disable security protections globally; only run software after verifying its source and origin.
+The installer writes to `%LOCALAPPDATA%\Programs\Viora` without requiring administrator rights. Uninstallation removes the program but deliberately **does not delete** `%LOCALAPPDATA%\Viora` (local settings and histories). Users may delete that folder separately once backups are made.
 
-Local accounts and playtime data are kept on each PC at `%LOCALAPPDATA%\Viora`, not shared between testers. Viora may copy an existing Violetstrap data folder on first launch without deleting the original. Roblox and Discord sign-in credentials are not required by Viora.
+Viora's existing one-click updater can replace the installed `Viora.exe` when the current user has write permission. New releases are downloaded only after approval. Portable and installed distributions share local settings.
 
-## Publishing v1.0.0
+**Unsigned software:** Neither EXE is code-signed. A checksum detects accidental corruption, but a release-supplied checksum alone does not authenticate the publisher. Only run binaries from the official repository and inspect warnings rather than broadly disabling security protections.
 
-1. Check [GitHub Actions](https://github.com/balcony3232/Viora/actions/workflows/windows-release.yml) by running **Windows EXE build and release** on `main`. Download and test its EXE artifact on Windows.
-2. Create the `v1.0.0` tag from the tested `main` branch, then publish a GitHub Release titled **Viora v1.0.0 — Public Beta** and select **Set as a pre-release**.
-3. The workflow is triggered by the tag push and should upload `Viora-v1.0.0.exe` and `Viora-v1.0.0.exe.sha256` to that Release. Confirm both assets are present before sharing the release link.
-4. Test the published download and the updater against the published release.
+## First-run setup
 
-**Do not publish personal settings, saved account data, statistics, custom user images, tokens or content from `%LOCALAPPDATA%`.** Keep the single `CHANGELOG.md` for major release notes.
+New installations show an optional **local account creation** screen. **Continue without an account** uses guest mode (no password). If a local account has already been created, guest mode is not offered as an authentication bypass.
 
-## Building from source
+After sign-in or guest entry, the initial wizard:
 
-Use `build-windows.bat` on Windows with the .NET 8 SDK or run the GitHub Actions workflow. The workflow creates a single self-contained Windows x64 executable plus a SHA-256 file. An untagged workflow run only uploads a temporary workflow artifact, not a permanent public Release asset.
+1. Introduces the features and privacy model
+2. Detects the official Roblox Player installation (can continue if not found)
+3. Offers theme and experimental performance preset choices
+4. Asks whether the user intends to configure Discord Rich Presence
 
-## Update system
+The performance selection is saved into the active profile but is **not written to Roblox client files during onboarding**. Discord remains disconnected unless a valid Application ID is configured, even if selected in the wizard. Tracking records local Roblox activity; there is no Viora server or cloud account.
 
-Viora checks the public `balcony3232/Viora` releases feed, including pre-releases. After confirmation, it downloads a versioned executable and checksum, verifies the checksum, stages the new executable, closes Viora, and uses a separate helper process to replace and reopen it. Updates require write permission to Viora's installed executable directory. Settings and local accounts are not replaced.
+The wizard does **not automatically run for existing v1.0.0 accounts/settings**. It is available later from **Personalise → Utilities → Open setup wizard**.
 
-**Security note:** SHA-256 detects a mismatch between the file and its checksum but does not authenticate the publisher when both are supplied by the same GitHub release. Updates are not code-signed; use only a trusted repository and build source.
+## Build and test
 
-## Reporting beta issues
+For source changes, use the `feature/v1.1-installer-onboarding` branch until Windows tests pass. The GitHub Actions workflow builds both EXEs and their SHA-256 files on Windows. Manual dispatch on the feature branch does not publish GitHub Releases; only a version tag matching `Viora.csproj` publishes release assets.
 
-Use the repository's [Issues](https://github.com/balcony3232/Viora/issues) page. Include the Viora version, Windows version, steps to reproduce, and the exact error message. Remove usernames, passwords, local file paths and private Roblox/Discord information from screenshots and logs.
+When preparing an official version, test a fresh install (on a Windows account with no Viora AppData), an existing user upgrade, guest mode, local account creation, uninstall, tray, splash, and Discord opt-in/out. Verify a second PC does not inherit the first PC's account or activity history. **Do not publish before these tests pass.**
+
+## Safety / compatibility
+
+Viora is not affiliated with Roblox or Discord. Roblox controls which local FastFlag overrides work and may change its allowlist at any time. Never upload `%LOCALAPPDATA%\Viora`, local password hashes, personal statistics or custom splash media to the public repository. Issues can be reported at https://github.com/balcony3232/Viora/issues.
