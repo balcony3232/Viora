@@ -22,7 +22,6 @@ public partial class MainWindow
     private bool _loadingPresenceFields;
     private string _gameHubFilter = "";
     private int _hubSortMode;
-    private bool _hubFavouritesOnly;
     private bool _iconRefreshBusy;
     private readonly HashSet<long> _iconAttempts = new();
 
@@ -31,7 +30,7 @@ public partial class MainWindow
     {
         if (!_gameHubReady || _iconRefreshBusy) return;
         var ids = _state.Stats.Games.Where(g => g.PlaceId > 0 && !_iconAttempts.Contains(g.PlaceId))
-            .OrderByDescending(g => g.Favorite).ThenByDescending(g => g.LastPlayedUtc)
+            .OrderByDescending(g => g.LastPlayedUtc)
             .Take(25).Select(g => g.PlaceId).ToArray();
         if (ids.Length == 0) return;
         _iconRefreshBusy = true;
@@ -149,25 +148,20 @@ public partial class MainWindow
         var games = _state.Stats.Games;
         var ranked = games.Where(g => g.ObservedSeconds > 0)
             .OrderByDescending(g => g.ObservedSeconds).ThenBy(g => g.DisplayName).ToList();
-        var favorites = games.Where(g => g.Favorite)
-            .OrderByDescending(g => g.LastQuickLaunchUtc ?? DateTimeOffset.MinValue)
-            .ThenBy(g => g.DisplayName).ToList();
         var today = DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
         HomeTodayTime.Text = DisplayDuration(_state.Stats.DailyObservedSeconds.GetValueOrDefault(today));
         HomeGamesCount.Text = ranked.Count.ToString(CultureInfo.InvariantCulture);
         HomeTopGameName.Text = ranked.FirstOrDefault()?.DisplayName ?? "No game data yet";
         HomeTopGamesList.ItemsSource = ranked.Take(5).ToList();
-        HomeFavoriteQuickList.ItemsSource = favorites.Take(6).ToList();
         GameHubCount.Text = ranked.Count.ToString(CultureInfo.InvariantCulture);
         GameHubTracked.Text = DisplayDuration(ranked.Sum(g => g.ObservedSeconds));
-        GameHubFavouriteCount.Text = favorites.Count.ToString(CultureInfo.InvariantCulture);
+        GameHubRecentCount.Text = _state.Stats.GameSessions.Count.ToString(CultureInfo.InvariantCulture);
         UpdateGameTrackingIndicator();
         var selectedId = (GameHubGamesGrid.SelectedItem as GameActivityRecord)?.PlaceId;
         _updatingGameGrid = true;
         try
         {
             var matched = games.Where(g =>
-                (!(_hubFavouritesOnly) || g.Favorite) &&
                 (string.IsNullOrWhiteSpace(_gameHubFilter) ||
                  g.DisplayName.Contains(_gameHubFilter, StringComparison.OrdinalIgnoreCase) ||
                  g.PlaceId.ToString(CultureInfo.InvariantCulture).Contains(_gameHubFilter, StringComparison.OrdinalIgnoreCase)));
@@ -179,9 +173,6 @@ public partial class MainWindow
             };
             GameHubGamesGrid.ItemsSource = filtered;
             GameHubGamesGrid.SelectedItem = filtered.FirstOrDefault(g => g.PlaceId == selectedId) ?? filtered.FirstOrDefault();
-            var oldFavoriteId = (GameHubFavoritesList.SelectedItem as GameActivityRecord)?.PlaceId;
-            GameHubFavoritesList.ItemsSource = favorites;
-            GameHubFavoritesList.SelectedItem = favorites.FirstOrDefault(g => g.PlaceId == oldFavoriteId);
             GameHubRecentGrid.ItemsSource = _state.Stats.GameSessions.Take(100).ToList();
         }
         finally { _updatingGameGrid = false; }
@@ -243,13 +234,6 @@ public partial class MainWindow
         RefreshGameHub(force: true);
     }
 
-    private void GameHubFavoriteFilter_Changed(object sender, RoutedEventArgs e)
-    {
-        if (!_gameHubReady) return;
-        _hubFavouritesOnly = GameHubOnlyFavorites.IsChecked == true;
-        RefreshGameHub(force: true);
-    }
-
     private void GameSearch_Changed(object sender, TextChangedEventArgs e)
     {
         _gameHubFilter = GameSearchBox.Text.Trim();
@@ -259,14 +243,6 @@ public partial class MainWindow
     private void GameHubSelection_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_updatingGameGrid) RefreshSelectedGameInfo();
-    }
-
-    private void ToggleFavorite_Click(object sender, RoutedEventArgs e)
-    {
-        if (GameHubGamesGrid.SelectedItem is not GameActivityRecord game)
-        { SetStatus("Select an experience first."); return; }
-        game.Favorite = !game.Favorite;
-        Persist(); RefreshGameHub(force: true);
     }
 
     private static bool TryParseRobloxPlace(string input, out long placeId)
@@ -280,25 +256,6 @@ public partial class MainWindow
         var parts = uri.AbsolutePath.Trim('/').Split('/');
         return parts.Length >= 2 && parts[0].Equals("games", StringComparison.OrdinalIgnoreCase) &&
             long.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out placeId) && placeId > 0;
-    }
-
-    private async void AddFavorite_Click(object sender, RoutedEventArgs e)
-    {
-        if (!TryParseRobloxPlace(GameHubAddUrl.Text, out long id))
-        { Alert("Enter a Roblox place ID or an official https://www.roblox.com/games/<id> link."); return; }
-        var game = GetOrCreateGame(id);
-        game.Favorite = true;
-        GameHubAddUrl.Clear();
-        Persist(); RefreshGameHub(force: true);
-        SetStatus("Favourite added. Looking up its public title...");
-        try
-        {
-            var name = await _robloxGameNames.GetNameAsync(id);
-            UpdateGameName(id, name);
-            Persist(); RefreshGameHub(force: true);
-            SetStatus(name is null ? $"Favourite saved as Place #{id} (name unavailable)." : $"Favourite added: {name}");
-        }
-        catch (Exception ex) { SetStatus("Favourite saved; title lookup failed: " + ex.Message); }
     }
 
     private static string OfficialGameUrl(long placeId) => $"https://www.roblox.com/games/{placeId}";
@@ -324,9 +281,6 @@ public partial class MainWindow
     private void CopySelectedGameLink_Click(object sender, RoutedEventArgs e) =>
         CopyOfficialGameLink((GameHubGamesGrid.SelectedItem as GameActivityRecord)?.PlaceId);
 
-    private void CopyFavoriteGameLink_Click(object sender, RoutedEventArgs e) =>
-        CopyOfficialGameLink((GameHubFavoritesList.SelectedItem as GameActivityRecord)?.PlaceId);
-
     private void DashboardQuickLaunch_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not Button button || button.Tag is not long placeId || placeId <= 0) return;
@@ -342,32 +296,16 @@ public partial class MainWindow
         catch (Exception ex) { Alert("Couldn't open Roblox: " + ex.Message); }
     }
 
-    private void LaunchFavorite_Click(object sender, RoutedEventArgs e)
-    {
-        if (GameHubFavoritesList.SelectedItem is not GameActivityRecord game)
-        { SetStatus("Select a favourite first."); return; }
-        try { OpenGamePage(game.PlaceId); }
-        catch (Exception ex) { Alert("Couldn't open Roblox: " + ex.Message); }
-    }
-
-    private void RemoveFavorite_Click(object sender, RoutedEventArgs e)
-    {
-        if (GameHubFavoritesList.SelectedItem is not GameActivityRecord game)
-        { SetStatus("Select a favourite first."); return; }
-        game.Favorite = false;
-        Persist(); RefreshGameHub(force: true);
-    }
-
     private void ExportGameHistory_Click(object sender, RoutedEventArgs e)
     {
         var picker = new SaveFileDialog { FileName = "viora-game-history.csv", Filter = "CSV files (*.csv)|*.csv" };
         if (picker.ShowDialog() != true) return;
         try
         {
-            var csv = new StringBuilder("Place ID,Name,Observed Seconds,Observed Sessions,Favourite,Last Played UTC\r\n");
+            var csv = new StringBuilder("Place ID,Name,Observed Seconds,Observed Sessions,Last Played UTC\r\n");
             foreach (var g in _state.Stats.Games)
                 csv.AppendLine(string.Join(",", g.PlaceId, Csv(g.Name), g.ObservedSeconds, g.Sessions,
-                    g.Favorite ? "yes" : "no", Csv(g.LastPlayedUtc?.ToString("O") ?? "")));
+                    Csv(g.LastPlayedUtc?.ToString("O") ?? "")));
             csv.AppendLine();
             csv.AppendLine("Session log");
             csv.AppendLine("Place ID,Name,Start UTC,End UTC,Observed Seconds");
