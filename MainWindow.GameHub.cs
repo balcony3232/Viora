@@ -25,6 +25,8 @@ public partial class MainWindow
     private int _hubSortMode;
     private bool _iconRefreshBusy;
     private readonly HashSet<long> _iconAttempts = new();
+    private readonly System.Windows.Threading.DispatcherTimer _gameSearchDebounce =
+        new() { Interval = TimeSpan.FromMilliseconds(170) };
 
     // Fetch public icons asynchronously; UI and game tracking stay responsive if offline.
     private async void BeginGameIconRefresh()
@@ -71,6 +73,12 @@ public partial class MainWindow
 
     private void InitializeGameHub()
     {
+        _gameSearchDebounce.Tick += (_, _) =>
+        {
+            _gameSearchDebounce.Stop();
+            if (_currentPage == "gamehub") RefreshGameHub(force: true);
+        };
+        Closed += (_, _) => _gameSearchDebounce.Stop();
         _gameHubReady = true;
         RefreshGameHub(force: true);
     }
@@ -261,7 +269,10 @@ public partial class MainWindow
     private void GameSearch_Changed(object sender, TextChangedEventArgs e)
     {
         _gameHubFilter = GameSearchBox.Text.Trim();
-        RefreshGameHub(force: true);
+        if (!_gameHubReady || _currentPage != "gamehub") return;
+        // Avoid re-sorting/rebuilding the grid once per keystroke.
+        _gameSearchDebounce.Stop();
+        _gameSearchDebounce.Start();
     }
 
     private void GameHubSelection_Changed(object sender, SelectionChangedEventArgs e)
