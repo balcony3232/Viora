@@ -13,11 +13,11 @@ namespace VioraManager;
 
 public partial class MainWindow : Window
 {
-    private sealed record RunningWindow(int Pid, nint Handle, DateTime Started, long Memory)
+    private sealed record RunningWindow(int Pid, nint Handle, DateTime Started, long Memory, double CpuPercent, bool IsResponsive)
     {
         public string Label { get; init; } = "";
         public string GameName { get; init; } = "Game not detected";
-        public string Detail => $"{Math.Max(0, (int)(DateTime.Now - Started).TotalMinutes)}m runtime · {Memory / (1024 * 1024)} MB RAM";
+        public string Detail => $"PID {Pid} · {Math.Max(0, (int)(DateTime.Now - Started).TotalMinutes)}m runtime · {Memory / 1048576d:0} MB RAM · CPU {CpuPercent:0.0}%";
     }
 
     // Stable binding objects: avoid tearing down/recreating every WPF instance
@@ -28,18 +28,23 @@ public partial class MainWindow : Window
         private string _label = "";
         private string _gameName = "";
         private string _detail = "";
+        private string _status = "Running";
         public string Label => _label;
         public string GameName => _gameName;
         public string Detail => _detail;
+        public string Status => _status;
+        public string Summary => $"{_label} · {_gameName} · {_detail}";
         public event PropertyChangedEventHandler? PropertyChanged;
 
         public InstanceCard(int pid) => Pid = pid;
 
-        public void Update(string label, string gameName, string detail)
+        public void Update(string label, string gameName, string detail, string status)
         {
             if (_label != label) { _label = label; PropertyChanged?.Invoke(this, new(nameof(Label))); }
             if (_gameName != gameName) { _gameName = gameName; PropertyChanged?.Invoke(this, new(nameof(GameName))); }
             if (_detail != detail) { _detail = detail; PropertyChanged?.Invoke(this, new(nameof(Detail))); }
+            if (_status != status) { _status = status; PropertyChanged?.Invoke(this, new(nameof(Status))); }
+            PropertyChanged?.Invoke(this, new(nameof(Summary)));
         }
     }
 
@@ -87,8 +92,8 @@ public partial class MainWindow : Window
         _games = new RobloxInstanceGames(() => Dispatcher.BeginInvoke(new Action(RefreshWindows)));
         SourceInitialized += (_, _) => ApplyDarkTitleBar();
         _refresh.Tick += (_, _) => RefreshWindows();
-        Loaded += (_, _) => { RefreshWindows(); _refresh.Start(); };
-        Closed += (_, _) => { _refresh.Stop(); _experiment.Disable(); };
+        Loaded += (_, _) => { LoadWorkspaces(); RefreshWindows(); _refresh.Start(); };
+        Closed += (_, _) => { _refresh.Stop(); _experiment.Disable(); _miniWindow?.Close(); };
     }
 
     private void RefreshWindows()
@@ -105,7 +110,9 @@ public partial class MainWindow : Window
                     if (process.HasExited || process.MainWindowHandle == nint.Zero ||
                         !IsWindowVisible(process.MainWindowHandle)) continue;
                     result.Add(new RunningWindow(process.Id, process.MainWindowHandle,
-                        process.StartTime, process.WorkingSet64));
+                        process.StartTime, process.WorkingSet64,
+                        SampleCpu(process.Id, process.StartTime, process.TotalProcessorTime),
+                        !IsHungAppWindow(process.MainWindowHandle)));
                 }
                 catch (InvalidOperationException) { } // Process closed during sample
                 catch (System.ComponentModel.Win32Exception) { } // Unreadable process
@@ -125,6 +132,9 @@ public partial class MainWindow : Window
         // Only create/remove/move visual cards when the actual processes change.
         // Preserve binding objects for unchanged PIDs and notify on changed fields.
         var activeIds = _instances.Select(x => x.Pid).ToHashSet();
+        foreach (var deadPid in _cpuSamples.Keys.Where(pid => !activeIds.Contains(pid)).ToArray())
+            _cpuSamples.Remove(deadPid);
+        TrackObservedSessions();
         for (int i = _cards.Count - 1; i >= 0; i--)
             if (!activeIds.Contains(_cards[i].Pid)) _cards.RemoveAt(i);
 
@@ -142,7 +152,8 @@ public partial class MainWindow : Window
                 int oldIndex = _cards.IndexOf(card);
                 if (oldIndex != i) _cards.Move(oldIndex, i);
             }
-            card.Update(window.Label, window.GameName, window.Detail);
+            card.Update(window.Label, window.GameName, window.Detail,
+                window.IsResponsive ? "Running" : "Not responding");
         }
 
         string instanceCount = _instances.Count.ToString();
@@ -150,6 +161,8 @@ public partial class MainWindow : Window
         long total = _instances.Sum(x => x.Memory);
         string memory = total >= 1073741824 ? $"{total / 1073741824d:0.0} GB" : $"{total / 1048576d:0} MB";
         if (MemoryText.Text != memory) MemoryText.Text = memory;
+        string cpu = $"{_instances.Sum(x => x.CpuPercent):0.0}%";
+        if (CpuText.Text != cpu) CpuText.Text = cpu;
         string status = _instances.Count > 0 ? "Active" : "Idle";
         if (StatusText.Text != status) StatusText.Text = status;
         EmptyInstancesText.Visibility = _instances.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -244,19 +257,6 @@ public partial class MainWindow : Window
             $"Arrange {_instances.Count} existing Roblox Player windows across your desktop?\n\n" +
             "This only changes window positions; it does not launch or modify Roblox.",
             "Arrange windows", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
-        var area = SystemParameters.WorkArea;
-        int columns = (int)Math.Ceiling(Math.Sqrt(_instances.Count));
-        int rows = (int)Math.Ceiling(_instances.Count / (double)columns);
-        int width = Math.Max(340, (int)(area.Width / columns));
-        int height = Math.Max(260, (int)(area.Height / rows));
-        for (int i = 0; i < _instances.Count; i++)
-        {
-            var instance = _instances[i];
-            if (!IsWindowVisible(instance.Handle)) continue;
-            ShowWindow(instance.Handle, RestoreWindow);
-            int left = (int)area.Left + (i % columns) * width;
-            int top = (int)area.Top + (i / columns) * height;
-            _ = SetWindowPos(instance.Handle, nint.Zero, left, top, width, height, NoZOrder | NoActivate);
-        }
+        ApplySelectedLayout();
     }
 }
