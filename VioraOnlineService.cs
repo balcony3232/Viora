@@ -212,7 +212,7 @@ public sealed class VioraOnlineService : IDisposable
 
     public async Task<IReadOnlyList<VioraLeaderboardEntry>> LeaderboardAsync()
     {
-        using var data = await RpcAsync("viora_leaderboard", new { p_limit = 50 });
+        using var data = await RpcAsync("viora_leaderboard", new { p_limit = 100 });
         var rows = new List<VioraLeaderboardEntry>();
         foreach (var row in data.RootElement.EnumerateArray())
             rows.Add(new VioraLeaderboardEntry(row.GetProperty("rank").GetInt64(),
