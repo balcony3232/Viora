@@ -448,6 +448,9 @@
                                         HorizontalAlignment="Left" Margin="0,0,0,10"/>
                                 <TextBlock x:Name="OnlineLeaderboardStatus" Text="Only accounts that opt in appear here."
                                            Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                                <Button Content="Delete my online account" Click="OnlineAccountDelete_Click"
+                                        HorizontalAlignment="Left" Margin="0,12,0,0"
+                                        ToolTip="Permanently remove this online account and its public leaderboard data; local settings remain on this PC"/>
                                 <DataGrid x:Name="OnlineLeaderboardList" IsReadOnly="True" AutoGenerateColumns="False"
                                           CanUserAddRows="False" MaxHeight="340" HeadersVisibility="Column">
                                     <DataGrid.Columns>
