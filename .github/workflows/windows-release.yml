@@ -7,6 +7,7 @@ on:
       - 'feature/v1.1-installer-onboarding'
       - 'feature/v1.1.1-privacy-guide'
       - 'feature/v1.1.2-polish'
+      - 'feature/v1.2-instance-manager'
     tags:
       - 'v*'
 
@@ -52,6 +53,26 @@ jobs:
           if ((Get-Item $outputFile).Length -lt 1000000) { throw 'Output looks unexpectedly small' }
           Write-Host "Built $outputFile ($((Get-Item $outputFile).Length) bytes)"
 
+      - name: Publish separate Viora Manager
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          [xml]$project = Get-Content 'Viora.csproj'
+          $version = [string]$project.Project.PropertyGroup.Version
+          dotnet restore 'VioraManager/VioraManager.csproj' --runtime win-x64
+          if ($LASTEXITCODE -ne 0) { throw 'Manager restore failed' }
+          dotnet publish 'VioraManager/VioraManager.csproj' -c Release -r win-x64 --self-contained true --no-restore `
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:EnableCompressionInSingleFile=true -p:DebugType=None -p:DebugSymbols=false `
+            -o manager-publish
+          if ($LASTEXITCODE -ne 0) { throw 'Manager publish failed' }
+          if (!(Test-Path 'manager-publish/VioraManager.exe')) { throw 'Missing Manager EXE' }
+          $output = "publish/VioraManager-v$version.exe"
+          Move-Item 'manager-publish/VioraManager.exe' $output -Force
+          $hash = (Get-FileHash -Algorithm SHA256 $output).Hash.ToLowerInvariant()
+          [IO.File]::WriteAllText("$output.sha256", "$hash  VioraManager-v$version.exe`n")
+          Write-Host "Built $output"
+
       - name: Install Inno Setup
         shell: pwsh
         run: |
@@ -84,6 +105,8 @@ jobs:
           path: |
             publish/Viora-v*.exe
             publish/Viora-v*.exe.sha256
+            publish/VioraManager-v*.exe
+            publish/VioraManager-v*.exe.sha256
           if-no-files-found: error
 
       - name: Publish direct EXE download on GitHub Releases
@@ -98,11 +121,14 @@ jobs:
           $hash = "$exe.sha256"
           $setup = "publish/Viora-$tag-Setup.exe"
           $setupHash = "$setup.sha256"
+          $manager = "publish/VioraManager-$tag.exe"
+          $managerHash = "$manager.sha256"
+          if (!(Test-Path $manager) -or !(Test-Path $managerHash)) { throw 'Missing Manager release assets' }
           if (!(Test-Path $setup) -or !(Test-Path $setupHash)) { throw 'Missing installer release assets' }
           gh release view $tag *> $null
           if ($LASTEXITCODE -eq 0) {
-            gh release upload $tag $exe $hash $setup $setupHash --clobber
+            gh release upload $tag $exe $hash $setup $setupHash $manager $managerHash --clobber
           } else {
-            gh release create $tag $exe $hash $setup $setupHash --title "Viora $tag" --generate-notes --verify-tag
+            gh release create $tag $exe $hash $setup $setupHash $manager $managerHash --title "Viora $tag" --generate-notes --verify-tag
           }
           if ($LASTEXITCODE -ne 0) { throw 'Publishing GitHub Release failed' }
