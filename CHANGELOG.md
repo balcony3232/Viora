@@ -5,7 +5,8 @@
 - Added manual refresh, official Roblox website launch, and user-approved tiling of existing Player windows. These functions do not require modifications to Roblox.
 - Made Manager an optional Windows Setup component with Start menu and desktop shortcut choices.
 - Extended the Windows build to package Viora EXE, Viora Manager EXE and combined Setup, each with SHA-256 checksum files.
-- **Multi-instance launching is not implemented or verified.** Supported multiplayer testing in Roblox Studio is a distinct workflow.
+- Added an **off-by-default, explicitly acknowledged experimental mutex compatibility switch** for investigating simultaneous official Player sessions. It holds a legacy Windows singleton mutex only while Manager is open; it performs no client injection, Roblox file changes, cookie access or credential storage.
+- **Multi-instance launching is not verified or officially supported.** The switch is a local test, not a reliable public launcher. Studio multiplayer testing remains a distinct workflow.
 - **Coordinated self-update for both EXEs is not complete.** Windows runtime testing is required before publishing this as a public release.
 
 ## v1.1 — Installer, onboarding and appearance (preview)
