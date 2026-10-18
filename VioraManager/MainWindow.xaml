@@ -3,8 +3,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Viora Manager — Instance &amp; Session Control"
         Width="980" Height="700" MinWidth="700" MinHeight="560"
-        WindowStartupLocation="CenterScreen" UseLayoutRounding="True" SnapsToDevicePixels="True">
-    <Grid Margin="20">
+        WindowStartupLocation="CenterScreen" UseLayoutRounding="True" SnapsToDevicePixels="True"
+        Background="#0D0915" Foreground="#F2EAFF">
+    <Grid Background="#0D0915">
+      <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -39,7 +41,7 @@
                     <TextBlock x:Name="StatusText" Text="Idle" Foreground="#DCC8F7" FontSize="21" FontWeight="SemiBold" Margin="0,5,0,0"/></StackPanel>
             </Border>
         </UniformGrid>
-        <Border Grid.Row="2" Background="#1B1427" CornerRadius="11" Padding="16" Margin="0,0,0,14">
+        <Border Grid.Row="2" Background="#191222" CornerRadius="11" Padding="16" Margin="0,0,0,14">
             <DockPanel>
                 <Grid DockPanel.Dock="Top" Margin="0,0,0,9">
                     <TextBlock Text="Detected Roblox Player windows" Foreground="{StaticResource Muted}" FontSize="12"/>
@@ -81,5 +83,6 @@
         </Grid>
         <TextBlock Grid.Row="4" Text="Official-client window monitoring only. Multi-instance Player launching is not verified or provided."
                    Foreground="{StaticResource Muted}" FontSize="11" Margin="0,12,0,0" TextWrapping="Wrap"/>
+      </Grid>
     </Grid>
 </Window>
