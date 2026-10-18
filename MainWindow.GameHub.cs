@@ -261,12 +261,41 @@ public partial class MainWindow
         if (!_updatingGameGrid) RefreshSelectedGameInfo();
     }
 
+    // A favourite changes only local metadata. Avoid Persist(), which refreshes
+    // several unrelated WPF pages and then refreshes Game Hub again. That
+    // redundant sequence could throw from a synchronous UI event handler.
+    private bool TryChangeFavorite(GameActivityRecord game, bool favourite)
+    {
+        bool previous = game.Favorite;
+        if (previous == favourite) return true;
+        try
+        {
+            game.Favorite = favourite;
+            Storage.Save(_state);
+            RefreshGameHub(force: true);
+            SetStatus(favourite ? "Favourite saved." : "Favourite removed.");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            game.Favorite = previous;
+            // Attempt to restore the original local state. Preserve the
+            // original exception for the user if rollback also fails.
+            try { Storage.Save(_state); } catch { }
+            SetStatus("Could not update favourite: " + ex.Message);
+            MessageBox.Show(this,
+                "Viora couldn't update that favourite. No Roblox files were changed.\n\n" +
+                ex.GetType().Name + ": " + ex.Message,
+                "Viora — Favourite error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+    }
+
     private void ToggleFavorite_Click(object sender, RoutedEventArgs e)
     {
         if (GameHubGamesGrid.SelectedItem is not GameActivityRecord game)
         { SetStatus("Select an experience first."); return; }
-        game.Favorite = !game.Favorite;
-        Persist(); RefreshGameHub(force: true);
+        TryChangeFavorite(game, !game.Favorite);
     }
 
     private static bool TryParseRobloxPlace(string input, out long placeId)
@@ -354,8 +383,7 @@ public partial class MainWindow
     {
         if (GameHubFavoritesList.SelectedItem is not GameActivityRecord game)
         { SetStatus("Select a favourite first."); return; }
-        game.Favorite = false;
-        Persist(); RefreshGameHub(force: true);
+        TryChangeFavorite(game, false);
     }
 
     private void ExportGameHistory_Click(object sender, RoutedEventArgs e)
