@@ -31,16 +31,16 @@ public sealed class HelpPrivacyWindow : Window
 
         tabs.Items.Add(Page("Start here",
             ("1. Install", "Download Viora Setup from the official GitHub Releases page, or use the portable EXE. Run only trusted downloads."),
-            ("2. Sign in or use Guest", "On first launch, create a local account or continue without a password. Accounts are stored on this PC, not in Roblox."),
+            ("2. Sign in", "Online-enabled builds use Supabase email/password accounts with email verification and globally unique usernames. Existing local accounts remain available in legacy offline mode; Viora never requests your Roblox password."),
             ("3. Roblox", "The startup wizard detects the official Roblox Player. Launch from Overview or save favourite game links in Quick Launcher."),
             ("4. Optimise", "Graphics and FastFlag options are available under Optimise. Roblox may ignore unsupported flags. Save a backup before experimenting."),
             ("5. Discord", "Discord Rich Presence is optional. Enter an Application ID on the Discord page. Never enter a bot token, client secret or Roblox password."),
             ("6. Updates and support", "Utilities contains update checks and backups. Issue reports go through GitHub after reviewing attached content.")));
         tabs.Items.Add(Page("Privacy",
-            ("Local data", "Viora stores profiles, settings, session history, custom media and optionally a salted password hash in Local AppData."),
-            ("External services", "Viora may contact GitHub Releases and public Roblox endpoints. Discord activity is opt-in and uses the local Discord client."),
+            ("Local data", "Viora keeps FastFlag profiles, settings, game history and custom media on this PC. Existing legacy local accounts may also store a salted password hash."),
+            ("External services", "Online-enabled builds send account email and password securely to Supabase Auth for sign-in. Global usernames, public IDs and roles live on the server. Public playtime ranking is opt-in; when enabled, Viora sends a periodic Roblox-running signal. GitHub, public Roblox APIs and optional Discord Rich Presence are separate."),
             ("Sensitive backups", "Full recovery ZIP files can contain password hashes and playtime history. Never upload them publicly."),
-            ("Data removal", "Close Viora before deleting its Local AppData folder. An uninstall leaves local data in place so upgrades preserve settings."),
+            ("Data removal", "Uninstalling Viora leaves local settings for upgrades. Deleting local AppData does not delete a Supabase account or online playtime. Online account deletion must be requested separately until the deletion flow is implemented."),
             ("Account limitations", "Local account sign-in helps with accidental access, but it does not protect data from someone who can modify your Windows user files.")));
         var diagnostics = new StackPanel { Margin = new Thickness(16) };
         diagnostics.Children.Add(Label("Safe diagnostic preview", 19, Brushes.White));
