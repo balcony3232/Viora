@@ -75,6 +75,54 @@ jobs:
           [IO.File]::WriteAllText("$output.sha256", "$hash  VioraManager-v$version.exe`n")
           Write-Host "Built $output"
 
+      # Experimental developer-only download: requires Microsoft.WindowsDesktop.App
+      # 8.x on the recipient PC. Keeps the fully self-contained installer intact.
+      - name: Publish lightweight framework-dependent EXEs
+        if: github.ref == 'refs/heads/feature/v1.3-stability-updater-ui'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          [xml]$project = Get-Content 'Viora.csproj'
+          $version = [string]$project.Project.PropertyGroup.Version
+          New-Item -ItemType Directory -Force -Path 'publish-lite' | Out-Null
+          dotnet publish 'Viora.csproj' -c Release -r win-x64 --self-contained false `
+            -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false `
+            -o publish-lite/launcher
+          if ($LASTEXITCODE -ne 0) { throw 'Lightweight Viora build failed' }
+          dotnet publish 'VioraManager/VioraManager.csproj' -c Release -r win-x64 --self-contained false `
+            -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false `
+            -o publish-lite/manager
+          if ($LASTEXITCODE -ne 0) { throw 'Lightweight Manager build failed' }
+          $launcher = "publish-lite/Viora-v$version-Lite.exe"
+          $manager = "publish-lite/VioraManager-v$version-Lite.exe"
+          Move-Item 'publish-lite/launcher/Viora.exe' $launcher -Force
+          Move-Item 'publish-lite/manager/VioraManager.exe' $manager -Force
+          foreach ($file in @($launcher, $manager)) {
+            $hash = (Get-FileHash -Algorithm SHA256 $file).Hash.ToLowerInvariant()
+            $filename = Split-Path -Leaf $file
+            [IO.File]::WriteAllText("$file.sha256", "$hash  $filename`n")
+            Write-Host "$filename : $((Get-Item $file).Length) bytes"
+          }
+          [IO.File]::WriteAllText('publish-lite/README.txt', @'
+          VIORA LIGHTWEIGHT DEVELOPMENT PREVIEW — Win64
+          Both EXEs require Microsoft .NET Desktop Runtime 8 (x64) installed once.
+          These are NOT self-contained. Check "dotnet --list-runtimes" for
+          Microsoft.WindowsDesktop.App 8.x if the EXE does not launch.
+          Only download/run when testing a coherent development milestone.
+          The self-contained installer remains available.
+          '@)
+
+      - name: Save lightweight EXEs as separate artifact
+        if: github.ref == 'refs/heads/feature/v1.3-stability-updater-ui'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Viora-Windows-lite-development
+          path: |
+            publish-lite/*.exe
+            publish-lite/*.sha256
+            publish-lite/README.txt
+          if-no-files-found: error
+
       - name: Install Inno Setup
         shell: pwsh
         run: |
