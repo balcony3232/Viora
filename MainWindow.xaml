@@ -378,32 +378,63 @@
                                            Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,8,0,0"/>
                             </StackPanel>
                         </Border>
-                        <Border x:Name="OnlineStatsPanel" Visibility="Collapsed" Style="{StaticResource PanelBorder}" Margin="0,16,0,0">
+                        <Border x:Name="OnlineStatsPanel" Visibility="Collapsed"
+                                Style="{StaticResource PanelBorder}" Margin="0,0,0,14">
                             <StackPanel>
-                                <TextBlock Text="Your Viora Online profile" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
-                                <TextBlock x:Name="OnlineAccountStatus" Text="Online profile unavailable" Style="{StaticResource Hint}" Margin="0,7,0,10" TextWrapping="Wrap"/>
-                                <CheckBox x:Name="OnlineLeaderboardVisible" Content="Join public playtime leaderboard (opt-in)"
-                                          Margin="0,0,0,10" Checked="OnlineLeaderboardVisible_Changed"
-                                          Unchecked="OnlineLeaderboardVisible_Changed"/>
-                                <TextBlock Text="If enabled, Viora sends periodic Roblox-running signals to your account. Rankings are approximate and not cheat-proof; local statistics are separate."
-                                           Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,0,0,11"/>
-                                <Button Content="Refresh global leaderboard" Click="OnlineLeaderboardRefresh_Click"
-                                        HorizontalAlignment="Left" Margin="0,0,0,10"/>
-                                <TextBlock x:Name="OnlineLeaderboardStatus" Text="Only accounts that opt in appear here."
-                                           Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,0,0,8"/>
-                                <DataGrid x:Name="OnlineLeaderboardList" IsReadOnly="True" AutoGenerateColumns="False"
-                                          CanUserAddRows="False" MaxHeight="340" HeadersVisibility="Column">
-                                    <DataGrid.Columns>
-                                        <DataGridTextColumn Header="RANK" Binding="{Binding RankLabel}" Width="68"/>
-                                        <DataGridTextColumn Header="USERNAME" Binding="{Binding Username}" Width="2*"/>
-                                        <DataGridTextColumn Header="USER ID" Binding="{Binding IdLabel}" Width="100"/>
-                                        <DataGridTextColumn Header="TAG" Binding="{Binding RoleLabel}" Width="*"/>
-                                        <DataGridTextColumn Header="PLAYTIME" Binding="{Binding PlaytimeLabel}" Width="*"/>
-                                    </DataGrid.Columns>
-                                </DataGrid>
-                                <Button Content="Delete my online account" Click="OnlineAccountDelete_Click"
-                                        HorizontalAlignment="Left" Margin="0,12,0,0"
-                                        ToolTip="Permanently remove this online account and its public leaderboard data; local settings remain on this PC"/>
+                                <DockPanel Margin="0,0,0,8">
+                                    <Button DockPanel.Dock="Right" Content="Refresh rankings"
+                                            Click="OnlineLeaderboardRefresh_Click" Margin="9,0,0,0"/>
+                                    <StackPanel>
+                                        <TextBlock Text="Your Viora Online profile" FontSize="17" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource Accent}"/>
+                                        <TextBlock x:Name="OnlineAccountStatus" Text="Loading online profile…"
+                                                   Style="{StaticResource Hint}" Margin="0,5,0,0" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </DockPanel>
+                                <CheckBox x:Name="OnlineLeaderboardVisible"
+                                          Content="Share my Roblox playtime on the public leaderboard"
+                                          Checked="OnlineLeaderboardVisible_Changed"
+                                          Unchecked="OnlineLeaderboardVisible_Changed" Margin="0,4,0,7"/>
+                                <TextBlock Text="Optional. Your username, ID, tag, avatar and approximate playtime are visible to other signed-in users only if you join. Turn this off any time."
+                                           Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,0,0,9"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,3,0,7">
+                                    <Button Content="Upload profile picture" Click="OnlineAvatarUpload_Click"
+                                            Margin="0,0,8,0"
+                                            ToolTip="Optional. Uploaded images become publicly accessible. PNG and JPEG accepted, sanitised to small PNG."/>
+                                    <Button Content="Delete my online account" Click="OnlineAccountDelete_Click"
+                                            ToolTip="Permanently remove this account; local Viora settings remain"/>
+                                </StackPanel>
+                                <TextBlock x:Name="OnlineAvatarStatus" Text="Optional: use a profile picture or an initials avatar."
+                                           Style="{StaticResource Hint}" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                        <Grid Margin="0,4,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <ContentControl x:Name="PodiumSecondSlot" Grid.Column="0" VerticalAlignment="Bottom" Margin="0,45,8,0"/>
+                            <ContentControl x:Name="PodiumFirstSlot" Grid.Column="1" VerticalAlignment="Bottom" Margin="0,0,8,0"/>
+                            <ContentControl x:Name="PodiumThirdSlot" Grid.Column="2" VerticalAlignment="Bottom" Margin="0,62,0,0"/>
+                        </Grid>
+                        <Border Style="{StaticResource PanelBorder}" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="Your ranking" FontSize="17" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource Accent}" Margin="0,0,0,5"/>
+                                <TextBlock x:Name="LeaderboardYourRank" Text="Sign in to see your rank."
+                                           FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                <TextBlock Text="This is based on server-tracked activity and can differ from local statistics."
+                                           Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource PanelBorder}">
+                            <StackPanel>
+                                <TextBlock Text="All other players" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <TextBlock Text="Ranked players from #4 onward. Top 3 appear on the podium."
+                                           Style="{StaticResource Hint}" Margin="0,0,0,12"/>
+                                <TextBlock x:Name="OnlineLeaderboardStatus"
+                                           Text="Open this page to refresh the global leaderboard."
+                                           Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,0,0,9"/>
+                                <StackPanel x:Name="LeaderboardRowsHost"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
