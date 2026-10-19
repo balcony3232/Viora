@@ -1,0 +1,113 @@
+name: Viora Manager antivirus diagnostics
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'feature/manager-antivirus-diagnostics'
+
+permissions:
+  contents: read
+
+jobs:
+  diagnostic-builds:
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build same-source diagnostic variants
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          [xml]$project = Get-Content 'VioraManager/VioraManager.csproj'
+          $version = [string]$project.Project.PropertyGroup.Version
+          if ([string]::IsNullOrWhiteSpace($version)) { throw 'Missing Manager version.' }
+          New-Item -ItemType Directory -Path diag -Force | Out-Null
+          dotnet restore 'VioraManager/VioraManager.csproj' --runtime win-x64
+          if ($LASTEXITCODE -ne 0) { throw 'Restore failed.' }
+
+          # A: production-equivalent packaging (single-file with compression).
+          dotnet publish 'VioraManager/VioraManager.csproj' -c Release -r win-x64 --self-contained true --no-restore -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o diag/compressed
+          if ($LASTEXITCODE -ne 0) { throw 'Compressed single-file publish failed.' }
+
+          # B: identical source and settings, only single-file compression disabled.
+          dotnet publish 'VioraManager/VioraManager.csproj' -c Release -r win-x64 --self-contained true --no-restore -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=false -p:DebugType=None -p:DebugSymbols=false -o diag/uncompressed
+          if ($LASTEXITCODE -ne 0) { throw 'Uncompressed single-file publish failed.' }
+
+          # C: optional secondary control, multi-file rather than single-file.
+          # Requires all included files together; its EXE is NOT standalone.
+          dotnet publish 'VioraManager/VioraManager.csproj' -c Release -r win-x64 --self-contained true --no-restore -p:PublishSingleFile=false -p:EnableCompressionInSingleFile=false -p:DebugType=None -p:DebugSymbols=false -o diag/multifile
+          if ($LASTEXITCODE -ne 0) { throw 'Multi-file publish failed.' }
+
+          foreach ($flavour in @('compressed', 'uncompressed', 'multifile')) {
+            if (!(Test-Path "diag/$flavour/VioraManager.exe")) { throw "Missing output for $flavour" }
+          }
+          Move-Item 'diag/compressed/VioraManager.exe' "diag/compressed/VioraManager-v$version-compressed.exe" -Force
+          Move-Item 'diag/uncompressed/VioraManager.exe' "diag/uncompressed/VioraManager-v$version-uncompressed.exe" -Force
+          Compress-Archive -Path 'diag/multifile/*' -DestinationPath "diag/VioraManager-v$version-multifile.zip" -CompressionLevel Optimal -Force
+
+          $sha = $env:GITHUB_SHA
+          $sdk = (dotnet --version)
+          $records = @(
+            'Viora Manager antivirus diagnostics',
+            "Source commit: $sha",
+            "Manager version: $version",
+            "Build OS: windows-latest (GitHub Actions)",
+            "dotnet SDK: $sdk",
+            'ALL builds: Release, win-x64, self-contained .NET 8, no debug symbols',
+            'A: SingleFile=true, Compression=true, IncludeNativeLibrariesForSelfExtract=true',
+            'B: SingleFile=true, Compression=false, IncludeNativeLibrariesForSelfExtract=true',
+            'C: SingleFile=false, Compression=false, ALL extracted files required'
+          )
+          $paths = @(
+            "diag/compressed/VioraManager-v$version-compressed.exe",
+            "diag/uncompressed/VioraManager-v$version-uncompressed.exe",
+            "diag/VioraManager-v$version-multifile.zip",
+            'diag/multifile/VioraManager.exe'
+          )
+          foreach ($path in $paths) {
+            $hash = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+            $size = (Get-Item -LiteralPath $path).Length
+            $records += ("SHA256: " + $hash + " | BYTES: " + $size + " | FILE: " + $path)
+            $file = Split-Path $path -Leaf
+            [IO.File]::WriteAllText("$path.sha256", "$hash  $file" + [Environment]::NewLine)
+          }
+          $records | Set-Content -Path 'diag/BUILD-MANIFEST.txt' -Encoding UTF8
+          Get-Content 'diag/BUILD-MANIFEST.txt'
+
+      - name: Upload compressed single-file control
+        uses: actions/upload-artifact@v4
+        with:
+          name: manager-diagnostic-A-compressed-singlefile
+          path: |
+            diag/compressed/*.exe
+            diag/compressed/*.sha256
+            diag/BUILD-MANIFEST.txt
+          if-no-files-found: error
+
+      - name: Upload uncompressed single-file comparison
+        uses: actions/upload-artifact@v4
+        with:
+          name: manager-diagnostic-B-uncompressed-singlefile
+          path: |
+            diag/uncompressed/*.exe
+            diag/uncompressed/*.sha256
+            diag/BUILD-MANIFEST.txt
+          if-no-files-found: error
+
+      - name: Upload multi-file secondary comparison
+        uses: actions/upload-artifact@v4
+        with:
+          name: manager-diagnostic-C-multifile
+          path: |
+            diag/VioraManager-v*-multifile.zip
+            diag/VioraManager-v*-multifile.zip.sha256
+            diag/multifile/VioraManager.exe.sha256
+            diag/BUILD-MANIFEST.txt
+          if-no-files-found: error
