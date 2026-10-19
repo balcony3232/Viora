@@ -44,13 +44,21 @@ These variants are **research artifacts only**, not public stable releases. Rebu
 
 **VirusTotal privacy notice:** VirusTotal submissions and results may be shared with security partners/researchers. Upload only publicly distributable binaries that contain no secrets, tokens, credentials, personal files or private customer data. These particular Manager builds should be inspected to confirm that before submission.
 
+## Preliminary A/B VirusTotal observations (19 October 2026)
+
+Screenshots supplied while both analyses were **still running** show that:
+- **A (compressed single-file)**, SHA-256 `c22e1de1ecc51c03c86ce6cf0306effaf7ec690a134d1298cd95e734e7a3f77a`: Zillya `Trojan.AgentAgen.Win32.210177` at **1/68** engines so far (about 141.5 seconds elapsed).
+- **B (uncompressed single-file)**, SHA-256 `7f5c52e5f621ec64d01be89efab4ea96ad077e6f988deaaf134f37a78715d9fd`: **the same Zillya `Trojan.AgentAgen.Win32.210177` label** at **1/30** engines so far (about 78.9 seconds elapsed).
+- The screenshot hashes matched the diagnostic build manifest. Engine counts in these images are **not final**; no full sandbox report for A or B was supplied yet.
+- **Interpretation:** Disabling single-file compression did **not** remove the observed Zillya detection, so single-file compression alone is unlikely to explain it. This is **not proof** of harmlessness or maliciousness. A final A/B scan comparison, multi-file control, and detailed behavior evidence are outstanding.
+
 ## Observations to fill in after the user scans
 
 | Sample | SHA-256 | VT analysis link | Static engines | Sandbox conclusions | Other evidence |
 |---|---|---|---|---|---|
 | Released v1.4.1 | \`2f53b7d6...c972c29\` | [Original report](https://www.virustotal.com/gui/file/2f53b7d633adafcda7bbb4c512fc0d83adeff83e71d27c1b784640c0cb972c29) | 1/69 (Zillya) | Yomi Hunter: MALWARE (heuristic) | Microsoft CRL traffic seen |
-| A — compressed control | `c22e1de1...e7a3f77a` | Pending | Pending | Pending | Built successfully |
-| B — no single-file compression | `7f5c52e5...8715d9fd` | Pending | Pending | Pending | Built successfully |
+| A — compressed control | `c22e1de1...e7a3f77a` | Pending | **1/68 provisional; Zillya AgentAgen** | Pending | Analysis was still running |
+| B — no single-file compression | `7f5c52e5...8715d9fd` | Pending | **1/30 provisional; Zillya AgentAgen** | Pending | Analysis was still running |
 | C — multi-file (inner EXE) | `219e6382...2f3f2b1` | Pending | Pending | Pending | Built successfully; requires complete folder to run |
 
 ## Assessment
