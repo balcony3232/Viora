@@ -23,6 +23,15 @@ A dedicated build on branch \`feature/manager-antivirus-diagnostics\` creates:
 
 Build workflow: [manager-antivirus-diagnostics.yml](../../.github/workflows/manager-antivirus-diagnostics.yml).
 
+**Completed diagnostic build:** [GitHub Actions #39303155336](https://github.com/balcony3232/Viora/actions/runs/39303155336), successful, source commit `3dae5d4de008200f393007b54984ca1e5a2d0804`. The job log reports **.NET SDK 10.0.401 targeting net8.0-windows**. This SDK/runtime distinction matters when comparing to older builds; the three new variants were compiled in the same job with the same SDK.
+
+GitHub Actions artifacts (download from that run's **Artifacts** section):
+- `manager-diagnostic-A-compressed-singlefile` — SHA-256 `c22e1de1ecc51c03c86ce6cf0306effaf7ec690a134d1298cd95e734e7a3f77a` (71,686,419 bytes)
+- `manager-diagnostic-B-uncompressed-singlefile` — SHA-256 `7f5c52e5f621ec64d01be89efab4ea96ad077e6f988deaaf134f37a78715d9fd` (161,770,520 bytes)
+- `manager-diagnostic-C-multifile` ZIP — SHA-256 `554dd58c186091c137160af0e475c2df2681e659c3dea89647f02fb1c52232c9` (72,202,941 bytes); the **inner EXE** SHA-256 is `219e6382cbf47baa05bda6323d501438e5a547e034211872a6e2f3f2b67683b1` (190,464 bytes) and requires adjacent DLL/runtime files.
+
+**These are unscanned research artifacts:** the GitHub workflow verified build success and hashes, **not that any of them are malware-free**.
+
 These variants are **research artifacts only**, not public stable releases. Rebuilding the compressed control can change hashes independently of source because of SDK or build environment changes, so do not assume new A is bitwise identical to the original released file. Inspect \`BUILD-MANIFEST.txt\` for the exact source commit, SDK and SHA-256 of each sample.
 
 ### Comparison protocol
@@ -40,9 +49,9 @@ These variants are **research artifacts only**, not public stable releases. Rebu
 | Sample | SHA-256 | VT analysis link | Static engines | Sandbox conclusions | Other evidence |
 |---|---|---|---|---|---|
 | Released v1.4.1 | \`2f53b7d6...c972c29\` | [Original report](https://www.virustotal.com/gui/file/2f53b7d633adafcda7bbb4c512fc0d83adeff83e71d27c1b784640c0cb972c29) | 1/69 (Zillya) | Yomi Hunter: MALWARE (heuristic) | Microsoft CRL traffic seen |
-| A — compressed control | Pending | Pending | Pending | Pending | Pending |
-| B — no single-file compression | Pending | Pending | Pending | Pending | Pending |
-| C — multi-file | Pending | Pending | Pending | Pending | Pending |
+| A — compressed control | `c22e1de1...e7a3f77a` | Pending | Pending | Pending | Built successfully |
+| B — no single-file compression | `7f5c52e5...8715d9fd` | Pending | Pending | Pending | Built successfully |
+| C — multi-file (inner EXE) | `219e6382...2f3f2b1` | Pending | Pending | Pending | Built successfully; requires complete folder to run |
 
 ## Assessment
 
