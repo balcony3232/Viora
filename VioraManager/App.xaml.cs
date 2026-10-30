@@ -16,8 +16,12 @@ public partial class App : Application
             var manager = new MainWindow();
             if (smokeTest)
             {
-                // This checks that packaged XAML and the main window can be constructed.
-                // No Roblox windows are launched or modified during the smoke test.
+                // Construct the packaged main window and show the live viewer on
+                // the runner's WPF desktop, including loading ComboBox templates.
+                // This test does not launch, attach to or modify Roblox.
+                var viewer = new LiveInstanceViewer(_ => "Game not detected");
+                viewer.Show();
+                viewer.Close();
                 Shutdown(0);
                 return;
             }
