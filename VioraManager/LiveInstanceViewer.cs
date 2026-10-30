@@ -167,6 +167,26 @@ public sealed class LiveInstanceViewer : Window
         restartFps.ToolTip = "Restart the optional Intel PresentMon process-based FPS sampler.";
         restartFps.Click += (_, _) => { _fps.Start(); Refresh(); };
         bar.Children.Add(restartFps);
+        var fpsDetails = MakeButton("FPS details");
+        fpsDetails.ToolTip = "Show the helper's exit code and last error so FPS failures can be diagnosed.";
+        fpsDetails.Click += (_, _) =>
+        {
+            string details = _fps.DiagnosticSummary();
+            var choice = MessageBox.Show(this,
+                details + "\\n\\nCopy these FPS diagnostics to clipboard?",
+                "Viora Manager — FPS diagnostics",
+                MessageBoxButton.YesNo, MessageBoxImage.Information);
+            if (choice == MessageBoxResult.Yes)
+            {
+                try { Clipboard.SetText(details); }
+                catch (System.Runtime.InteropServices.ExternalException)
+                {
+                    MessageBox.Show(this, "Windows clipboard is unavailable right now.",
+                        "Viora Manager", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+        };
+        bar.Children.Add(fpsDetails);
         top.Children.Add(_summary);
 
         DockPanel.SetDock(_status, Dock.Bottom);
