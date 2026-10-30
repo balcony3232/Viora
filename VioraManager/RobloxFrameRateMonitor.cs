@@ -22,6 +22,9 @@ internal sealed class RobloxFrameRateMonitor : IDisposable
     private int _frameMsColumn = -1;
     private int _chainColumn = -1;
     private string _status = "Not started";
+    private string _lastError = "";
+    private int? _exitCode;
+
     private bool _disposed;
 
     private sealed record Frame(string SwapChain, DateTime When, double IntervalMs);
@@ -38,7 +41,7 @@ internal sealed class RobloxFrameRateMonitor : IDisposable
         var path = Path.Combine(AppContext.BaseDirectory, HelperName);
         if (!File.Exists(path))
         {
-            lock (_gate) _status = "PresentMon helper missing — download the complete preview ZIP.";
+            lock (_gate) _status = "PresentMon helper missing — extract ALL files from the preview ZIP.";
             return;
         }
 
@@ -72,20 +75,40 @@ internal sealed class RobloxFrameRateMonitor : IDisposable
             process.ErrorDataReceived += (_, e) =>
             {
                 if (string.IsNullOrWhiteSpace(e.Data)) return;
-                if (e.Data.Contains("error", StringComparison.OrdinalIgnoreCase) ||
-                    e.Data.Contains("denied", StringComparison.OrdinalIgnoreCase))
-                    lock (_gate) _status = "FPS capture unavailable (Windows trace permission or session error).";
+                var diagnostic = e.Data.Trim();
+                // Preserve an actionable error rather than replacing it with
+                // a generic message when the process exits.
+                if (diagnostic.Length > 220) diagnostic = diagnostic[..220];
+                lock (_gate)
+                {
+                    if (_disposed || !ReferenceEquals(_capture, process)) return;
+                    if (diagnostic.Contains("error", StringComparison.OrdinalIgnoreCase) ||
+                        diagnostic.Contains("denied", StringComparison.OrdinalIgnoreCase) ||
+                        diagnostic.Contains("failed", StringComparison.OrdinalIgnoreCase))
+                    {
+                        _lastError = diagnostic;
+                        _status = FormatExitStatus();
+                    }
+                }
             };
             process.Exited += (_, _) =>
             {
+                int? code;
+                try { code = process.ExitCode; }
+                catch (InvalidOperationException) { code = null; }
                 lock (_gate)
-                    if (!_disposed && ReferenceEquals(_capture, process))
-                        _status = "PresentMon exited — check Windows trace permissions, then restart FPS.";
+                {
+                    if (_disposed || !ReferenceEquals(_capture, process)) return;
+                    _exitCode = code;
+                    _status = FormatExitStatus();
+                }
             };
             lock (_gate)
             {
                 _pidColumn = _frameMsColumn = _chainColumn = -1;
                 _frames.Clear();
+                _lastError = "";
+                _exitCode = null;
                 _status = "FPS sampler starting...";
                 _capture = process;
             }
@@ -101,6 +124,36 @@ internal sealed class RobloxFrameRateMonitor : IDisposable
                                    System.ComponentModel.Win32Exception or InvalidOperationException)
         {
             lock (_gate) _status = "FPS capture unavailable: " + ex.Message;
+        }
+    }
+
+    private string FormatExitStatus()
+    {
+        // Caller holds _gate. Never claim that missing FPS means Roblox was
+        // blocked; Windows trace access, capture options and helper startup vary.
+        if (_lastError.Contains("access denied", StringComparison.OrdinalIgnoreCase) ||
+            _lastError.Contains("permission", StringComparison.OrdinalIgnoreCase))
+            return "FPS access denied by Windows. PresentMon requires trace permission (Performance Log Users or approved elevation). " +
+                   _lastError;
+        if (!string.IsNullOrWhiteSpace(_lastError))
+            return "PresentMon: " + _lastError + (_exitCode is int c ? " (exit " + c + ")" : "");
+        return _exitCode is int exit
+            ? "PresentMon exited (code " + exit + "). Use FPS diagnostics for help."
+            : "PresentMon reported an error. Use FPS diagnostics for help.";
+    }
+
+    public string DiagnosticSummary()
+    {
+        lock (_gate)
+        {
+            return "PresentMon 2.5.1 (official console helper)\\n" +
+                "Status: " + _status + "\\n" +
+                "Exit code: " + (_exitCode?.ToString(CultureInfo.InvariantCulture) ?? "not exited") + "\\n" +
+                "Last helper error: " + (string.IsNullOrEmpty(_lastError) ? "none received" : _lastError) + "\\n" +
+                "FPS data headers: " + (_pidColumn >= 0 ? "received" : "not received") + "\\n" +
+                "Captured Roblox PIDs: " + _frames.Count + "\\n\\n" +
+                "If Windows blocks ETW capture, consult official PresentMon documentation about Performance Log Users. " +
+                "Do not disable antivirus, Roblox protections or Windows security.";
         }
     }
 
