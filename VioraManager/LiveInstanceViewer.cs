@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -13,9 +14,9 @@ using System.Windows.Threading;
 namespace VioraManager;
 
 /// <summary>
-/// DWM thumbnails are display-only. Interactive mode switches focus to each
-/// actual Roblox window for native keyboard/mouse input; no synthetic messages,
-/// injection, hooks, credentials or Roblox client modification.
+/// Single viewer: click any DWM thumbnail to focus its real Roblox window.
+/// Thumbnails are display-only; input goes to the foreground native game.
+/// No Roblox injection, hooks, credentials or client modification.
 /// </summary>
 public sealed class LiveInstanceViewer : Window
 {
@@ -25,13 +26,13 @@ public sealed class LiveInstanceViewer : Window
     private const int DWM_CLIENT_ONLY = 0x0010;
 
     private readonly Func<int, string> _getGameName;
+    private readonly RobloxAntiAfk _antiAfk;
     private readonly Action? _tilePlayableWindows;
     private readonly RobloxFrameRateMonitor _fps = new();
     private readonly WrapPanel _tiles = new();
     private readonly ScrollViewer _scroll;
-    // Direct actions avoid the unreliable custom ComboBox popup template.
-    private readonly Button _dashboardButton = MakeButton("Dashboard");
-    private readonly Button _interactiveButton = MakeButton("Interactive");
+    // Compact toolbar: grid layout + optional Anti-AFK. Advanced tools in More.
+    private readonly Button _antiAfkButton = MakeButton("Anti-AFK: Off");
     private readonly Button _layoutButton = MakeButton("Grid: Auto");
     private readonly string[] _layoutNames = { "Auto", "1 column", "2 columns", "3 columns", "4 columns" };
     private int _layoutIndex;
@@ -41,7 +42,6 @@ public sealed class LiveInstanceViewer : Window
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(2) };
     private readonly Dictionary<int, Preview> _previews = new();
     private readonly Dictionary<int, CpuSample> _cpuSamples = new();
-    private bool _interactive;
     private int? _selectedPid;
 
     private sealed record CpuSample(DateTime SampledUtc, TimeSpan TotalCpu);
@@ -94,9 +94,11 @@ public sealed class LiveInstanceViewer : Window
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool SetForegroundWindow(nint window);
 
-    public LiveInstanceViewer(Func<int, string> getGameName, Action? tilePlayableWindows = null)
+    public LiveInstanceViewer(Func<int, string> getGameName, RobloxAntiAfk antiAfk,
+        Action? tilePlayableWindows = null)
     {
         _getGameName = getGameName;
+        _antiAfk = antiAfk;
         _tilePlayableWindows = tilePlayableWindows;
         Title = "Viora Manager — Live Instance Viewer";
         Width = 1120;
@@ -120,18 +122,26 @@ public sealed class LiveInstanceViewer : Window
             VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 16, 0)
         });
 
-        _dashboardButton.Click += (_, _) => SetInteractiveMode(false);
-        _interactiveButton.Click += (_, _) => SetInteractiveMode(true);
         _layoutButton.Click += (_, _) =>
         {
             _layoutIndex = (_layoutIndex + 1) % _layoutNames.Length;
             _layoutButton.Content = "Grid: " + _layoutNames[_layoutIndex];
             LayoutTiles();
         };
-        _layoutButton.ToolTip = "Click repeatedly to choose Auto, 1, 2, 3, or 4 columns.";
-        bar.Children.Add(_dashboardButton);
-        bar.Children.Add(_interactiveButton);
+        _layoutButton.ToolTip = "Click to cycle Auto, 1, 2, 3, or 4 columns.";
+        _antiAfkButton.Click += (_, _) =>
+        {
+            bool enabled = !_antiAfk.Enabled;
+            _antiAfk.Toggle(enabled);
+            _antiAfkButton.Content = enabled ? "Anti-AFK: On" : "Anti-AFK: Off";
+            _antiAfkButton.Background = new SolidColorBrush(enabled
+                ? Color.FromRgb(111, 70, 161) : Color.FromRgb(53, 36, 75));
+            UpdateStatus();
+        };
+        _antiAfkButton.ToolTip = "Opt-in only. On long PC idle, attempts a Space tap in each REAL Roblox window. May steal focus and is not guaranteed to prevent idle disconnects.";
+        _antiAfkButton.Content = _antiAfk.Enabled ? "Anti-AFK: On" : "Anti-AFK: Off";
         bar.Children.Add(_layoutButton);
+        bar.Children.Add(_antiAfkButton);
         var tileAndPlay = MakeButton("Tile & play windows");
         tileAndPlay.ToolTip = "Arrange real Roblox windows side by side, then play normally; the previews remain display-only.";
         tileAndPlay.Click += (_, _) =>
@@ -157,8 +167,7 @@ public sealed class LiveInstanceViewer : Window
             WindowState = WindowState.Minimized;
             _tilePlayableWindows();
         };
-        bar.Children.Add(tileAndPlay);
-        UpdateModeButtons();
+        // Keep the existing action, but place it in the More menu below.
 
         var refresh = MakeButton("Refresh");
         refresh.Click += (_, _) => Refresh();
@@ -166,7 +175,7 @@ public sealed class LiveInstanceViewer : Window
         var restartFps = MakeButton("Restart FPS");
         restartFps.ToolTip = "Restart the optional Intel PresentMon process-based FPS sampler.";
         restartFps.Click += (_, _) => { _fps.Start(); Refresh(); };
-        bar.Children.Add(restartFps);
+        // FPS controls are in the More menu.
         var fpsDetails = MakeButton("FPS details");
         fpsDetails.ToolTip = "Show the helper's exit code and last error so FPS failures can be diagnosed.";
         fpsDetails.Click += (_, _) =>
@@ -186,7 +195,29 @@ public sealed class LiveInstanceViewer : Window
                 }
             }
         };
-        bar.Children.Add(fpsDetails);
+        var more = MakeButton("More ▾");
+        more.ToolTip = "Window arrangement and FPS troubleshooting";
+        var menu = new ContextMenu
+        {
+            Background = new SolidColorBrush(Color.FromRgb(33, 23, 45)),
+            Foreground = Brushes.White, BorderBrush = new SolidColorBrush(Color.FromRgb(106, 73, 139))
+        };
+        void AddMoreAction(string caption, Button action)
+        {
+            var item = new MenuItem { Header = caption, Foreground = Brushes.White };
+            item.Click += (_, _) => action.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            menu.Items.Add(item);
+        }
+        AddMoreAction("Tile & play windows", tileAndPlay);
+        AddMoreAction("Restart FPS capture", restartFps);
+        AddMoreAction("FPS details", fpsDetails);
+        more.Click += (_, _) =>
+        {
+            menu.PlacementTarget = more;
+            menu.Placement = PlacementMode.Bottom;
+            menu.IsOpen = true;
+        };
+        bar.Children.Add(more);
         top.Children.Add(_summary);
 
         DockPanel.SetDock(_status, Dock.Bottom);
@@ -202,10 +233,16 @@ public sealed class LiveInstanceViewer : Window
         _tiles.LayoutUpdated += (_, _) => UpdateThumbnails();
 
         Loaded += (_, _) => { _fps.Start(); Refresh(); _timer.Start(); };
-        _timer.Tick += (_, _) => Refresh();
+        _timer.Tick += async (_, _) =>
+        {
+            Refresh();
+            await _antiAfk.TickAsync(_previews.Values.Select(x => (x.Pid, x.Source)).ToArray());
+            UpdateStatus();
+        };
         Closed += (_, _) =>
         {
             _timer.Stop();
+            _antiAfk.Toggle(false);
             _fps.Dispose();
             foreach (var preview in _previews.Values) Release(preview);
             _previews.Clear();
@@ -213,44 +250,19 @@ public sealed class LiveInstanceViewer : Window
         UpdateStatus();
     }
 
-    // Validate clickable mode and grid controls in the packaged Windows smoke test.
+    // Verify compact toolbar controls without sending any game input.
     internal bool SmokeTestModeButtons()
     {
-        _interactiveButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        bool interactiveSelected = _interactive && _selectedPid == null;
-        _dashboardButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        bool dashboardSelected = !_interactive;
         _layoutButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         bool layoutAdvanced = _layoutIndex == 1;
-        return interactiveSelected && dashboardSelected && layoutAdvanced;
+        _antiAfkButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        bool antiAfkEnabled = _antiAfk.Enabled;
+        _antiAfkButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        return layoutAdvanced && antiAfkEnabled && !_antiAfk.Enabled;
     }
 
     private static Button MakeButton(string caption) =>
         new() { Content = caption, Padding = new Thickness(11, 7, 11, 7), Margin = new Thickness(4, 0, 4, 0), FontSize = 12 };
-
-    private void SetInteractiveMode(bool interactive)
-    {
-        if (_interactive == interactive) return;
-        // Release input capture before switching modes, so the mouse remains usable.
-        if (Mouse.Captured != null) Mouse.Capture(null);
-        _interactive = interactive;
-        _selectedPid = null;
-        UpdateModeButtons();
-        UpdateSelection();
-        UpdateStatus();
-    }
-
-    private void UpdateModeButtons()
-    {
-        var active = new SolidColorBrush(Color.FromRgb(161, 111, 236));
-        var inactive = new SolidColorBrush(Color.FromRgb(55, 38, 76));
-        _dashboardButton.Background = !_interactive ? active : inactive;
-        _interactiveButton.Background = _interactive ? active : inactive;
-        _dashboardButton.FontWeight = !_interactive ? FontWeights.SemiBold : FontWeights.Normal;
-        _interactiveButton.FontWeight = _interactive ? FontWeights.SemiBold : FontWeights.Normal;
-        _dashboardButton.ToolTip = !_interactive ? "Dashboard mode is selected" : "Switch to read-only previews";
-        _interactiveButton.ToolTip = _interactive ? "Click a preview to focus the real Roblox game window" : "Activate a real Roblox window by clicking its preview";
-    }
 
     private static TextBlock MakeDetail(string text, double size = 12) =>
         new() { Text = text, Foreground = new SolidColorBrush(Color.FromRgb(194, 171, 220)),
@@ -258,10 +270,9 @@ public sealed class LiveInstanceViewer : Window
 
     private void UpdateStatus()
     {
-        var modeStatus = _interactive
-            ? "Interactive: click a preview to activate its REAL Roblox window and play normally there. For multiple accounts, choose Tile & play windows. Previews cannot receive native game input."
-            : "Dashboard: live read-only previews. Account labels are manual and not verified Roblox usernames.";
-        _status.Text = modeStatus + "   ·   Render FPS: " + _fps.Status;
+        _status.Text = "Click a preview to activate the actual Roblox game. " +
+            (_antiAfk.Enabled ? "Anti-AFK: " + _antiAfk.Status : "Anti-AFK off.") +
+            "   ·   Render FPS: " + _fps.Status;
     }
 
     private void Refresh()
@@ -344,7 +355,7 @@ public sealed class LiveInstanceViewer : Window
         _empty.Visibility = found.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         _summary.Text = found.Count + (found.Count == 1
             ? " Roblox window detected" : " Roblox windows detected") +
-            "   ·   " + (_interactive ? "Native window control" : "Live dashboard");
+            "   ·   Click preview to focus game";
         UpdateSelection();
         UpdateStatus();
         LayoutTiles();
@@ -406,7 +417,6 @@ public sealed class LiveInstanceViewer : Window
 
         surface.PreviewMouseLeftButtonDown += (_, e) =>
         {
-            if (!_interactive) return;
             SelectPreview(preview);
             // A DWM thumbnail is a picture, not a native input target.
             // Activate the original HWND instead of sending synthetic messages
@@ -426,7 +436,7 @@ public sealed class LiveInstanceViewer : Window
     private void UpdateSelection()
     {
         foreach (var item in _previews.Values)
-            item.Tile.BorderBrush = _interactive && item.Pid == _selectedPid
+            item.Tile.BorderBrush = item.Pid == _selectedPid
                 ? new SolidColorBrush(Color.FromRgb(181, 125, 251))
                 : new SolidColorBrush(Color.FromRgb(68, 46, 91));
     }
