@@ -13,35 +13,25 @@ using System.Windows.Threading;
 namespace VioraManager;
 
 /// <summary>
-/// DWM live previews of official Roblox windows. Interactive input forwarding
-/// uses ordinary Win32 window messages, never injection, hooks, credentials or
-/// Roblox client modification. Games using Raw Input may ignore these messages.
+/// DWM thumbnails are display-only. Interactive mode switches focus to each
+/// actual Roblox window for native keyboard/mouse input; no synthetic messages,
+/// injection, hooks, credentials or Roblox client modification.
 /// </summary>
 public sealed class LiveInstanceViewer : Window
 {
-    private const int WM_MOUSEMOVE = 0x0200;
-    private const int WM_LBUTTONDOWN = 0x0201;
-    private const int WM_LBUTTONUP = 0x0202;
-    private const int WM_RBUTTONDOWN = 0x0204;
-    private const int WM_RBUTTONUP = 0x0205;
-    private const int WM_MOUSEWHEEL = 0x020A;
-    private const int WM_KEYDOWN = 0x0100;
-    private const int WM_KEYUP = 0x0101;
-    private const int WM_CHAR = 0x0102;
-    private const int MK_LBUTTON = 0x0001;
-    private const int MK_RBUTTON = 0x0002;
     private const int DWM_DESTINATION = 0x0001;
     private const int DWM_OPACITY = 0x0004;
     private const int DWM_VISIBLE = 0x0008;
     private const int DWM_CLIENT_ONLY = 0x0010;
 
     private readonly Func<int, string> _getGameName;
+    private readonly Action? _tilePlayableWindows;
     private readonly RobloxFrameRateMonitor _fps = new();
     private readonly WrapPanel _tiles = new();
     private readonly ScrollViewer _scroll;
     // Direct actions avoid the unreliable custom ComboBox popup template.
     private readonly Button _dashboardButton = MakeButton("Dashboard");
-    private readonly Button _interactiveButton = MakeButton("Interactive (test)");
+    private readonly Button _interactiveButton = MakeButton("Interactive");
     private readonly Button _layoutButton = MakeButton("Grid: Auto");
     private readonly string[] _layoutNames = { "Auto", "1 column", "2 columns", "3 columns", "4 columns" };
     private int _layoutIndex;
@@ -52,8 +42,6 @@ public sealed class LiveInstanceViewer : Window
     private readonly Dictionary<int, Preview> _previews = new();
     private readonly Dictionary<int, CpuSample> _cpuSamples = new();
     private bool _interactive;
-    private bool _leftDown;
-    private bool _rightDown;
     private int? _selectedPid;
 
     private sealed record CpuSample(DateTime SampledUtc, TimeSpan TotalCpu);
@@ -76,8 +64,6 @@ public sealed class LiveInstanceViewer : Window
 
     [StructLayout(LayoutKind.Sequential)]
     private struct Rect { public int Left, Top, Right, Bottom; }
-    [StructLayout(LayoutKind.Sequential)]
-    private struct ScreenPoint { public int X, Y; }
     [StructLayout(LayoutKind.Sequential)]
     private struct ThumbnailProperties
     {
@@ -103,23 +89,15 @@ public sealed class LiveInstanceViewer : Window
     private static extern bool IsWindowVisible(nint window);
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool GetClientRect(nint window, out Rect rect);
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool ClientToScreen(nint window, ref ScreenPoint point);
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool PostMessage(nint window, uint message, nint wParam, nint lParam);
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool ShowWindow(nint window, int command);
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool SetForegroundWindow(nint window);
 
-    public LiveInstanceViewer(Func<int, string> getGameName)
+    public LiveInstanceViewer(Func<int, string> getGameName, Action? tilePlayableWindows = null)
     {
         _getGameName = getGameName;
+        _tilePlayableWindows = tilePlayableWindows;
         Title = "Viora Manager — Live Instance Viewer";
         Width = 1120;
         Height = 790;
@@ -154,6 +132,32 @@ public sealed class LiveInstanceViewer : Window
         bar.Children.Add(_dashboardButton);
         bar.Children.Add(_interactiveButton);
         bar.Children.Add(_layoutButton);
+        var tileAndPlay = MakeButton("Tile & play windows");
+        tileAndPlay.ToolTip = "Arrange real Roblox windows side by side, then play normally; the previews remain display-only.";
+        tileAndPlay.Click += (_, _) =>
+        {
+            Refresh();
+            if (_previews.Count == 0)
+            {
+                MessageBox.Show(this, "Open Roblox before arranging playable windows.",
+                    "Viora Manager", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            if (_tilePlayableWindows == null)
+            {
+                MessageBox.Show(this, "Desktop arrangement is unavailable in this preview context.",
+                    "Viora Manager", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            var answer = MessageBox.Show(this,
+                "Arrange your existing Roblox windows on the desktop and open the Mini-manager? " +
+                "You can play normally in the real game windows. Their positions will change; no clients will be launched.",
+                "Tile playable Roblox windows", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (answer != MessageBoxResult.Yes) return;
+            WindowState = WindowState.Minimized;
+            _tilePlayableWindows();
+        };
+        bar.Children.Add(tileAndPlay);
         UpdateModeButtons();
 
         var refresh = MakeButton("Refresh");
@@ -211,8 +215,6 @@ public sealed class LiveInstanceViewer : Window
         if (Mouse.Captured != null) Mouse.Capture(null);
         _interactive = interactive;
         _selectedPid = null;
-        _leftDown = false;
-        _rightDown = false;
         UpdateModeButtons();
         UpdateSelection();
         UpdateStatus();
@@ -227,7 +229,7 @@ public sealed class LiveInstanceViewer : Window
         _dashboardButton.FontWeight = !_interactive ? FontWeights.SemiBold : FontWeights.Normal;
         _interactiveButton.FontWeight = _interactive ? FontWeights.SemiBold : FontWeights.Normal;
         _dashboardButton.ToolTip = !_interactive ? "Dashboard mode is selected" : "Switch to read-only previews";
-        _interactiveButton.ToolTip = _interactive ? "Interactive testing is selected" : "Try sending inputs to a preview";
+        _interactiveButton.ToolTip = _interactive ? "Click a preview to focus the real Roblox game window" : "Activate a real Roblox window by clicking its preview";
     }
 
     private static TextBlock MakeDetail(string text, double size = 12) =>
@@ -237,7 +239,7 @@ public sealed class LiveInstanceViewer : Window
     private void UpdateStatus()
     {
         var modeStatus = _interactive
-            ? "Interactive (experimental): click a preview and try mouse/keyboard controls inside it. Roblox may reject background input. Use Focus game if it does; Esc exits input focus."
+            ? "Interactive: click a preview to activate its REAL Roblox window and play normally there. For multiple accounts, choose Tile & play windows. Previews cannot receive native game input."
             : "Dashboard: live read-only previews. Account labels are manual and not verified Roblox usernames.";
         _status.Text = modeStatus + "   ·   Render FPS: " + _fps.Status;
     }
@@ -322,7 +324,7 @@ public sealed class LiveInstanceViewer : Window
         _empty.Visibility = found.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         _summary.Text = found.Count + (found.Count == 1
             ? " Roblox window detected" : " Roblox windows detected") +
-            "   ·   " + ( _interactive ? "Interactive test" : "Live dashboard");
+            "   ·   " + (_interactive ? "Native window control" : "Live dashboard");
         UpdateSelection();
         UpdateStatus();
         LayoutTiles();
@@ -386,90 +388,10 @@ public sealed class LiveInstanceViewer : Window
         {
             if (!_interactive) return;
             SelectPreview(preview);
-            Keyboard.Focus(surface);
-            _leftDown = true;
-            SendMouse(preview, WM_LBUTTONDOWN, MK_LBUTTON, e.GetPosition(surface));
-            Mouse.Capture(surface);
-            e.Handled = true;
-        };
-        surface.PreviewMouseLeftButtonUp += (_, e) =>
-        {
-            if (!_interactive || _selectedPid != preview.Pid) return;
-            SendMouse(preview, WM_LBUTTONUP, 0, e.GetPosition(surface));
-            _leftDown = false;
-            if (!_rightDown) Mouse.Capture(null);
-            e.Handled = true;
-        };
-        surface.PreviewMouseRightButtonDown += (_, e) =>
-        {
-            if (!_interactive) return;
-            SelectPreview(preview);
-            Keyboard.Focus(surface);
-            _rightDown = true;
-            SendMouse(preview, WM_RBUTTONDOWN, MK_RBUTTON, e.GetPosition(surface));
-            Mouse.Capture(surface);
-            e.Handled = true;
-        };
-        surface.PreviewMouseRightButtonUp += (_, e) =>
-        {
-            if (!_interactive || _selectedPid != preview.Pid) return;
-            SendMouse(preview, WM_RBUTTONUP, 0, e.GetPosition(surface));
-            _rightDown = false;
-            if (!_leftDown) Mouse.Capture(null);
-            e.Handled = true;
-        };
-        surface.MouseMove += (_, e) =>
-        {
-            if (_interactive && _selectedPid == preview.Pid)
-                SendMouse(preview, WM_MOUSEMOVE,
-                    (_leftDown ? MK_LBUTTON : 0) | (_rightDown ? MK_RBUTTON : 0),
-                    e.GetPosition(surface));
-        };
-        surface.PreviewMouseWheel += (_, e) =>
-        {
-            if (!_interactive || _selectedPid != preview.Pid) return;
-            if (TryClientPoint(preview, e.GetPosition(surface), out var client))
-            {
-                var screen = client;
-                if (ClientToScreen(preview.Source, ref screen))
-                {
-                    PostMessage(preview.Source, WM_MOUSEWHEEL,
-                        (nint)unchecked(e.Delta << 16), PackPoint(screen.X, screen.Y));
-                    e.Handled = true;
-                }
-            }
-        };
-        surface.PreviewKeyDown += (_, e) =>
-        {
-            if (!_interactive || _selectedPid != preview.Pid) return;
-            if (e.Key == Key.Escape)
-            {
-                _selectedPid = null; UpdateSelection(); e.Handled = true; return;
-            }
-            var key = e.Key == Key.System ? e.SystemKey : e.Key;
-            int vk = KeyInterop.VirtualKeyFromKey(key);
-            if (vk != 0 && IsWindow(preview.Source))
-            {
-                PostMessage(preview.Source, WM_KEYDOWN, (nint)vk, 0);
-                e.Handled = true;
-            }
-        };
-        surface.PreviewKeyUp += (_, e) =>
-        {
-            if (!_interactive || _selectedPid != preview.Pid) return;
-            var key = e.Key == Key.System ? e.SystemKey : e.Key;
-            int vk = KeyInterop.VirtualKeyFromKey(key);
-            if (vk != 0 && IsWindow(preview.Source))
-            {
-                PostMessage(preview.Source, WM_KEYUP, (nint)vk, 0);
-                e.Handled = true;
-            }
-        };
-        surface.PreviewTextInput += (_, e) =>
-        {
-            if (!_interactive || _selectedPid != preview.Pid || !IsWindow(preview.Source)) return;
-            foreach (char character in e.Text)
-                PostMessage(preview.Source, WM_CHAR, (nint)(int)character, 0);
+            // A DWM thumbnail is a picture, not a native input target.
+            // Activate the original HWND instead of sending synthetic messages
+            // which Roblox's Raw Input path may ignore.
+            FocusGame(preview.Source);
             e.Handled = true;
         };
         return preview;
@@ -494,30 +416,6 @@ public sealed class LiveInstanceViewer : Window
         if (!IsWindow(handle)) return;
         ShowWindow(handle, 9);
         SetForegroundWindow(handle);
-    }
-
-    private bool TryClientPoint(Preview preview, Point local, out ScreenPoint point)
-    {
-        point = default;
-        if (!IsWindow(preview.Source) || !GetClientRect(preview.Source, out var rect) ||
-            preview.Surface.ActualWidth < 2 || preview.Surface.ActualHeight < 2)
-            return false;
-        int w = Math.Max(1, rect.Right - rect.Left);
-        int h = Math.Max(1, rect.Bottom - rect.Top);
-        point = new ScreenPoint
-        {
-            X = Math.Clamp((int)(local.X / preview.Surface.ActualWidth * w), 0, w - 1),
-            Y = Math.Clamp((int)(local.Y / preview.Surface.ActualHeight * h), 0, h - 1)
-        };
-        return true;
-    }
-
-    private static nint PackPoint(int x, int y) => (nint)unchecked((y & 0xffff) << 16 | (x & 0xffff));
-
-    private void SendMouse(Preview preview, uint message, int flags, Point local)
-    {
-        if (!TryClientPoint(preview, local, out var point)) return;
-        PostMessage(preview.Source, message, (nint)flags, PackPoint(point.X, point.Y));
     }
 
     private void LayoutTiles()
