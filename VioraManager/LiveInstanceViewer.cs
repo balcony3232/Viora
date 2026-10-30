@@ -173,7 +173,7 @@ public sealed class LiveInstanceViewer : Window
         {
             string details = _fps.DiagnosticSummary();
             var choice = MessageBox.Show(this,
-                details + "\\n\\nCopy these FPS diagnostics to clipboard?",
+                details + "\n\nCopy these FPS diagnostics to clipboard?",
                 "Viora Manager — FPS diagnostics",
                 MessageBoxButton.YesNo, MessageBoxImage.Information);
             if (choice == MessageBoxResult.Yes)
