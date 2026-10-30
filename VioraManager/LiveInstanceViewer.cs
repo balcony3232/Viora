@@ -38,8 +38,12 @@ public sealed class LiveInstanceViewer : Window
     private readonly Func<int, string> _getGameName;
     private readonly WrapPanel _tiles = new();
     private readonly ScrollViewer _scroll;
-    private readonly ComboBox _mode = new() { Width = 190, Margin = new Thickness(8, 0, 8, 0) };
-    private readonly ComboBox _columns = new() { Width = 130, Margin = new Thickness(0, 0, 8, 0) };
+    // Direct actions avoid the unreliable custom ComboBox popup template.
+    private readonly Button _dashboardButton = MakeButton("Dashboard");
+    private readonly Button _interactiveButton = MakeButton("Interactive (test)");
+    private readonly Button _layoutButton = MakeButton("Grid: Auto");
+    private readonly string[] _layoutNames = { "Auto", "1 column", "2 columns", "3 columns", "4 columns" };
+    private int _layoutIndex;
     private readonly TextBlock _summary = new() { Foreground = new SolidColorBrush(Color.FromRgb(205, 180, 233)), Margin = new Thickness(0, 10, 0, 3), FontSize = 12 };
     private readonly TextBlock _status = new() { Foreground = new SolidColorBrush(Color.FromRgb(185, 166, 205)), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0), FontSize = 11 };
     private readonly TextBlock _empty = new() { Text = "No Roblox windows found. Launch Roblox and click Refresh.", Foreground = Brushes.LightGray, FontSize = 14, Margin = new Thickness(14) };
@@ -137,25 +141,19 @@ public sealed class LiveInstanceViewer : Window
             VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 16, 0)
         });
 
-        _mode.Items.Add("Dashboard");
-        _mode.Items.Add("Interactive (test)");
-        _mode.SelectedIndex = 0;
-        _mode.SelectionChanged += (_, _) =>
+        _dashboardButton.Click += (_, _) => SetInteractiveMode(false);
+        _interactiveButton.Click += (_, _) => SetInteractiveMode(true);
+        _layoutButton.Click += (_, _) =>
         {
-            _interactive = _mode.SelectedIndex == 1;
-            _selectedPid = null;
-            _leftDown = false;
-            _rightDown = false;
-            UpdateSelection();
-            UpdateStatus();
+            _layoutIndex = (_layoutIndex + 1) % _layoutNames.Length;
+            _layoutButton.Content = "Grid: " + _layoutNames[_layoutIndex];
+            LayoutTiles();
         };
-        bar.Children.Add(_mode);
-
-        foreach (var option in new[] { "Auto grid", "1 column", "2 columns", "3 columns", "4 columns" })
-            _columns.Items.Add(option);
-        _columns.SelectedIndex = 0;
-        _columns.SelectionChanged += (_, _) => LayoutTiles();
-        bar.Children.Add(_columns);
+        _layoutButton.ToolTip = "Click repeatedly to choose Auto, 1, 2, 3, or 4 columns.";
+        bar.Children.Add(_dashboardButton);
+        bar.Children.Add(_interactiveButton);
+        bar.Children.Add(_layoutButton);
+        UpdateModeButtons();
 
         var refresh = MakeButton("Refresh");
         refresh.Click += (_, _) => Refresh();
@@ -187,6 +185,32 @@ public sealed class LiveInstanceViewer : Window
 
     private static Button MakeButton(string caption) =>
         new() { Content = caption, Padding = new Thickness(11, 7, 11, 7), Margin = new Thickness(4, 0, 4, 0), FontSize = 12 };
+
+    private void SetInteractiveMode(bool interactive)
+    {
+        if (_interactive == interactive) return;
+        // Release input capture before switching modes, so the mouse remains usable.
+        if (Mouse.Captured != null) Mouse.Capture(null);
+        _interactive = interactive;
+        _selectedPid = null;
+        _leftDown = false;
+        _rightDown = false;
+        UpdateModeButtons();
+        UpdateSelection();
+        UpdateStatus();
+    }
+
+    private void UpdateModeButtons()
+    {
+        var active = new SolidColorBrush(Color.FromRgb(161, 111, 236));
+        var inactive = new SolidColorBrush(Color.FromRgb(55, 38, 76));
+        _dashboardButton.Background = !_interactive ? active : inactive;
+        _interactiveButton.Background = _interactive ? active : inactive;
+        _dashboardButton.FontWeight = !_interactive ? FontWeights.SemiBold : FontWeights.Normal;
+        _interactiveButton.FontWeight = _interactive ? FontWeights.SemiBold : FontWeights.Normal;
+        _dashboardButton.ToolTip = !_interactive ? "Dashboard mode is selected" : "Switch to read-only previews";
+        _interactiveButton.ToolTip = _interactive ? "Interactive testing is selected" : "Try sending inputs to a preview";
+    }
 
     private static TextBlock MakeDetail(string text, double size = 12) =>
         new() { Text = text, Foreground = new SolidColorBrush(Color.FromRgb(194, 171, 220)),
@@ -473,7 +497,7 @@ public sealed class LiveInstanceViewer : Window
         if (_previews.Count == 0 || !IsLoaded) return;
         var available = Math.Max(350, _scroll.ViewportWidth > 10 ? _scroll.ViewportWidth : ActualWidth - 60);
         int auto = available >= 1000 ? 3 : available >= 730 ? 2 : 1;
-        int requested = _columns.SelectedIndex switch { 1 => 1, 2 => 2, 3 => 3, 4 => 4, _ => auto };
+        int requested = _layoutIndex switch { 1 => 1, 2 => 2, 3 => 3, 4 => 4, _ => auto };
         int cols = Math.Max(1, Math.Min(_previews.Count, requested));
         // Keep a single preview large but still completely visible in the
         // scrolling viewport, including its header, stats and label controls.
