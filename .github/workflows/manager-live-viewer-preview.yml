@@ -1,0 +1,41 @@
+name: Viora Manager Live Viewer Preview
+
+on:
+  push:
+    branches:
+      - feature/manager-2-live-viewer
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-manager-preview:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout preview branch
+        uses: actions/checkout@v4
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Publish standalone Windows Manager
+        shell: pwsh
+        run: |
+          dotnet publish VioraManager/VioraManager.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -p:DebugSymbols=false -o out/manager-preview
+      - name: Generate checksum
+        shell: pwsh
+        run: |
+          $exe = 'out/manager-preview/VioraManager.exe'
+          if (!(Test-Path $exe)) { throw 'Manager EXE was not produced' }
+          $hash = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  VioraManager.exe" | Set-Content out/manager-preview/VioraManager.exe.sha256
+      - name: Upload preview binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: VioraManager-LiveViewer-Windows-x64-preview
+          path: |
+            out/manager-preview/VioraManager.exe
+            out/manager-preview/VioraManager.exe.sha256
+          if-no-files-found: error
+          retention-days: 14
