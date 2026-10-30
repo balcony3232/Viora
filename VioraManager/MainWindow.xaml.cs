@@ -55,6 +55,9 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _refresh = new() { Interval = TimeSpan.FromSeconds(3) };
     private readonly MultiInstanceExperiment _experiment = new();
     private readonly RobloxInstanceGames _games;
+    private readonly ManagerDiscordPresence _discordPresence = new();
+    private readonly RobloxGpuUsageSampler _gpuSampler = new();
+    private readonly RobloxAntiAfk _antiAfk = new();
     private bool _loadingAutoPreference;
     private static readonly string AutoPreferencePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -100,7 +103,7 @@ public partial class MainWindow : Window
         SourceInitialized += (_, _) => ApplyDarkTitleBar();
         _refresh.Tick += (_, _) => RefreshWindows();
         Loaded += (_, _) => { LoadAutoMultiInstancePreference(); LoadWorkspaces(); RefreshWindows(); _refresh.Start(); };
-        Closed += (_, _) => { _refresh.Stop(); _experiment.Disable(); _liveViewer?.Close(); _miniWindow?.Close(); };
+        Closed += (_, _) => { _refresh.Stop(); _experiment.Disable(); _liveViewer?.Close(); _miniWindow?.Close(); _gpuSampler.Dispose(); _discordPresence.Dispose(); };
     }
 
     private void RefreshWindows()
@@ -168,8 +171,15 @@ public partial class MainWindow : Window
         long total = _instances.Sum(x => x.Memory);
         string memory = total >= 1073741824 ? $"{total / 1073741824d:0.0} GB" : $"{total / 1048576d:0} MB";
         if (MemoryText.Text != memory) MemoryText.Text = memory;
-        string cpu = $"{_instances.Sum(x => x.CpuPercent):0.0}%";
+        double totalRobloxCpu = Math.Clamp(_instances.Sum(x => x.CpuPercent), 0, 100);
+        string cpu = $"{totalRobloxCpu:0.0}%";
         if (CpuText.Text != cpu) CpuText.Text = cpu;
+        double? gpu3d = _gpuSampler.Sample(activeIds);
+        _ = _discordPresence.UpdateAsync(_instances.Count, totalRobloxCpu, gpu3d);
+        RpcStatusText.ToolTip = _discordPresence.Status;
+        RpcStatusText.Text = _discordPresence.Enabled
+            ? (_discordPresence.ApplicationId.Length > 0 ? "RPC configured" : "RPC setup required")
+            : "RPC off";
         string status = _instances.Count > 0 ? "Active" : "Idle";
         if (StatusText.Text != status) StatusText.Text = status;
         EmptyInstancesText.Visibility = _instances.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -325,6 +335,7 @@ public partial class MainWindow : Window
         if (_liveViewer is { IsLoaded: true }) { _liveViewer.Activate(); return; }
         _liveViewer = new LiveInstanceViewer(
             pid => _games.GetGameName(pid),
+            _antiAfk,
             () =>
             {
                 // Use the existing window layout code and always-on-top mini
