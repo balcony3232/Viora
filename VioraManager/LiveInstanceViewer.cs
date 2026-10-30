@@ -94,7 +94,7 @@ public sealed class LiveInstanceViewer : Window
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool SetForegroundWindow(nint window);
 
-    public LiveInstanceViewer(Func<int, string> getGameName, RobloxAntiAfk antiAfk,
+    internal LiveInstanceViewer(Func<int, string> getGameName, RobloxAntiAfk antiAfk,
         Action? tilePlayableWindows = null)
     {
         _getGameName = getGameName;
