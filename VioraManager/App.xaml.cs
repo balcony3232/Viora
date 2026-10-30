@@ -21,10 +21,10 @@ public partial class App : Application
                 // This test does not launch, attach to or modify Roblox.
                 if (!RobloxFrameRateMonitor.SmokeTestParser())
                     throw new InvalidOperationException("PresentMon per-PID FPS parser failed its synthetic 60/120 FPS test.");
-                var viewer = new LiveInstanceViewer(_ => "Game not detected");
+                var viewer = new LiveInstanceViewer(_ => "Game not detected", new RobloxAntiAfk());
                 viewer.Show();
                 if (!viewer.SmokeTestModeButtons())
-                    throw new InvalidOperationException("Viewer Dashboard/Interactive/Grid buttons failed smoke test.");
+                    throw new InvalidOperationException("Viewer layout/Anti-AFK toggle controls failed smoke test.");
                 viewer.Close();
                 Shutdown(0);
                 return;
