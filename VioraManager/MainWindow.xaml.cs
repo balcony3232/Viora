@@ -323,7 +323,15 @@ public partial class MainWindow : Window
     private void ShowLiveViewer_Click(object sender, RoutedEventArgs e)
     {
         if (_liveViewer is { IsLoaded: true }) { _liveViewer.Activate(); return; }
-        _liveViewer = new LiveInstanceViewer(pid => _games.GetGameName(pid)) { Owner = this };
+        _liveViewer = new LiveInstanceViewer(
+            pid => _games.GetGameName(pid),
+            () =>
+            {
+                // Use the existing window layout code and always-on-top mini
+                // manager. These are real Roblox windows, not thumbnails.
+                ApplySelectedLayout();
+                ShowMiniManager_Click(this, new RoutedEventArgs());
+            }) { Owner = this };
         _liveViewer.Show();
     }
 
