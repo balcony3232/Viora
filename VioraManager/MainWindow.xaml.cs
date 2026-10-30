@@ -4,6 +4,8 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.IO;
+using System.Text.Json;
 using System.Runtime.InteropServices;
 using System.Windows.Interop;
 using System.Windows;
@@ -53,6 +55,10 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _refresh = new() { Interval = TimeSpan.FromSeconds(3) };
     private readonly MultiInstanceExperiment _experiment = new();
     private readonly RobloxInstanceGames _games;
+    private bool _loadingAutoPreference;
+    private static readonly string AutoPreferencePath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "Viora", "Manager", "startup-preferences.json");
 
     [DllImport("dwmapi.dll", PreserveSig = true)]
     private static extern int DwmSetWindowAttribute(nint hwnd, int attribute, ref int value, int size);
@@ -93,8 +99,8 @@ public partial class MainWindow : Window
         _games = new RobloxInstanceGames(() => Dispatcher.BeginInvoke(new Action(RefreshWindows)));
         SourceInitialized += (_, _) => ApplyDarkTitleBar();
         _refresh.Tick += (_, _) => RefreshWindows();
-        Loaded += (_, _) => { LoadWorkspaces(); RefreshWindows(); _refresh.Start(); };
-        Closed += (_, _) => { _refresh.Stop(); _experiment.Disable(); _miniWindow?.Close(); };
+        Loaded += (_, _) => { LoadAutoMultiInstancePreference(); LoadWorkspaces(); RefreshWindows(); _refresh.Start(); };
+        Closed += (_, _) => { _refresh.Stop(); _experiment.Disable(); _liveViewer?.Close(); _miniWindow?.Close(); };
     }
 
     private void RefreshWindows()
@@ -174,21 +180,107 @@ public partial class MainWindow : Window
         if (_refresh.Interval != wantedInterval) _refresh.Interval = wantedInterval;
     }
 
+    private static bool HasRobloxPlayerRunning()
+    {
+        var processes = Process.GetProcessesByName("RobloxPlayerBeta");
+        try
+        {
+            return processes.Any(p =>
+            {
+                try { return !p.HasExited; }
+                catch (InvalidOperationException) { return false; }
+            });
+        }
+        finally { foreach (var process in processes) process.Dispose(); }
+    }
+
+    // This opt-in is enabled by default only in the feature preview. Users may
+    // disable it at any time and the choice survives subsequent launches.
+    private void LoadAutoMultiInstancePreference()
+    {
+        bool autoEnable = true;
+        try
+        {
+            if (File.Exists(AutoPreferencePath))
+            {
+                using var document = JsonDocument.Parse(File.ReadAllText(AutoPreferencePath));
+                if (document.RootElement.TryGetProperty("autoEnableMultiInstance", out var value)
+                    && value.ValueKind is JsonValueKind.True or JsonValueKind.False)
+                    autoEnable = value.GetBoolean();
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        {
+            ExperimentStatus.Text = "Could not read saved startup preference; using preview default.";
+        }
+
+        _loadingAutoPreference = true;
+        AutoMultiInstanceToggle.IsChecked = autoEnable;
+        _loadingAutoPreference = false;
+        if (autoEnable) TryAutoEnableMultiInstance();
+    }
+
+    private void SaveAutoMultiInstancePreference(bool enabled)
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(AutoPreferencePath)!);
+            File.WriteAllText(AutoPreferencePath,
+                JsonSerializer.Serialize(new { autoEnableMultiInstance = enabled }));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            ExperimentStatus.Text = "Could not save multi-instance startup preference: " + ex.Message;
+        }
+    }
+
+    private void TryAutoEnableMultiInstance()
+    {
+        if (_experiment.IsEnabled)
+        {
+            MultiInstanceToggle.IsChecked = true;
+            return;
+        }
+        if (HasRobloxPlayerRunning())
+        {
+            MultiInstanceToggle.IsChecked = false;
+            ExperimentStatus.Text =
+                "Auto-start skipped: Roblox is already running. Exit Roblox completely and restart Viora Manager to enable compatibility.";
+            return;
+        }
+        bool enabled = _experiment.TryEnable(out string message);
+        MultiInstanceToggle.IsChecked = enabled;
+        ExperimentStatus.Text = enabled
+            ? "Automatically enabled for this session. " + message
+            : "Auto-start unavailable: " + message;
+    }
+
+    private void AutoMultiInstanceToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (_loadingAutoPreference) return;
+        bool enabled = AutoMultiInstanceToggle.IsChecked == true;
+        SaveAutoMultiInstancePreference(enabled);
+        if (enabled) TryAutoEnableMultiInstance();
+        else
+        {
+            _experiment.Disable();
+            MultiInstanceToggle.IsChecked = false;
+            ExperimentStatus.Text = "Automatic multi-instance startup disabled. Compatibility mode is off.";
+        }
+    }
+
     private void MultiInstanceToggle_Click(object sender, RoutedEventArgs e)
     {
         if (MultiInstanceToggle.IsChecked != true)
         {
             _experiment.Disable();
-            ExperimentStatus.Text = "Experimental mode disabled. Any already-running Roblox clients are unaffected.";
+            AutoMultiInstanceToggle.IsChecked = false;
+            SaveAutoMultiInstancePreference(false);
+            ExperimentStatus.Text = "Experimental mode disabled; automatic startup also disabled.";
             return;
         }
 
-        bool robloxRunning = false;
-        var processes = Process.GetProcessesByName("RobloxPlayerBeta");
-        try { robloxRunning = processes.Any(p => { try { return !p.HasExited; } catch { return false; } }); }
-        finally { foreach (var process in processes) process.Dispose(); }
-
-        if (robloxRunning)
+        if (HasRobloxPlayerRunning())
         {
             MultiInstanceToggle.IsChecked = false;
             ExperimentStatus.Text = "Close all Roblox Player clients before enabling this mode.";
@@ -214,6 +306,8 @@ public partial class MainWindow : Window
         }
         if (_experiment.TryEnable(out string message))
         {
+            AutoMultiInstanceToggle.IsChecked = true;
+            SaveAutoMultiInstancePreference(true);
             ExperimentStatus.Text = message;
         }
         else
@@ -229,7 +323,7 @@ public partial class MainWindow : Window
     private void ShowLiveViewer_Click(object sender, RoutedEventArgs e)
     {
         if (_liveViewer is { IsLoaded: true }) { _liveViewer.Activate(); return; }
-        _liveViewer = new LiveInstanceViewer { Owner = this };
+        _liveViewer = new LiveInstanceViewer(pid => _games.GetGameName(pid)) { Owner = this };
         _liveViewer.Show();
     }
 
