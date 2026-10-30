@@ -21,6 +21,8 @@ public partial class App : Application
                 // This test does not launch, attach to or modify Roblox.
                 var viewer = new LiveInstanceViewer(_ => "Game not detected");
                 viewer.Show();
+                if (!viewer.SmokeTestModeButtons())
+                    throw new InvalidOperationException("Viewer Dashboard/Interactive/Grid buttons failed smoke test.");
                 viewer.Close();
                 Shutdown(0);
                 return;
