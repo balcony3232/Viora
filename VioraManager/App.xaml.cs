@@ -19,6 +19,8 @@ public partial class App : Application
                 // Construct the packaged main window and show the live viewer on
                 // the runner's WPF desktop, including loading ComboBox templates.
                 // This test does not launch, attach to or modify Roblox.
+                if (!RobloxFrameRateMonitor.SmokeTestParser())
+                    throw new InvalidOperationException("PresentMon per-PID FPS parser failed its synthetic 60/120 FPS test.");
                 var viewer = new LiveInstanceViewer(_ => "Game not detected");
                 viewer.Show();
                 if (!viewer.SmokeTestModeButtons())
