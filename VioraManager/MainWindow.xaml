@@ -117,10 +117,10 @@
             </DockPanel>
         </Border>
         <Grid Grid.Row="4">
-            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
             <Button Content="＋  Open Roblox" Background="#A982F4" Foreground="#180D29" FontWeight="SemiBold" Margin="0,0,5,0" Click="OpenRoblox_Click"/>
             <Button Grid.Column="1" Content="Arrange windows" Background="#39274D" FontWeight="SemiBold" Margin="5,0" Click="ManageWindows_Click"/>
-            <Button Grid.Column="2" Content="Live viewer" Background="#39274D" FontWeight="SemiBold" Margin="5,0,0,0" Click="ShowLiveViewer_Click"/>\n            <!-- Mini-manager remains accessible from the existing manager controls. -->\n            <Button Grid.Column="2" Content="Mini-manager" Visibility="Collapsed" Background="#39274D" FontWeight="SemiBold" Margin="5,0,0,0" Click="ShowMiniManager_Click"/>
+            <Button Grid.Column="2" Content="Live viewer" Background="#39274D" FontWeight="SemiBold" Margin="5,0,0,0" Click="ShowLiveViewer_Click"/>\n            <Button Grid.Column="3" Content="Mini-manager" Background="#39274D" FontWeight="SemiBold" Margin="5,0,0,0" Click="ShowMiniManager_Click"/>
         </Grid>
         <TextBlock Grid.Row="5" Text="Experimental compatibility does not modify Roblox files, but simultaneous Player support and account safety are not guaranteed."
                    Foreground="{StaticResource Muted}" FontSize="11" Margin="0,12,0,0" TextWrapping="Wrap"/>
