@@ -331,6 +331,9 @@ public partial class MainWindow : Window
                 // manager. These are real Roblox windows, not thumbnails.
                 ApplySelectedLayout();
                 ShowMiniManager_Click(this, new RoutedEventArgs());
+                // Show playable windows unobstructed; the Mini-manager stays
+                // available above them for account switching.
+                WindowState = WindowState.Minimized;
             }) { Owner = this };
         _liveViewer.Show();
     }
