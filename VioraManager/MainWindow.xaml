@@ -24,9 +24,16 @@
                 <TextBlock Text="Viora Manager" FontWeight="SemiBold" FontSize="19"/>
                 <TextBlock Text="Instance &amp; Session Control" Foreground="{StaticResource Muted}" FontSize="11" Margin="0,2,0,0"/>
             </StackPanel>
-            <Border Grid.Column="2" Padding="10,5" Background="#292033" CornerRadius="12" VerticalAlignment="Center">
-                <TextBlock x:Name="ManagerVersionText" Text="v1.3 Preview" FontSize="11" Foreground="#CFBBEB"/>
-            </Border>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock x:Name="RpcStatusText" Text="RPC setup required" Foreground="#AFA0C4"
+                           FontSize="10" VerticalAlignment="Center" Margin="0,0,9,0"/>
+                <Button Content="Discord RPC" Click="DiscordRpcSettings_Click"
+                        Padding="10,6" Margin="0,0,9,0" Background="#35234B"
+                        ToolTip="Configure automatic Discord Rich Presence for Roblox clients, CPU and GPU"/>
+                <Border Padding="10,5" Background="#292033" CornerRadius="12" VerticalAlignment="Center">
+                    <TextBlock x:Name="ManagerVersionText" Text="v2.0 Preview" FontSize="11" Foreground="#CFBBEB"/>
+                </Border>
+            </StackPanel>
         </Grid>
         <UniformGrid Grid.Row="1" Columns="4" Margin="0,0,0,14">
             <Border Background="{StaticResource Panel}" CornerRadius="11" Padding="14" Margin="0,0,5,0">
