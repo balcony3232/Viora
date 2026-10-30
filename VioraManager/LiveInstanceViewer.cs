@@ -36,6 +36,7 @@ public sealed class LiveInstanceViewer : Window
     private const int DWM_CLIENT_ONLY = 0x0010;
 
     private readonly Func<int, string> _getGameName;
+    private readonly RobloxFrameRateMonitor _fps = new();
     private readonly WrapPanel _tiles = new();
     private readonly ScrollViewer _scroll;
     // Direct actions avoid the unreliable custom ComboBox popup template.
@@ -158,6 +159,10 @@ public sealed class LiveInstanceViewer : Window
         var refresh = MakeButton("Refresh");
         refresh.Click += (_, _) => Refresh();
         bar.Children.Add(refresh);
+        var restartFps = MakeButton("Restart FPS");
+        restartFps.ToolTip = "Restart the optional Intel PresentMon process-based FPS sampler.";
+        restartFps.Click += (_, _) => { _fps.Start(); Refresh(); };
+        bar.Children.Add(restartFps);
         top.Children.Add(_summary);
 
         DockPanel.SetDock(_status, Dock.Bottom);
@@ -172,11 +177,12 @@ public sealed class LiveInstanceViewer : Window
         _scroll.ScrollChanged += (_, _) => UpdateThumbnails();
         _tiles.LayoutUpdated += (_, _) => UpdateThumbnails();
 
-        Loaded += (_, _) => { Refresh(); _timer.Start(); };
+        Loaded += (_, _) => { _fps.Start(); Refresh(); _timer.Start(); };
         _timer.Tick += (_, _) => Refresh();
         Closed += (_, _) =>
         {
             _timer.Stop();
+            _fps.Dispose();
             foreach (var preview in _previews.Values) Release(preview);
             _previews.Clear();
         };
@@ -230,9 +236,10 @@ public sealed class LiveInstanceViewer : Window
 
     private void UpdateStatus()
     {
-        _status.Text = _interactive
-            ? "Interactive (experimental): click a preview and try mouse/keyboard controls inside it. Roblox may reject background input (especially movement/camera). Use Focus game if it does; Esc exits preview input focus."
-            : "Dashboard: previews are live and read-only. Account labels are manual session labels, not verified Roblox usernames. Actual in-game FPS is not available without client instrumentation.";
+        var modeStatus = _interactive
+            ? "Interactive (experimental): click a preview and try mouse/keyboard controls inside it. Roblox may reject background input. Use Focus game if it does; Esc exits input focus."
+            : "Dashboard: live read-only previews. Account labels are manual and not verified Roblox usernames.";
+        _status.Text = modeStatus + "   ·   Render FPS: " + _fps.Status;
     }
 
     private void Refresh()
@@ -276,6 +283,7 @@ public sealed class LiveInstanceViewer : Window
             Release(old);
             _tiles.Children.Remove(old.Tile);
             _previews.Remove(old.Pid);
+            _fps.ForgetProcess(old.Pid);
             if (_selectedPid == old.Pid) _selectedPid = null;
         }
         foreach (var pid in _cpuSamples.Keys.Where(pid => !found.ContainsKey(pid)).ToArray())
@@ -299,16 +307,24 @@ public sealed class LiveInstanceViewer : Window
             try { preview.Game.Text = _getGameName(snapshot.Pid); }
             catch (InvalidOperationException) { preview.Game.Text = "Game not detected"; }
             var minutes = Math.Max(0, (int)(DateTime.Now - snapshot.Started).TotalMinutes);
+            var renderFps = _fps.GetRenderFps(snapshot.Pid);
+            string fpsValue = renderFps.HasValue
+                ? renderFps.Value.ToString("0", System.Globalization.CultureInfo.InvariantCulture)
+                : "—";
             preview.Metrics.Text = "PID " + snapshot.Pid + "  ·  RAM " +
                 (snapshot.Memory / 1048576d).ToString("0") + " MB  ·  CPU " +
                 snapshot.CpuPercent.ToString("0.0") + "%  ·  " + minutes +
-                "m runtime  ·  Game FPS: n/a";
+                "m runtime  ·  Render FPS: " + fpsValue;
+            preview.Metrics.ToolTip = renderFps.HasValue
+                ? "Measured Roblox application frame presents per second (Intel PresentMon ETW). Not necessarily displayed FPS."
+                : "Render FPS not available yet. See the status below for capture errors.";
         }
         _empty.Visibility = found.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         _summary.Text = found.Count + (found.Count == 1
             ? " Roblox window detected" : " Roblox windows detected") +
             "   ·   " + ( _interactive ? "Interactive test" : "Live dashboard");
         UpdateSelection();
+        UpdateStatus();
         LayoutTiles();
     }
 
