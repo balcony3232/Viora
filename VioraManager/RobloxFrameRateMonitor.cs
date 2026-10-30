@@ -146,12 +146,12 @@ internal sealed class RobloxFrameRateMonitor : IDisposable
     {
         lock (_gate)
         {
-            return "PresentMon 2.5.1 (official console helper)\\n" +
-                "Status: " + _status + "\\n" +
-                "Exit code: " + (_exitCode?.ToString(CultureInfo.InvariantCulture) ?? "not exited") + "\\n" +
-                "Last helper error: " + (string.IsNullOrEmpty(_lastError) ? "none received" : _lastError) + "\\n" +
-                "FPS data headers: " + (_pidColumn >= 0 ? "received" : "not received") + "\\n" +
-                "Captured Roblox PIDs: " + _frames.Count + "\\n\\n" +
+            return "PresentMon 2.5.1 (official console helper)\n" +
+                "Status: " + _status + "\n" +
+                "Exit code: " + (_exitCode?.ToString(CultureInfo.InvariantCulture) ?? "not exited") + "\n" +
+                "Last helper error: " + (string.IsNullOrEmpty(_lastError) ? "none received" : _lastError) + "\n" +
+                "FPS data headers: " + (_pidColumn >= 0 ? "received" : "not received") + "\n" +
+                "Captured Roblox PIDs: " + _frames.Count + "\n\n" +
                 "If Windows blocks ETW capture, consult official PresentMon documentation about Performance Log Users. " +
                 "Do not disable antivirus, Roblox protections or Windows security.";
         }
