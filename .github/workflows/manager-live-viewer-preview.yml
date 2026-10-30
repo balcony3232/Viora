@@ -23,6 +23,20 @@ jobs:
         shell: pwsh
         run: |
           dotnet publish VioraManager/VioraManager.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -p:DebugSymbols=false -o out/manager-preview
+      - name: Smoke-test packaged WPF startup
+        shell: pwsh
+        run: |
+          $exe = Join-Path (Get-Location) 'out/manager-preview/VioraManager.exe'
+          $env:VIORA_SMOKE_REPORT = Join-Path (Get-Location) 'out/manager-preview/startup-error.txt'
+          $process = Start-Process -FilePath $exe -ArgumentList '--smoke-test' -PassThru
+          if (-not $process.WaitForExit(40000)) {
+            $process.Kill()
+            throw 'Viora Manager startup smoke test timed out'
+          }
+          if ($process.ExitCode -ne 0) {
+            if (Test-Path $env:VIORA_SMOKE_REPORT) { Get-Content $env:VIORA_SMOKE_REPORT }
+            throw "Viora Manager startup smoke test failed with exit code $($process.ExitCode)"
+          }
       - name: Generate checksum
         shell: pwsh
         run: |
