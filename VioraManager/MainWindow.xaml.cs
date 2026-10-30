@@ -224,7 +224,16 @@ public partial class MainWindow : Window
         }
     }
 
-    private LiveInstanceViewer? _liveViewer;\n\n    private void ShowLiveViewer_Click(object sender, RoutedEventArgs e)\n    {\n        if (_liveViewer is { IsLoaded: true }) { _liveViewer.Activate(); return; }\n        _liveViewer = new LiveInstanceViewer { Owner = this };\n        _liveViewer.Show();\n    }\n\n    private void Refresh_Click(object sender, RoutedEventArgs e) => RefreshWindows();
+    private LiveInstanceViewer? _liveViewer;
+
+    private void ShowLiveViewer_Click(object sender, RoutedEventArgs e)
+    {
+        if (_liveViewer is { IsLoaded: true }) { _liveViewer.Activate(); return; }
+        _liveViewer = new LiveInstanceViewer { Owner = this };
+        _liveViewer.Show();
+    }
+
+    private void Refresh_Click(object sender, RoutedEventArgs e) => RefreshWindows();
 
     private void OpenRoblox_Click(object sender, RoutedEventArgs e)
     {
