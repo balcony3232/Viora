@@ -475,7 +475,12 @@ public sealed class LiveInstanceViewer : Window
         int auto = available >= 1000 ? 3 : available >= 730 ? 2 : 1;
         int requested = _columns.SelectedIndex switch { 1 => 1, 2 => 2, 3 => 3, 4 => 4, _ => auto };
         int cols = Math.Max(1, Math.Min(_previews.Count, requested));
-        double width = Math.Max(170, (available / cols) - 14);
+        // Keep a single preview large but still completely visible in the
+        // scrolling viewport, including its header, stats and label controls.
+        // DWM thumbnails are native overlays and cannot use WPF's ScrollViewer clip.
+        double verticalSpace = Math.Max(220, _scroll.ViewportHeight - 170);
+        double widthCap = verticalSpace * 16 / 9 + 26;
+        double width = Math.Max(170, Math.Min((available / cols) - 14, widthCap));
         foreach (var preview in _previews.Values)
         {
             if (Math.Abs(preview.Tile.Width - width) > 0.5 || double.IsNaN(preview.Tile.Width))
