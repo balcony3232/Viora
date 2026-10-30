@@ -24,9 +24,16 @@
                 <TextBlock Text="Viora Manager" FontWeight="SemiBold" FontSize="19"/>
                 <TextBlock Text="Instance &amp; Session Control" Foreground="{StaticResource Muted}" FontSize="11" Margin="0,2,0,0"/>
             </StackPanel>
-            <Border Grid.Column="2" Padding="10,5" Background="#292033" CornerRadius="12" VerticalAlignment="Center">
-                <TextBlock x:Name="ManagerVersionText" Text="v1.3 Preview" FontSize="11" Foreground="#CFBBEB"/>
-            </Border>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock x:Name="RpcStatusText" Text="RPC setup required" Foreground="#AFA0C4"
+                           FontSize="10" VerticalAlignment="Center" Margin="0,0,9,0"/>
+                <Button Content="Discord RPC" Click="DiscordRpcSettings_Click"
+                        Padding="10,6" Margin="0,0,9,0" Background="#35234B"
+                        ToolTip="Configure automatic Discord Rich Presence for Roblox clients, CPU and GPU"/>
+                <Border Padding="10,5" Background="#292033" CornerRadius="12" VerticalAlignment="Center">
+                    <TextBlock x:Name="ManagerVersionText" Text="v2.0 Preview" FontSize="11" Foreground="#CFBBEB"/>
+                </Border>
+            </StackPanel>
         </Grid>
         <UniformGrid Grid.Row="1" Columns="4" Margin="0,0,0,14">
             <Border Background="{StaticResource Panel}" CornerRadius="11" Padding="14" Margin="0,0,5,0">
@@ -49,9 +56,13 @@
         <Border Grid.Row="2" Background="#1C142A" BorderBrush="#51336C" BorderThickness="1"
                 CornerRadius="11" Padding="15,12" Margin="0,0,0,14">
             <StackPanel>
+                <CheckBox x:Name="AutoMultiInstanceToggle" Click="AutoMultiInstanceToggle_Click"
+                          Content="Automatically enable multi-instance when Manager starts"
+                          Foreground="#E8D9FF" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,10"
+                          ToolTip="Saved locally. The experiment starts only if Roblox is not already running."/>
                 <CheckBox x:Name="MultiInstanceToggle" Click="MultiInstanceToggle_Click"
                           Foreground="#E8D9FF" FontWeight="SemiBold" FontSize="13"
-                          Content="Enable experimental multi-instance mode"/>
+                          Content="Experimental multi-instance mode active this session"/>
                 <TextBlock x:Name="ExperimentStatus"
                            Foreground="#B9A9CC" FontSize="11" Margin="20,7,0,0" TextWrapping="Wrap"
                            Text="Off by default. Applies only while Viora Manager stays open. Roblox does not officially support simultaneous Player clients."/>
@@ -64,14 +75,14 @@
                     <Button Content="Refresh" Click="Refresh_Click" HorizontalAlignment="Right" Padding="11,4" FontSize="11"/>
                 </Grid>
                 <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,12">
-                    <ComboBox x:Name="LayoutChoice" Width="152" Height="33" SelectedIndex="0" Margin="0,0,7,7" Foreground="#251633">
+                    <ComboBox x:Name="LayoutChoice" Width="152" Height="33" SelectedIndex="0" Margin="0,0,7,7" Foreground="#F3E9FF">
                         <ComboBoxItem Content="Balanced grid"/>
                         <ComboBoxItem Content="Side by side"/>
                         <ComboBoxItem Content="Main + secondary"/>
                     </ComboBox>
                     <Button Content="Apply layout" Click="ApplyLayout_Click" Padding="12,7" Margin="0,0,7,7"/>
                     <Button Content="Save workspace" Click="SaveWorkspace_Click" Padding="12,7" Margin="0,0,7,7"/>
-                    <ComboBox x:Name="WorkspaceChoice" Width="150" Height="33" DisplayMemberPath="Name" Margin="0,0,7,7" Foreground="#251633" ToolTip="Saved positions for visible Roblox windows"/>
+                    <ComboBox x:Name="WorkspaceChoice" Width="150" Height="33" DisplayMemberPath="Name" Margin="0,0,7,7" Foreground="#F3E9FF" ToolTip="Saved positions for visible Roblox windows"/>
                     <Button Content="Restore saved" Click="RestoreWorkspace_Click" Padding="12,7" Margin="0,0,7,7"/>
                     <Button Content="History" Click="ShowHistory_Click" Padding="12,7" Margin="0,0,7,7"/>
                 </WrapPanel>
@@ -117,10 +128,11 @@
             </DockPanel>
         </Border>
         <Grid Grid.Row="4">
-            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
             <Button Content="＋  Open Roblox" Background="#A982F4" Foreground="#180D29" FontWeight="SemiBold" Margin="0,0,5,0" Click="OpenRoblox_Click"/>
             <Button Grid.Column="1" Content="Arrange windows" Background="#39274D" FontWeight="SemiBold" Margin="5,0" Click="ManageWindows_Click"/>
-            <Button Grid.Column="2" Content="Mini-manager" Background="#39274D" FontWeight="SemiBold" Margin="5,0,0,0" Click="ShowMiniManager_Click"/>
+            <Button Grid.Column="2" Content="Live viewer" Background="#39274D" FontWeight="SemiBold" Margin="5,0,0,0" Click="ShowLiveViewer_Click"/>
+            <Button Grid.Column="3" Content="Mini-manager" Background="#39274D" FontWeight="SemiBold" Margin="5,0,0,0" Click="ShowMiniManager_Click"/>
         </Grid>
         <TextBlock Grid.Row="5" Text="Experimental compatibility does not modify Roblox files, but simultaneous Player support and account safety are not guaranteed."
                    Foreground="{StaticResource Muted}" FontSize="11" Margin="0,12,0,0" TextWrapping="Wrap"/>

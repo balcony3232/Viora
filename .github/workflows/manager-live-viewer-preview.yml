@@ -1,0 +1,72 @@
+name: Viora Manager Live Viewer Preview
+
+on:
+  push:
+    branches:
+      - feature/manager-2-live-viewer
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-manager-preview:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout preview branch
+        uses: actions/checkout@v4
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Publish standalone Windows Manager
+        shell: pwsh
+        run: |
+          dotnet publish VioraManager/VioraManager.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -p:DebugSymbols=false -o out/manager-preview
+      - name: Download and verify Intel PresentMon FPS helper
+        shell: pwsh
+        run: |
+          $url = 'https://github.com/GameTechDev/PresentMon/releases/download/v2.5.1/PresentMon-2.5.1-x64.exe'
+          $helper = 'out/manager-preview/PresentMon-2.5.1-x64.exe'
+          $expected = '9bec3083069f58f911e6a512f4806db51a27bd096103087bc1d05ef54c80a191'
+          Invoke-WebRequest -Uri $url -OutFile $helper -ErrorAction Stop
+          $actual = (Get-FileHash $helper -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $expected) {
+            Remove-Item $helper -Force
+            throw "PresentMon hash mismatch. Expected $expected, got $actual"
+          }
+          Copy-Item third_party/PresentMon-LICENSE.txt out/manager-preview/PresentMon-LICENSE.txt
+      - name: Smoke-test packaged WPF startup
+        shell: pwsh
+        run: |
+          $exe = Join-Path (Get-Location) 'out/manager-preview/VioraManager.exe'
+          $env:VIORA_SMOKE_REPORT = Join-Path (Get-Location) 'out/manager-preview/startup-error.txt'
+          $process = Start-Process -FilePath $exe -ArgumentList '--smoke-test' -PassThru
+          if (-not $process.WaitForExit(40000)) {
+            $process.Kill()
+            throw 'Viora Manager startup smoke test timed out'
+          }
+          if ($process.ExitCode -ne 0) {
+            if (Test-Path $env:VIORA_SMOKE_REPORT) { Get-Content $env:VIORA_SMOKE_REPORT }
+            throw "Viora Manager startup smoke test failed with exit code $($process.ExitCode)"
+          }
+      - name: Generate checksum
+        shell: pwsh
+        run: |
+          $exe = 'out/manager-preview/VioraManager.exe'
+          if (!(Test-Path $exe)) { throw 'Manager EXE was not produced' }
+          $hash = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  VioraManager.exe" | Set-Content out/manager-preview/VioraManager.exe.sha256
+          $helperHash = (Get-FileHash out/manager-preview/PresentMon-2.5.1-x64.exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$helperHash  PresentMon-2.5.1-x64.exe" | Add-Content out/manager-preview/VioraManager.exe.sha256
+      - name: Upload preview binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: VioraManager-LiveViewer-Windows-x64-preview
+          path: |
+            out/manager-preview/VioraManager.exe
+            out/manager-preview/VioraManager.exe.sha256
+            out/manager-preview/PresentMon-2.5.1-x64.exe
+            out/manager-preview/PresentMon-LICENSE.txt
+          if-no-files-found: error
+          retention-days: 14
