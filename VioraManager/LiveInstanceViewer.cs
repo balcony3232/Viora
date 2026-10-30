@@ -183,6 +183,18 @@ public sealed class LiveInstanceViewer : Window
         UpdateStatus();
     }
 
+    // Validate clickable mode and grid controls in the packaged Windows smoke test.
+    internal bool SmokeTestModeButtons()
+    {
+        _interactiveButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        bool interactiveSelected = _interactive && _selectedPid == null;
+        _dashboardButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        bool dashboardSelected = !_interactive;
+        _layoutButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        bool layoutAdvanced = _layoutIndex == 1;
+        return interactiveSelected && dashboardSelected && layoutAdvanced;
+    }
+
     private static Button MakeButton(string caption) =>
         new() { Content = caption, Padding = new Thickness(11, 7, 11, 7), Margin = new Thickness(4, 0, 4, 0), FontSize = 12 };
 
