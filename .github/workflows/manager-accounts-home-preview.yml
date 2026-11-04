@@ -1,10 +1,10 @@
-name: Viora Manager 1.4.4 login-onboarding test build
+name: Viora Manager v1.4.4 Accounts Home preview
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - 'feature/manager-v1.4.4-browser-login'
+      - 'feature/manager-v1.4.4-accounts-home'
 
 permissions:
   contents: read
