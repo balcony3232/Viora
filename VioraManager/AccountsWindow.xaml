@@ -1,7 +1,7 @@
 <Window x:Class="VioraManager.AccountsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Viora Manager — Account Shortcuts"
+        Title="Viora Manager — Add Accounts"
         Width="845" Height="650" MinWidth="730" MinHeight="555"
         WindowStartupLocation="CenterOwner"
         Background="#0D0915" Foreground="#F2EAFF">
@@ -13,9 +13,9 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <StackPanel Margin="0,0,0,16">
-            <TextBlock Text="Roblox Account Shortcuts" Foreground="#C3A1FF"
+            <TextBlock Text="Add Roblox Accounts" Foreground="#C3A1FF"
                        FontSize="22" FontWeight="SemiBold"/>
-            <TextBlock Text="Keep different Roblox logins in separate browser profiles. Viora saves only usernames, browser choices and game shortcuts — no passwords or cookies."
+            <TextBlock Text="Save each Roblox username with a separate Edge, Chrome or Brave browser profile and optional game/subplace ID. Viora saves no passwords or cookies."
                        Foreground="{StaticResource Muted}" TextWrapping="Wrap" FontSize="12" Margin="0,6,0,0"/>
         </StackPanel>
         <Border Grid.Row="1" Background="{StaticResource Panel}" Padding="15"
@@ -49,12 +49,13 @@
                         <ComboBox x:Name="BrowserInput" Height="29" SelectedIndex="0">
                             <ComboBoxItem Content="Microsoft Edge" Tag="Edge"/>
                             <ComboBoxItem Content="Google Chrome" Tag="Chrome"/>
+                            <ComboBoxItem Content="Brave Browser" Tag="Brave"/>
                         </ComboBox>
                     </StackPanel>
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="BROWSER PROFILE FOLDER" Foreground="{StaticResource Muted}" FontSize="10" Margin="0,0,0,4"/>
-                        <ComboBox x:Name="ProfileInput" Height="29"
-                                  ToolTip="Use 'Default' for your first browser profile, or Profile 1, Profile 2, etc."/>
+                        <ComboBox x:Name="ProfileInput" Height="29" IsEditable="True"
+                                  ToolTip="Use 'Default', 'Profile 1', 'Profile 2', etc. You can type higher profile folder numbers."/>
                     </StackPanel>
                 </Grid>
                 <DockPanel>
@@ -97,7 +98,7 @@
                                                 VerticalAlignment="Center">
                                         <Button Content="Sign in / Roblox" Tag="{Binding}" Click="OpenAccount_Click"
                                                 Margin="0,0,7,0" Padding="11,8"/>
-                                        <Button Content="Open game" Tag="{Binding}" Click="OpenGame_Click"
+                                        <Button Content="▶ Play game" Tag="{Binding}" Click="OpenGame_Click"
                                                 Margin="0,0,7,0" Padding="11,8"/>
                                         <Button Content="Remove" Tag="{Binding}" Click="Remove_Click"
                                                 Padding="11,8"/>
@@ -111,6 +112,6 @@
         </Border>
         <TextBlock Grid.Row="3" Foreground="{StaticResource Muted}"
                    FontSize="11" TextWrapping="Wrap"
-                   Text="Browser profiles must already be signed into the correct Roblox account. 'Open game' opens the official game page; press Play in Roblox. This does not force a Player client into a specific account, and multi-instance compatibility is not guaranteed."/>
+                   Text="Play opens Roblox's official game-start link for the selected browser profile. Roblox Player may still use a different signed-in account; verify it before playing. Saved accounts are local shortcuts, not logged-in sessions."/>
     </Grid>
 </Window>
