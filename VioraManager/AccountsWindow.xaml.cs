@@ -68,7 +68,7 @@ public sealed class SavedRobloxAccount : System.ComponentModel.INotifyPropertyCh
 
     public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
 
-    public void ApplyPublicProfile(RobloxPublicProfiles.PublicProfile profile)
+    internal void ApplyPublicProfile(RobloxPublicProfiles.PublicProfile profile)
     {
         PublicUserId = profile.UserId;
         PublicDisplayName = profile.DisplayName;
