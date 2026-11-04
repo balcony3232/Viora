@@ -213,6 +213,15 @@ public partial class MainWindow : Window
 
     private void Refresh_Click(object sender, RoutedEventArgs e) => RefreshWindows();
 
+    private void AddAccount_Click(object sender, RoutedEventArgs e)
+    {
+        // Open a fresh, isolated browser login immediately after the wizard loads.
+        // Actual identity stays under Roblox's control; user labels it on return.
+        var dialog = new AccountsWindow(openLoginOnLaunch: true) { Owner = this };
+        dialog.ShowDialog();
+        ReloadConnectedAccounts();
+    }
+
     private void Accounts_Click(object sender, RoutedEventArgs e)
     {
         // Browser-based shortcuts are separate from the experimental mutex.
