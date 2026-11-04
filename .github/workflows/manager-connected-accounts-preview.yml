@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - 'feature/manager-v1.4.3-connected-accounts'
+      - 'feature/manager-v1.4.3-browser-login'
 
 permissions:
   contents: read
@@ -43,7 +43,7 @@ jobs:
       - name: Upload Manager preview artifact
         uses: actions/upload-artifact@v4
         with:
-          name: VioraManager-v1.4.3-connected-accounts
+          name: VioraManager-v1.4.3-guided-login
           path: |
             publish/*.exe
             publish/*.sha256
