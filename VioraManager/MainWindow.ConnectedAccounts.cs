@@ -114,7 +114,9 @@ public partial class MainWindow
                 _launchAccountWarningAccepted = true;
             }
 
-            RobloxBrowserLauncher.Open(account, place, tryJoinDirectly: true, jobId: GetOptionalJobId());
+            string? jobId = GetOptionalJobId();
+            RobloxBrowserLauncher.Open(account, place, tryJoinDirectly: true, jobId: jobId);
+            RecordLaunch(account, place, jobId);
             AccountLaunchStatus.Text = "Opened game-start link for " + account.Username +
                 " · Place " + place + ". Check Roblox Player to confirm the account and game.";
         }
