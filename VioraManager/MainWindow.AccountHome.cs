@@ -267,9 +267,20 @@ public partial class MainWindow
             foreach (var account in selected)
             {
                 cancel.Token.ThrowIfCancellationRequested();
-                RobloxBrowserLauncher.Open(account, place ?? account.PlaceId,
-                    tryJoinDirectly: true, jobId: job);
-                RecordLaunch(account, place ?? account.PlaceId, job);
+                long targetPlace = (place ?? account.PlaceId)!.Value;
+                if (account.EmbeddedBrowserProfile)
+                {
+                    var window = new RobloxEmbeddedLoginWindow(account.Id,
+                        RobloxBrowserLauncher.BuildGameStartUrl(targetPlace, job),
+                        detectLogin: false) { Owner = this };
+                    window.Show();
+                }
+                else
+                {
+                    RobloxBrowserLauncher.Open(account, targetPlace,
+                        tryJoinDirectly: true, jobId: job);
+                }
+                RecordLaunch(account, targetPlace, job);
                 completed++;
                 AccountLaunchStatus.Text = "Opened " + completed + "/" + selected.Count +
                     " browser game-start links. Verify desktop Roblox identity.";
