@@ -73,16 +73,32 @@ public partial class MainWindow
     private void SavedAccountLogin_Click(object sender, RoutedEventArgs e)
     {
         if ((sender as Button)?.Tag is not SavedRobloxAccount account) return;
+        if (!account.EmbeddedBrowserProfile &&
+            MessageBox.Show(this,
+                "This account was saved using an external Edge/Chrome browser. " +
+                "Viora's new embedded browser keeps its own separate login. " +
+                "Sign in once more inside Viora to detect the account automatically? " +
+                "Your existing browser session will remain unchanged.",
+                "Connect inside Viora", MessageBoxButton.YesNo,
+                MessageBoxImage.Information) != MessageBoxResult.Yes)
+            return;
         try
         {
-            RobloxBrowserLauncher.Open(account, null, tryJoinDirectly: false);
-            AccountLaunchStatus.Text = "Opened Roblox sign-in for " + account.Username +
-                " in " + account.Browser + " (" + account.ProfileDirectory + ").";
+            var login = new RobloxEmbeddedLoginWindow(account.Id) { Owner = this };
+            if (login.ShowDialog() == true && login.DetectedUser is not null)
+            {
+                var saved = EmbeddedRobloxAccountStore.SaveDetectedAccount(account.Id, login.DetectedUser);
+                ReloadConnectedAccounts();
+                _ = RefreshPublicProfilesAsync();
+                AccountLaunchStatus.Text = "Connected @" + saved.RobloxUsername +
+                    " · Roblox User ID " + saved.PublicUserId +
+                    ". Roblox's browser session is saved for this account.";
+            }
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or
-            FileNotFoundException or Win32Exception)
+            InvalidDataException or UnauthorizedAccessException or IOException or JsonException)
         {
-            MessageBox.Show(this, ex.Message, "Viora Manager — Account shortcut",
+            MessageBox.Show(this, ex.Message, "Viora Manager — Roblox login",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
@@ -115,7 +131,19 @@ public partial class MainWindow
             }
 
             string? jobId = GetOptionalJobId();
-            RobloxBrowserLauncher.Open(account, place, tryJoinDirectly: true, jobId: jobId);
+            if (account.EmbeddedBrowserProfile)
+            {
+                // Same browser profile used during Add Account; Roblox itself
+                // still determines which account the desktop Player uses.
+                var game = new RobloxEmbeddedLoginWindow(account.Id,
+                    RobloxBrowserLauncher.BuildGameStartUrl(place.Value, jobId),
+                    detectLogin: false) { Owner = this };
+                game.Show();
+            }
+            else
+            {
+                RobloxBrowserLauncher.Open(account, place, tryJoinDirectly: true, jobId: jobId);
+            }
             RecordLaunch(account, place, jobId);
             AccountLaunchStatus.Text = "Opened game-start link for " + account.Username +
                 " · Place " + place + ". Check Roblox Player to confirm the account and game.";

@@ -1,0 +1,57 @@
+<Window x:Class="VioraManager.RobloxEmbeddedLoginWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        Title="Viora Manager — Roblox Login"
+        Width="1010" Height="760" MinWidth="750" MinHeight="560"
+        WindowStartupLocation="CenterOwner"
+        Background="#0D0915" Foreground="#F2EAFF">
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="Roblox Account Login" FontSize="21" FontWeight="SemiBold"
+                           Foreground="#D4B4FF"/>
+                <TextBlock x:Name="StatusText"
+                           Text="Roblox opens inside Viora. Sign in normally; your account details will be detected after login."
+                           Foreground="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap"
+                           Margin="0,5,0,0"/>
+            </StackPanel>
+            <Border Grid.Column="1" Background="#322047" CornerRadius="12"
+                    Padding="11,6" VerticalAlignment="Center">
+                <TextBlock Text="Official Roblox website" Foreground="#D4B4FF" FontSize="11"/>
+            </Border>
+        </Grid>
+        <Border Grid.Row="1" Background="#191222" CornerRadius="12" ClipToBounds="True"
+                BorderBrush="#52396A" BorderThickness="1">
+            <Grid>
+                <wv2:WebView2 x:Name="RobloxWebView" />
+            </Grid>
+        </Border>
+        <Grid Grid.Row="2" Margin="0,12,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="Viora reads only the username, User ID and display name returned by Roblox. No passwords or cookies are copied or exported."
+                       Foreground="{StaticResource Muted}" FontSize="10" TextWrapping="Wrap"
+                       VerticalAlignment="Center" Margin="0,0,12,0"/>
+            <Button Grid.Column="1" Content="Open Roblox home" Click="Home_Click"
+                    Padding="11,8" Margin="0,0,8,0" FontSize="11"/>
+            <Button Grid.Column="2" x:Name="CheckButton" Content="Detect signed-in account"
+                    Click="Check_Click" Background="#A982F4" Foreground="#180D29"
+                    FontWeight="SemiBold" Padding="13,8" FontSize="11" Margin="0,0,8,0"/>
+            <Button Grid.Column="3" Content="Close" Click="Close_Click" Padding="13,8"/>
+        </Grid>
+    </Grid>
+</Window>

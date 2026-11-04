@@ -23,6 +23,12 @@ public sealed class SavedRobloxAccount : System.ComponentModel.INotifyPropertyCh
     public string ProfileDirectory { get; set; } = "Default";
     public long? PlaceId { get; set; }
     public bool ManagedBrowserProfile { get; set; }
+    // In-app WebView2 session is separate from old Edge/Chrome profiles.
+    public bool EmbeddedBrowserProfile { get; set; }
+    // Browser session user identity checked using Roblox authenticated-user API.
+    // Not Roblox OAuth, nor proof of the active desktop Player identity.
+    public long? SessionIdentityUserId { get; set; }
+    public DateTime? SessionIdentityCheckedAtUtc { get; set; }
 
     // Local, optional organisation fields. Username is the legacy label,
     // not evidence of an authenticated Roblox browser session.
@@ -54,13 +60,16 @@ public sealed class SavedRobloxAccount : System.ComponentModel.INotifyPropertyCh
     [JsonIgnore]
     public string SecondaryLine => PublicUserId is long id && id > 0
         ? "@" + (string.IsNullOrWhiteSpace(RobloxUsername) ? Username : RobloxUsername) +
-          "  ·  #" + id + (VerifiedRobloxUserId == id ? "  ·  ✓ OAuth linked" : "  ·  public lookup")
+          "  ·  #" + id + (EmbeddedBrowserProfile && SessionIdentityUserId == id
+             ? "  ·  ✓ Browser login" : VerifiedRobloxUserId == id
+             ? "  ·  ✓ OAuth linked" : "  ·  public lookup")
         : Username + "  ·  Roblox identity not linked";
 
     [JsonIgnore]
     public string Detail => (IsPinned ? "📌 " : "") +
         (IsFavorite ? "★ " : "") + Browser + " · " +
-        (ManagedBrowserProfile ? "Private browser profile" : ProfileDirectory) +
+        (EmbeddedBrowserProfile ? "Embedded Roblox browser" :
+         ManagedBrowserProfile ? "Private browser profile" : ProfileDirectory) +
         (PlaceId is long id ? " · Game " + id : " · No saved game") +
         (string.IsNullOrWhiteSpace(Group) ? "" : " · " + Group) +
         (string.IsNullOrWhiteSpace(Tags) ? "" : " · " + Tags);
@@ -69,7 +78,8 @@ public sealed class SavedRobloxAccount : System.ComponentModel.INotifyPropertyCh
     public string SearchableText => string.Join(" ", new[]
     {
         Username, Alias, RobloxUsername, PublicDisplayName, Group, Tags, Notes,
-        PublicUserId?.ToString() ?? "", VerifiedRobloxUserId?.ToString() ?? ""
+        PublicUserId?.ToString() ?? "", VerifiedRobloxUserId?.ToString() ?? "",
+        SessionIdentityUserId?.ToString() ?? ""
     });
 
     public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
@@ -175,80 +185,38 @@ public partial class AccountsWindow : Window
         a.Username is not null && UsernamePattern.IsMatch(a.Username) &&
         a.Browser is "Edge" or "Chrome" or "Brave" &&
         a.ProfileDirectory is not null &&
-        (a.ManagedBrowserProfile || ProfilePattern.IsMatch(a.ProfileDirectory)) &&
+        (a.ManagedBrowserProfile || a.EmbeddedBrowserProfile || ProfilePattern.IsMatch(a.ProfileDirectory)) &&
         (a.PlaceId is null or > 0);
 
     private void StartBrowserLogin_Click(object sender, RoutedEventArgs e) =>
         BeginBrowserLogin();
 
-    private async void BeginBrowserLogin()
+    private void BeginBrowserLogin()
     {
         if (_readOnly) return;
-        if (_accounts.Count >= 1000)
+        string id = Guid.NewGuid().ToString("N");
+        try
         {
-            LoginStatusText.Text = "The account shortcut limit has been reached.";
-            return;
-        }
-
-        string browser = (BrowserInput.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "Edge";
-        int number = 1;
-        while (_accounts.Any(a => a.Username.Equals(
-                   "Account" + number, StringComparison.OrdinalIgnoreCase)))
-        {
-            number++;
-        }
-
-        // We cannot determine the user's authenticated Roblox account merely
-        // by opening a browser, so save a generic, user-renamable label. Roblox
-        // itself retains the login inside the browser-managed profile directory.
-        var saved = new SavedRobloxAccount
-        {
-            Id = Guid.NewGuid().ToString("N"),
-            Username = "Account" + number,
-            Browser = browser,
-            ProfileDirectory = "Default",
-            ManagedBrowserProfile = true
-        };
-
-        // Persist the shortcut first. The user doesn't need to copy a name or
-        // click a second Save button after completing Roblox's official login.
-        _accounts.Add(saved);
-        if (!Persist())
-        {
-            _accounts.Remove(saved);
-            LoginStatusText.Text = "Couldn't save a browser profile. Roblox login wasn't opened.";
-            return;
-        }
-
-        RefreshEmptyState();
-        AccountList.SelectedItem = saved; // Show rename/game options, if wanted.
-        SaveMessage.Text = "Shortcut saved. The browser handles passwords and cookies; " +
-            "Viora stores only public account metadata.";
-
-        if (RobloxOAuthLinker.GetClientId().Length > 0)
-        {
-            LoginStatusText.Text = "Account slot saved as " + saved.Username +
-                ". Starting official Roblox account verification…";
-            await VerifySavedAccountAsync(saved);
-        }
-        else
-        {
-            OAuthSetupExpander.IsExpanded = true;
-            LoginStatusText.Text = "Account slot saved as " + saved.Username +
-                ". Browser sign-in alone cannot report who logged in. Configure " +
-                "official Roblox OAuth below to link the identity automatically.";
-            try
+            var browser = new RobloxEmbeddedLoginWindow(id) { Owner = this };
+            if (browser.ShowDialog() != true || browser.DetectedUser is null)
             {
-                RobloxBrowserLauncher.OpenLogin(saved);
+                LoginStatusText.Text = "Login wasn't completed. No new account was saved.";
+                return;
             }
-            catch (Exception ex) when (ex is ArgumentException or
-                System.ComponentModel.Win32Exception or FileNotFoundException or
-                InvalidOperationException)
-            {
-                LoginStatusText.Text = "Saved the shortcut, but couldn't open Roblox login.";
-                MessageBox.Show(this, ex.Message, "Open Roblox login",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
+            var saved = EmbeddedRobloxAccountStore.SaveDetectedAccount(id, browser.DetectedUser);
+            _accounts.Clear();
+            LoadShortcuts();
+            AccountList.SelectedItem = _accounts.FirstOrDefault(a => a.Id == saved.Id);
+            LoginStatusText.Text = "Connected @" + saved.RobloxUsername +
+                " · Roblox User ID " + saved.PublicUserId + ". The browser saved its session.";
+            SaveMessage.Text = "Account connected automatically. You can add a custom nickname below.";
+            RefreshEmptyState();
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or
+            IOException or UnauthorizedAccessException or JsonException or InvalidDataException)
+        {
+            MessageBox.Show(this, ex.Message, "Connect Roblox account",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -464,7 +432,10 @@ public partial class AccountsWindow : Window
                 PublicUserId = samePublicProfile ? current!.PublicUserId : null,
                 PublicDisplayName = samePublicProfile ? current!.PublicDisplayName : "",
                 VerifiedRobloxUserId = samePublicProfile ? current!.VerifiedRobloxUserId : null,
-                VerifiedAtUtc = samePublicProfile ? current!.VerifiedAtUtc : null
+                VerifiedAtUtc = samePublicProfile ? current!.VerifiedAtUtc : null,
+                EmbeddedBrowserProfile = current?.EmbeddedBrowserProfile ?? false,
+                SessionIdentityUserId = samePublicProfile ? current!.SessionIdentityUserId : null,
+                SessionIdentityCheckedAtUtc = samePublicProfile ? current!.SessionIdentityCheckedAtUtc : null
             };
             int index = current is null ? -1 : _accounts.IndexOf(current);
             if (index >= 0) _accounts[index] = updated;
@@ -594,17 +565,44 @@ public partial class AccountsWindow : Window
     {
         try
         {
-            RobloxBrowserLauncher.Open(account, placeId, tryJoinDirectly: placeId.HasValue);
-            SaveMessage.Text = placeId.HasValue
-                ? "Opening game-start link for " + account.Username +
-                  ". Confirm which Roblox Player account actually launched."
-                : "Opened official Roblox website in " + account.Browser + " (" +
-                  account.ProfileDirectory + "). Sign in to the correct account there.";
+            if (placeId is long place)
+            {
+                if (account.EmbeddedBrowserProfile)
+                {
+                    var game = new RobloxEmbeddedLoginWindow(account.Id,
+                        RobloxBrowserLauncher.BuildGameStartUrl(place), detectLogin: false)
+                    { Owner = this };
+                    game.Show();
+                }
+                else
+                {
+                    RobloxBrowserLauncher.Open(account, place, tryJoinDirectly: true);
+                }
+                SaveMessage.Text = "Opened game for " + account.Username +
+                    ". Check which account Roblox Player actually uses.";
+            }
+            else
+            {
+                var login = new RobloxEmbeddedLoginWindow(account.Id) { Owner = this };
+                if (login.ShowDialog() == true && login.DetectedUser is not null)
+                {
+                    var linked = EmbeddedRobloxAccountStore.SaveDetectedAccount(account.Id,
+                        login.DetectedUser);
+                    _accounts.Clear();
+                    LoadShortcuts();
+                    AccountList.SelectedItem = _accounts.FirstOrDefault(x => x.Id == linked.Id);
+                    RefreshEmptyState();
+                    SaveMessage.Text = "Detected @" + linked.RobloxUsername +
+                        " (Roblox User ID " + linked.PublicUserId +
+                        "). Username and display name saved automatically.";
+                }
+            }
         }
         catch (Exception ex) when (ex is ArgumentException or System.ComponentModel.Win32Exception or
-            FileNotFoundException or InvalidOperationException)
+            FileNotFoundException or InvalidOperationException or IOException or
+            UnauthorizedAccessException or JsonException)
         {
-            MessageBox.Show(this, "Could not launch Roblox page: " + ex.Message,
+            MessageBox.Show(this, "Could not open Roblox: " + ex.Message,
                 "Viora Manager", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }

@@ -54,6 +54,19 @@ internal static class RobloxBrowserLauncher
             "This link does not contain a valid Roblox Place ID. A game or subplace ID is required.");
     }
 
+    public static string BuildGameStartUrl(long placeId, string? jobId = null)
+    {
+        if (placeId <= 0) throw new ArgumentException("A positive Roblox Place ID is required.");
+        string url = "https://www.roblox.com/games/start?placeId=" + placeId;
+        if (!string.IsNullOrWhiteSpace(jobId))
+        {
+            if (!Guid.TryParse(jobId, out var guid))
+                throw new ArgumentException("A valid Roblox server Job GUID is required.");
+            url += "&gameInstanceId=" + Uri.EscapeDataString(guid.ToString());
+        }
+        return url;
+    }
+
     public static void Open(SavedRobloxAccount account, long? placeId, bool tryJoinDirectly, string? jobId = null)
     {
         if (account.Browser is not ("Edge" or "Chrome" or "Brave") ||
