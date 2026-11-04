@@ -215,12 +215,30 @@ public partial class MainWindow : Window
 
     private void AddAccount_Click(object sender, RoutedEventArgs e)
     {
-        // Open a fresh, isolated browser login immediately after the wizard loads.
-        // Actual identity stays under Roblox's control; user labels it on return.
-        var dialog = new AccountsWindow(openLoginOnLaunch: true) { Owner = this };
-        dialog.ShowDialog();
-        ReloadConnectedAccounts();
-        _ = RefreshPublicProfilesAsync();
+        // Account is saved ONLY after Roblox confirms the authenticated user
+        // inside a new embedded browser profile. No OAuth setup needed.
+        string id = Guid.NewGuid().ToString("N");
+        try
+        {
+            var login = new RobloxEmbeddedLoginWindow(id) { Owner = this };
+            if (login.ShowDialog() != true || login.DetectedUser is null)
+            {
+                AccountLaunchStatus.Text = "Login cancelled. No new account added.";
+                return;
+            }
+            var saved = EmbeddedRobloxAccountStore.SaveDetectedAccount(id, login.DetectedUser);
+            ReloadConnectedAccounts();
+            _ = RefreshPublicProfilesAsync();
+            AccountLaunchStatus.Text = "Added @" + saved.RobloxUsername +
+                " · Roblox User ID " + saved.PublicUserId +
+                ". The embedded browser will remember this login.";
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or
+            IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+        {
+            MessageBox.Show(this, "Unable to add Roblox account: " + ex.Message,
+                "Viora Manager", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     private void Accounts_Click(object sender, RoutedEventArgs e)
