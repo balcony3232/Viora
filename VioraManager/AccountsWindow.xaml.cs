@@ -40,7 +40,6 @@ public partial class AccountsWindow : Window
 
     private readonly ObservableCollection<SavedRobloxAccount> _accounts = new();
     private string? _selectedId;
-    private SavedRobloxAccount? _pendingLoginAccount;
     private bool _readOnly;
     private readonly string _storagePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -56,13 +55,7 @@ public partial class AccountsWindow : Window
         LoadShortcuts();
         RefreshEmptyState();
         if (openLoginOnLaunch)
-        {
-            Loaded += (_, _) =>
-            {
-                if (_pendingLoginAccount is null)
-                    BeginBrowserLogin();
-            };
-        }
+            Loaded += (_, _) => BeginBrowserLogin();
     }
 
     private void LoadShortcuts()
@@ -121,49 +114,56 @@ public partial class AccountsWindow : Window
             LoginStatusText.Text = "The account shortcut limit has been reached.";
             return;
         }
-        if (_pendingLoginAccount is not null)
-        {
-            if (MessageBox.Show(this,
-                "Start a fresh Roblox login? The previous unfinished browser profile will " +
-                "remain on disk until you clean it up manually.",
-                "Start another login", MessageBoxButton.YesNo,
-                MessageBoxImage.Question) != MessageBoxResult.Yes) return;
-        }
 
         string browser = (BrowserInput.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "Edge";
-        var pending = new SavedRobloxAccount
+        int number = 1;
+        while (_accounts.Any(a => a.Username.Equals(
+                   "Account" + number, StringComparison.OrdinalIgnoreCase)))
+        {
+            number++;
+        }
+
+        // We cannot determine the user's authenticated Roblox account merely
+        // by opening a browser, so save a generic, user-renamable label. Roblox
+        // itself retains the login inside the browser-managed profile directory.
+        var saved = new SavedRobloxAccount
         {
             Id = Guid.NewGuid().ToString("N"),
+            Username = "Account" + number,
             Browser = browser,
             ProfileDirectory = "Default",
             ManagedBrowserProfile = true
         };
+
+        // Persist the shortcut first. The user doesn't need to copy a name or
+        // click a second Save button after completing Roblox's official login.
+        _accounts.Add(saved);
+        if (!Persist())
+        {
+            _accounts.Remove(saved);
+            LoginStatusText.Text = "Couldn't save a browser profile. Roblox login wasn't opened.";
+            return;
+        }
+
+        RefreshEmptyState();
+        AccountList.SelectedItem = saved; // Show rename/game options, if wanted.
+        LoginStatusText.Text = "Account slot saved as " + saved.Username +
+            ". Opening Roblox login now. Sign in on the Roblox website; " +
+            "the browser saves its own session automatically.";
+        SaveMessage.Text = "Optional: rename " + saved.Username +
+            " to the actual Roblox username and add a game ID below.";
+
         try
         {
-            // Roblox's own site handles the password and MFA. We deliberately
-            // do not inspect browser storage, Roblox cookies, or browser requests.
-            RobloxBrowserLauncher.OpenLogin(pending);
-            _pendingLoginAccount = pending;
-            _selectedId = null;
-            AccountList.SelectedItem = null;
-            UsernameInput.Clear();
-            PlaceInput.Clear();
-            BrowserInput.IsEnabled = false;
-            ProfileInput.Text = "Private browser (managed by Viora)";
-            ProfileInput.IsEnabled = false;
-            SaveButton.Content = "Finish && save account";
-            LoginStatusText.Text =
-                "Roblox login has opened in a fresh private browser profile. " +
-                "Sign in on roblox.com, then return here, enter the Roblox username " +
-                "as a label and click Finish & save. Viora doesn't check the browser's identity.";
-            SaveMessage.Text = "Your browser stores its own login; Viora saves only this account shortcut.";
-            UsernameInput.Focus();
+            // Cookies/passwords remain managed by the browser, not by Viora.
+            RobloxBrowserLauncher.OpenLogin(saved);
         }
         catch (Exception ex) when (ex is ArgumentException or
             System.ComponentModel.Win32Exception or
             FileNotFoundException or InvalidOperationException)
         {
-            LoginStatusText.Text = "Couldn't open Roblox login. Choose an installed browser and try again.";
+            LoginStatusText.Text = "Saved the shortcut for " + saved.Username +
+                ", but Roblox login couldn't be opened. Use the Sign in button below to retry.";
             MessageBox.Show(this, ex.Message, "Open Roblox login",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
         }
@@ -209,46 +209,36 @@ public partial class AccountsWindow : Window
             string username = UsernameInput.Text.Trim();
             long? place = RobloxBrowserLauncher.ParsePlaceId(PlaceInput.Text);
             var current = _accounts.FirstOrDefault(x => x.Id == _selectedId);
-            var pending = current is null ? _pendingLoginAccount : null;
 
-            // For Viora-managed browser profiles, lock the browser and profile
-            // to the original login folder. A visible label cannot authenticate
-            // an account or transfer its browser's cookies to another profile.
             string browser = current?.ManagedBrowserProfile == true
                 ? current.Browser
-                : pending?.Browser ??
-                  (BrowserInput.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "Edge";
-            string profile = current?.ManagedBrowserProfile == true || pending is not null
+                : (BrowserInput.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "Edge";
+            string profile = current?.ManagedBrowserProfile == true
                 ? "Default" : ProfileInput.Text.Trim();
-            bool managed = current?.ManagedBrowserProfile ?? pending is not null;
+            bool managed = current?.ManagedBrowserProfile ?? false;
+
             if (!UsernamePattern.IsMatch(username))
-                throw new ArgumentException(
-                    "After signing into Roblox, enter a username of 3–20 letters, numbers or underscores.");
+                throw new ArgumentException("Enter a username/label of 3–20 letters, numbers or underscores.");
             if (browser is not ("Edge" or "Chrome" or "Brave") ||
                 (!managed && !ProfilePattern.IsMatch(profile)))
                 throw new ArgumentException("Choose a supported browser and profile.");
-
             if (_accounts.Any(a => a.Id != _selectedId &&
                 (a.Username.Equals(username, StringComparison.OrdinalIgnoreCase) ||
                  (!a.ManagedBrowserProfile && !managed &&
                   a.Browser == browser && a.ProfileDirectory == profile))))
-                throw new ArgumentException(
-                    "That username or browser profile already has a shortcut.");
+                throw new ArgumentException("That username or legacy browser profile is already saved.");
 
             if (current is null && _accounts.Count >= 1000)
                 throw new ArgumentException("The account shortcut limit of 1,000 has been reached.");
-
-            bool editing = current is not null;
             var updated = new SavedRobloxAccount
             {
-                Id = current?.Id ?? pending?.Id ?? Guid.NewGuid().ToString("N"),
+                Id = current?.Id ?? Guid.NewGuid().ToString("N"),
                 Username = username,
                 Browser = browser,
                 ProfileDirectory = profile,
                 PlaceId = place,
                 ManagedBrowserProfile = managed
             };
-
             int index = current is null ? -1 : _accounts.IndexOf(current);
             if (index >= 0) _accounts[index] = updated;
             else _accounts.Add(updated);
@@ -259,12 +249,10 @@ public partial class AccountsWindow : Window
                 return;
             }
 
-            bool fromLogin = pending is not null;
             ClearFields();
-            SaveMessage.Text = fromLogin
-                ? "Account shortcut saved. Roblox's browser profile keeps its own login. " +
-                  "The username is your label and has not been verified by Viora."
-                : editing ? "Account shortcut updated." : "Account shortcut saved.";
+            SaveMessage.Text = current is null
+                ? "Account shortcut saved. Use Open Roblox login to create a dedicated browser session."
+                : "Saved changes. Roblox's browser login remains unchanged; the username is only a label.";
             RefreshEmptyState();
         }
         catch (ArgumentException ex)
@@ -277,7 +265,6 @@ public partial class AccountsWindow : Window
     private void AccountList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (AccountList.SelectedItem is not SavedRobloxAccount account) return;
-        _pendingLoginAccount = null;
         _selectedId = account.Id;
         UsernameInput.Text = account.Username;
         PlaceInput.Text = account.PlaceId?.ToString() ?? "";
@@ -291,7 +278,8 @@ public partial class AccountsWindow : Window
             ? "Private browser (managed by Viora)" : account.ProfileDirectory;
         SaveButton.Content = "Save changes";
         LoginStatusText.Text = account.ManagedBrowserProfile
-            ? "This shortcut uses an isolated browser login. Open it with Sign in / Roblox below."
+            ? "This shortcut uses an isolated browser login saved by " + account.Browser +
+              ". You may rename the label; Viora does not verify Roblox identity."
             : "This is a legacy browser profile shortcut. You can still edit it.";
         SaveMessage.Text = "Editing " + account.Username +
             ". Roblox identity is controlled by the browser, not by this label.";
@@ -299,7 +287,6 @@ public partial class AccountsWindow : Window
 
     private void ClearFields()
     {
-        _pendingLoginAccount = null;
         _selectedId = null;
         AccountList.SelectedItem = null;
         UsernameInput.Clear();
