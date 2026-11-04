@@ -139,9 +139,15 @@
                                  ToolTip="Optional running server Job ID (GUID). Leave blank for an automatic public server."
                                  MaxLength="40"/>
                     </Grid>
-                    <TextBlock Text="Optional server Job ID is in the right-hand box. Roblox's deprecated game-start link may not honour a specific server."
-                               Foreground="{StaticResource Muted}" FontSize="10" Margin="0,6,0,0"
-                               TextWrapping="Wrap"/>
+                    <DockPanel Margin="0,7,0,0">
+                        <Button DockPanel.Dock="Right" Content="Browse / random servers"
+                                Click="BrowseServers_Click" FontSize="11" Padding="10,6"
+                                Margin="10,0,0,0"
+                                ToolTip="Use Roblox's public server list; choose a server Job ID."/>
+                        <TextBlock Text="Optional server Job ID on the right. Server joins may fail if full, and client account selection is not guaranteed."
+                                   Foreground="{StaticResource Muted}" FontSize="10"
+                                   VerticalAlignment="Center" TextWrapping="Wrap"/>
+                    </DockPanel>
                 </StackPanel>
             </Border>
             <Border Grid.Row="2" Background="#191222" CornerRadius="11" Padding="10">
