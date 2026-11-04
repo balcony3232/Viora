@@ -34,6 +34,10 @@ public sealed class SavedRobloxAccount : System.ComponentModel.INotifyPropertyCh
     public bool IsPinned { get; set; }
     public long? PublicUserId { get; set; }
     public string PublicDisplayName { get; set; } = "";
+    // Non-secret identity record from explicit, validated Roblox OAuth consent.
+    // Does not prove that a desktop Roblox Player uses this same account.
+    public long? VerifiedRobloxUserId { get; set; }
+    public DateTime? VerifiedAtUtc { get; set; }
 
     [JsonIgnore]
     public System.Windows.Media.ImageSource? AvatarImage { get; private set; }
@@ -49,7 +53,8 @@ public sealed class SavedRobloxAccount : System.ComponentModel.INotifyPropertyCh
     [JsonIgnore]
     public string SecondaryLine => PublicUserId is long id && id > 0
         ? "@" + (string.IsNullOrWhiteSpace(RobloxUsername) ? Username : RobloxUsername) +
-          "  ·  #" + id : Username + "  ·  public profile not linked";
+          "  ·  #" + id + (VerifiedRobloxUserId == id ? "  ·  ✓ OAuth linked" : "  ·  public lookup")
+        : Username + "  ·  Roblox identity not linked";
 
     [JsonIgnore]
     public string Detail => (IsPinned ? "📌 " : "") +
@@ -63,7 +68,7 @@ public sealed class SavedRobloxAccount : System.ComponentModel.INotifyPropertyCh
     public string SearchableText => string.Join(" ", new[]
     {
         Username, Alias, RobloxUsername, PublicDisplayName, Group, Tags, Notes,
-        PublicUserId?.ToString() ?? ""
+        PublicUserId?.ToString() ?? "", VerifiedRobloxUserId?.ToString() ?? ""
     });
 
     public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
@@ -322,7 +327,9 @@ public partial class AccountsWindow : Window
                 IsFavorite = FavoriteInput.IsChecked == true,
                 IsPinned = PinnedInput.IsChecked == true,
                 PublicUserId = samePublicProfile ? current!.PublicUserId : null,
-                PublicDisplayName = samePublicProfile ? current!.PublicDisplayName : ""
+                PublicDisplayName = samePublicProfile ? current!.PublicDisplayName : "",
+                VerifiedRobloxUserId = samePublicProfile ? current!.VerifiedRobloxUserId : null,
+                VerifiedAtUtc = samePublicProfile ? current!.VerifiedAtUtc : null
             };
             int index = current is null ? -1 : _accounts.IndexOf(current);
             if (index >= 0) _accounts[index] = updated;
