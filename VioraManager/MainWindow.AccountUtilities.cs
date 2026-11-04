@@ -179,6 +179,13 @@ public partial class MainWindow
                 // must be looked up afresh before showing avatar/user ID.
                 item.PublicUserId = null;
                 item.PublicDisplayName = "";
+                item.VerifiedRobloxUserId = null;
+                item.VerifiedAtUtc = null;
+                item.SessionIdentityUserId = null;
+                item.SessionIdentityCheckedAtUtc = null;
+                // Imported metadata isn't proof of a live browser login.
+                // A matching WebView2 profile may exist locally, but Viora
+                // must re-check Roblox before displaying a login badge.
                 existing.Add(item);
                 ids.Add(item.Id);
                 names.Add(item.Username);
