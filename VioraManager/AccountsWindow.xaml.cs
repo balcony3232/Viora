@@ -565,17 +565,44 @@ public partial class AccountsWindow : Window
     {
         try
         {
-            RobloxBrowserLauncher.Open(account, placeId, tryJoinDirectly: placeId.HasValue);
-            SaveMessage.Text = placeId.HasValue
-                ? "Opening game-start link for " + account.Username +
-                  ". Confirm which Roblox Player account actually launched."
-                : "Opened official Roblox website in " + account.Browser + " (" +
-                  account.ProfileDirectory + "). Sign in to the correct account there.";
+            if (placeId is long place)
+            {
+                if (account.EmbeddedBrowserProfile)
+                {
+                    var game = new RobloxEmbeddedLoginWindow(account.Id,
+                        RobloxBrowserLauncher.BuildGameStartUrl(place), detectLogin: false)
+                    { Owner = this };
+                    game.Show();
+                }
+                else
+                {
+                    RobloxBrowserLauncher.Open(account, place, tryJoinDirectly: true);
+                }
+                SaveMessage.Text = "Opened game for " + account.Username +
+                    ". Check which account Roblox Player actually uses.";
+            }
+            else
+            {
+                var login = new RobloxEmbeddedLoginWindow(account.Id) { Owner = this };
+                if (login.ShowDialog() == true && login.DetectedUser is not null)
+                {
+                    var linked = EmbeddedRobloxAccountStore.SaveDetectedAccount(account.Id,
+                        login.DetectedUser);
+                    _accounts.Clear();
+                    LoadShortcuts();
+                    AccountList.SelectedItem = _accounts.FirstOrDefault(x => x.Id == linked.Id);
+                    RefreshEmptyState();
+                    SaveMessage.Text = "Detected @" + linked.RobloxUsername +
+                        " (Roblox User ID " + linked.PublicUserId +
+                        "). Username and display name saved automatically.";
+                }
+            }
         }
         catch (Exception ex) when (ex is ArgumentException or System.ComponentModel.Win32Exception or
-            FileNotFoundException or InvalidOperationException)
+            FileNotFoundException or InvalidOperationException or IOException or
+            UnauthorizedAccessException or JsonException)
         {
-            MessageBox.Show(this, "Could not launch Roblox page: " + ex.Message,
+            MessageBox.Show(this, "Could not open Roblox: " + ex.Message,
                 "Viora Manager", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
