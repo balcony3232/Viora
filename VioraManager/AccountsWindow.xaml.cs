@@ -291,6 +291,16 @@ public partial class AccountsWindow : Window
 
             if (current is null && _accounts.Count >= 1000)
                 throw new ArgumentException("The account shortcut limit of 1,000 has been reached.");
+            string realUsername = RobloxUsernameInput.Text.Trim();
+            string alias = AliasInput.Text.Trim();
+            string group = GroupInput.Text.Trim();
+            string tags = TagsInput.Text.Trim();
+            string notes = NotesInput.Text.Trim();
+            if (realUsername.Length != 0 && !UsernamePattern.IsMatch(realUsername))
+                throw new ArgumentException("Real Roblox username must contain 3–20 letters, numbers or underscores.");
+
+            bool samePublicProfile = current is not null &&
+                string.Equals(current.RobloxUsername, realUsername, StringComparison.OrdinalIgnoreCase);
             var updated = new SavedRobloxAccount
             {
                 Id = current?.Id ?? Guid.NewGuid().ToString("N"),
@@ -298,7 +308,16 @@ public partial class AccountsWindow : Window
                 Browser = browser,
                 ProfileDirectory = profile,
                 PlaceId = place,
-                ManagedBrowserProfile = managed
+                ManagedBrowserProfile = managed,
+                RobloxUsername = realUsername,
+                Alias = alias,
+                Group = group,
+                Tags = tags,
+                Notes = notes,
+                IsFavorite = FavoriteInput.IsChecked == true,
+                IsPinned = PinnedInput.IsChecked == true,
+                PublicUserId = samePublicProfile ? current!.PublicUserId : null,
+                PublicDisplayName = samePublicProfile ? current!.PublicDisplayName : ""
             };
             int index = current is null ? -1 : _accounts.IndexOf(current);
             if (index >= 0) _accounts[index] = updated;
@@ -329,6 +348,16 @@ public partial class AccountsWindow : Window
         _selectedId = account.Id;
         UsernameInput.Text = account.Username;
         PlaceInput.Text = account.PlaceId?.ToString() ?? "";
+        RobloxUsernameInput.Text = account.RobloxUsername;
+        AliasInput.Text = account.Alias;
+        GroupInput.Text = account.Group;
+        TagsInput.Text = account.Tags;
+        NotesInput.Text = account.Notes;
+        FavoriteInput.IsChecked = account.IsFavorite;
+        PinnedInput.IsChecked = account.IsPinned;
+        OptionalDetailsExpander.IsExpanded = !string.IsNullOrWhiteSpace(account.Alias) ||
+            !string.IsNullOrWhiteSpace(account.RobloxUsername) ||
+            !string.IsNullOrWhiteSpace(account.Group) || !string.IsNullOrWhiteSpace(account.Tags);
         BrowserInput.SelectedIndex = account.Browser switch
         {
             "Chrome" => 1, "Brave" => 2, _ => 0
@@ -352,6 +381,14 @@ public partial class AccountsWindow : Window
         AccountList.SelectedItem = null;
         UsernameInput.Clear();
         PlaceInput.Clear();
+        RobloxUsernameInput.Clear();
+        AliasInput.Clear();
+        GroupInput.Clear();
+        TagsInput.Clear();
+        NotesInput.Clear();
+        FavoriteInput.IsChecked = false;
+        PinnedInput.IsChecked = false;
+        OptionalDetailsExpander.IsExpanded = false;
         BrowserInput.IsEnabled = true;
         ProfileInput.IsEnabled = true;
         BrowserInput.SelectedIndex = 0;
