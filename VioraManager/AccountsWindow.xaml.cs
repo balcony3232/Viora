@@ -106,7 +106,7 @@ public partial class AccountsWindow : Window
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "Viora", "Manager", "accounts.json");
 
-    public AccountsWindow(bool openLoginOnLaunch = false)
+    public AccountsWindow(bool openLoginOnLaunch = false, string? selectAccountId = null)
     {
         InitializeComponent();
         for (int i = 0; i <= 25; i++)
@@ -115,6 +115,11 @@ public partial class AccountsWindow : Window
         AccountList.ItemsSource = _accounts;
         LoadShortcuts();
         RefreshEmptyState();
+        if (selectAccountId is not null)
+        {
+            Loaded += (_, _) =>
+                AccountList.SelectedItem = _accounts.FirstOrDefault(a => a.Id == selectAccountId);
+        }
         if (openLoginOnLaunch)
             Loaded += (_, _) => BeginBrowserLogin();
     }
