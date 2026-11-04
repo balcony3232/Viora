@@ -239,6 +239,23 @@
                             Click="LaunchSelected_Click" Padding="15,8" FontSize="12"
                             FontWeight="SemiBold" Background="#A982F4" Foreground="#180D29"/>
                 </Grid>
+                <StackPanel Orientation="Horizontal" Margin="0,7,0,0">
+                    <Button Content="Import list" Click="ImportAccounts_Click" Padding="11,6"
+                            FontSize="11" Margin="0,0,8,0"
+                            ToolTip="Merge a metadata-only JSON account list into Viora. No browser cookies imported."/>
+                    <Button Content="Launch history" Click="LaunchHistory_Click" Padding="11,6"
+                            FontSize="11" Margin="0,0,8,0"/>
+                    <TextBlock Text="Launch delay:" Foreground="{StaticResource Muted}"
+                               VerticalAlignment="Center" FontSize="11" Margin="12,0,7,0"/>
+                    <ComboBox x:Name="LaunchDelayInput" Width="85" Height="28" SelectedIndex="2"
+                              FontSize="11" ToolTip="Seconds between launches in a queue">
+                        <ComboBoxItem Content="2 sec" Tag="2"/>
+                        <ComboBoxItem Content="3 sec" Tag="3"/>
+                        <ComboBoxItem Content="4 sec" Tag="4"/>
+                        <ComboBoxItem Content="5 sec" Tag="5"/>
+                        <ComboBoxItem Content="10 sec" Tag="10"/>
+                    </ComboBox>
+                </StackPanel>
                 <TextBlock x:Name="AccountLaunchStatus" Foreground="{StaticResource Muted}"
                            FontSize="10" TextWrapping="Wrap" Margin="0,7,0,0"
                            Text="Browser sessions are separate, but Roblox Player may still use a different account."/>
