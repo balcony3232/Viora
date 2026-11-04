@@ -71,14 +71,54 @@ internal static class RobloxBrowserLauncher
                 : "https://www.roblox.com/games/" + id
             : "https://www.roblox.com/home";
 
-        var info = new ProcessStartInfo(executable) { UseShellExecute = false };
-        info.ArgumentList.Add("--profile-directory=" + account.ProfileDirectory);
-        info.ArgumentList.Add("--new-window");
-        info.ArgumentList.Add(url);
+        var info = BrowserStartInfo(executable, account, url);
 
         using var process = Process.Start(info);
         if (process is null)
             throw new InvalidOperationException("Browser launch did not start.");
+    }
+
+    /// <summary>
+    /// Opens Roblox's actual login page in an isolated browser profile. Browser
+    /// alone saves its session state; Viora only stores the profile's random ID.
+    /// Do NOT inspect or copy the browser's login cookies or password database.
+    /// </summary>
+    public static void OpenLogin(SavedRobloxAccount account)
+    {
+        if (!account.ManagedBrowserProfile)
+            throw new ArgumentException("New sign-ins require a Viora-managed browser profile.");
+
+        string executable = FindInstalledBrowser(account.Browser)
+            ?? throw new FileNotFoundException(account.Browser + " isn't installed in a standard location.");
+        var start = BrowserStartInfo(executable, account, "https://www.roblox.com/login");
+        using var launched = Process.Start(start);
+        if (launched is null)
+            throw new InvalidOperationException("The selected browser didn't start.");
+    }
+
+    private static ProcessStartInfo BrowserStartInfo(
+        string executable, SavedRobloxAccount account, string url)
+    {
+        var info = new ProcessStartInfo(executable) { UseShellExecute = false };
+        if (account.ManagedBrowserProfile)
+        {
+            if (!Guid.TryParseExact(account.Id, "N", out _))
+                throw new ArgumentException("Invalid saved browser profile identifier.");
+            var userDirectory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Viora", "Manager", "BrowserProfiles", account.Id);
+            // Explicit per-account user-data-dir provides browser-managed session
+            // isolation. It is NOT an authenticated Roblox identity API.
+            info.ArgumentList.Add("--user-data-dir=" + userDirectory);
+            info.ArgumentList.Add("--no-first-run");
+        }
+        else
+        {
+            info.ArgumentList.Add("--profile-directory=" + account.ProfileDirectory);
+        }
+        info.ArgumentList.Add("--new-window");
+        info.ArgumentList.Add(url);
+        return info;
     }
 
     private static string? FindInstalledBrowser(string browser)

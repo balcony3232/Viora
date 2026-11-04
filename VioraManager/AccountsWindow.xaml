@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Viora Manager — Add Accounts"
-        Width="845" Height="650" MinWidth="730" MinHeight="555"
+        Width="845" Height="710" MinWidth="730" MinHeight="605"
         WindowStartupLocation="CenterOwner"
         Background="#0D0915" Foreground="#F2EAFF">
     <Grid Margin="22">
@@ -13,15 +13,30 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <StackPanel Margin="0,0,0,16">
-            <TextBlock Text="Add Roblox Accounts" Foreground="#C3A1FF"
+            <TextBlock Text="Your Roblox Accounts" Foreground="#C3A1FF"
                        FontSize="22" FontWeight="SemiBold"/>
-            <TextBlock Text="Save each Roblox username with a separate Edge, Chrome or Brave browser profile and optional game/subplace ID. Viora saves no passwords or cookies."
+            <TextBlock Text="One click creates and saves a separate browser profile, then opens Roblox's real login page. Sign in there; the browser remembers the session. Viora never handles your password."
                        Foreground="{StaticResource Muted}" TextWrapping="Wrap" FontSize="12" Margin="0,6,0,0"/>
         </StackPanel>
         <Border Grid.Row="1" Background="{StaticResource Panel}" Padding="15"
                 CornerRadius="12" Margin="0,0,0,14">
             <StackPanel>
-                <TextBlock Text="ADD OR EDIT AN ACCOUNT" Foreground="#C3A1FF"
+                <DockPanel Margin="0,0,0,9">
+                    <Button x:Name="StartBrowserLoginButton" DockPanel.Dock="Right"
+                            Content="＋ Open Roblox login" Click="StartBrowserLogin_Click"
+                            Background="#A982F4" Foreground="#180D29" FontWeight="SemiBold"
+                            Padding="15,9" Margin="12,0,0,0"/>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="1  SIGN IN THROUGH ROBLOX" Foreground="#C3A1FF"
+                                   FontSize="11" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="LoginStatusText"
+                                   Text="Choose a browser below, then open Roblox login."
+                                   Foreground="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap"
+                                   Margin="0,4,0,0"/>
+                    </StackPanel>
+                </DockPanel>
+                <Border BorderThickness="0,0,0,1" BorderBrush="#413050" Margin="0,0,0,10"/>
+                <TextBlock Text="2  OPTIONAL: CHANGE THE ACCOUNT LABEL / GAME" Foreground="#C3A1FF"
                            FontSize="11" FontWeight="SemiBold" Margin="0,0,0,9"/>
                 <Grid Margin="0,0,0,9">
                     <Grid.ColumnDefinitions>
@@ -29,7 +44,7 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Text="ROBLOX USERNAME" Foreground="{StaticResource Muted}" FontSize="10" Margin="0,0,0,4"/>
+                        <TextBlock Text="ACCOUNT LABEL (EDIT IF WANTED)" Foreground="{StaticResource Muted}" FontSize="10" Margin="0,0,0,4"/>
                         <TextBox x:Name="UsernameInput" MaxLength="20" Height="28"
                                  ToolTip="An account label, not proof of who is signed in"/>
                     </StackPanel>
@@ -61,7 +76,7 @@
                 <DockPanel>
                     <Button DockPanel.Dock="Right" Content="Clear selection" Click="Clear_Click"
                             Margin="8,0,0,0"/>
-                    <Button DockPanel.Dock="Right" x:Name="SaveButton" Content="Add account"
+                    <Button DockPanel.Dock="Right" x:Name="SaveButton" Content="Save account"
                             Background="#A982F4" Foreground="#180D29"
                             Click="Save_Click" Padding="18,9"/>
                     <TextBlock x:Name="SaveMessage" Foreground="{StaticResource Muted}" FontSize="11"
@@ -74,7 +89,7 @@
                 <TextBlock DockPanel.Dock="Top" Text="SAVED ACCOUNTS" FontSize="11"
                            FontWeight="SemiBold" Foreground="#C3A1FF" Margin="0,0,0,8"/>
                 <TextBlock x:Name="EmptyText" DockPanel.Dock="Top"
-                           Text="No accounts saved. Add one above, then sign into Roblox in that browser profile."
+                           Text="No accounts saved. Click Open Roblox login to automatically save an account slot."
                            Foreground="{StaticResource Muted}" TextWrapping="Wrap"
                            Margin="0,5,0,9"/>
                 <ListBox x:Name="AccountList" BorderThickness="0" Background="Transparent"
@@ -112,6 +127,6 @@
         </Border>
         <TextBlock Grid.Row="3" Foreground="{StaticResource Muted}"
                    FontSize="11" TextWrapping="Wrap"
-                   Text="Play opens Roblox's official game-start link for the selected browser profile. Roblox Player may still use a different signed-in account; verify it before playing. Saved accounts are local shortcuts, not logged-in sessions."/>
+                   Text="New account slots save automatically, with labels like Account1. Rename them if you wish. Browser logins are stored by your browser, not Viora. Roblox desktop Player may still use a different account."/>
     </Grid>
 </Window>

@@ -72,7 +72,7 @@
                             <TextBlock x:Name="SavedAccountCount" Text="0 saved" FontSize="11" Margin="12,1,0,0"
                                        Foreground="{StaticResource Muted}" VerticalAlignment="Center"/>
                         </StackPanel>
-                        <Button Grid.Column="1" Content="＋ Add accounts" Click="Accounts_Click"
+                        <Button Grid.Column="1" Content="＋ Add an Account" Click="AddAccount_Click"
                                 Padding="10,7" FontSize="11" Background="#38264B"/>
                     </Grid>
                     <Grid Margin="0,0,0,7">
