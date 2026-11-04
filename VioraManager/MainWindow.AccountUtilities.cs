@@ -97,7 +97,7 @@ public partial class MainWindow
         panel.Children.Add(header);
         var apply = new Button
         {
-            Content = "Use selected Place / Job ID", Padding = new Thickness(12, 9),
+            Content = "Use selected Place / Job ID", Padding = new Thickness(12, 9, 12, 9),
             Background = (System.Windows.Media.Brush)FindResource("Accent"),
             Foreground = new System.Windows.Media.SolidColorBrush(
                 System.Windows.Media.Color.FromRgb(28, 13, 43)),
