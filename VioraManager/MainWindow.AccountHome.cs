@@ -268,11 +268,12 @@ public partial class MainWindow
                 cancel.Token.ThrowIfCancellationRequested();
                 RobloxBrowserLauncher.Open(account, place ?? account.PlaceId,
                     tryJoinDirectly: true, jobId: job);
+                RecordLaunch(account, place ?? account.PlaceId, job);
                 completed++;
                 AccountLaunchStatus.Text = "Opened " + completed + "/" + selected.Count +
                     " browser game-start links. Verify desktop Roblox identity.";
                 if (completed < selected.Count)
-                    await Task.Delay(TimeSpan.FromSeconds(4), cancel.Token);
+                    await Task.Delay(TimeSpan.FromSeconds(LaunchDelaySeconds), cancel.Token);
             }
         }
         catch (OperationCanceledException)
