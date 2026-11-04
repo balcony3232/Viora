@@ -295,6 +295,33 @@ public partial class MainWindow
     private void CancelLaunchQueue_Click(object sender, RoutedEventArgs e) =>
         _accountLaunchCancel?.Cancel();
 
+    private void BrowseServers_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var place = RobloxBrowserLauncher.ParsePlaceId(QuickPlaceInput.Text);
+            if (place is null)
+            {
+                MessageBox.Show(this,
+                    "Enter a game or subplace Place ID in the main box first.",
+                    "Browse servers", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            var picker = new ServerBrowserWindow(place.Value) { Owner = this };
+            if (picker.ShowDialog() == true && picker.SelectedJobId is string job)
+            {
+                QuickJobInput.Text = job;
+                AccountLaunchStatus.Text = "Selected public server " + job +
+                    ". Select an account and press Play to attempt joining it.";
+            }
+        }
+        catch (ArgumentException ex)
+        {
+            MessageBox.Show(this, ex.Message, "Invalid Place ID",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
+
     private string? GetOptionalJobId()
     {
         var input = QuickJobInput.Text.Trim();
