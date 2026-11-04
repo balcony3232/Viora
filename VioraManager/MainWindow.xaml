@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Viora Manager — Instance &amp; Session Control"
-        Width="980" Height="700" MinWidth="700" MinHeight="560"
+        Width="980" Height="770" MinWidth="730" MinHeight="610"
         WindowStartupLocation="CenterScreen" UseLayoutRounding="True" SnapsToDevicePixels="True"
         Background="#0D0915" Foreground="#F2EAFF">
     <Grid Background="#0D0915">
@@ -53,7 +53,79 @@
                            Text="Off by default. Applies only while Viora Manager stays open. Roblox does not officially support simultaneous Player clients."/>
             </StackPanel>
         </Border>
-        <Border Grid.Row="3" Background="#191222" CornerRadius="11" Padding="16" Margin="0,0,0,14">
+        <Grid Grid.Row="3" Margin="0,0,0,14">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*" MinHeight="130"/>
+            </Grid.RowDefinitions>
+            <Border Grid.Row="0" Background="#1C142A" BorderBrush="#51336C" BorderThickness="1"
+                    CornerRadius="11" Padding="14,12" Margin="0,0,0,12">
+                <StackPanel>
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="Connected Accounts" FontWeight="SemiBold" FontSize="15"
+                                       Foreground="#D4B4FF" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="SavedAccountCount" Text="0 saved" FontSize="11" Margin="12,1,0,0"
+                                       Foreground="{StaticResource Muted}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="＋ Add accounts" Click="Accounts_Click"
+                                Padding="10,7" FontSize="11" Background="#38264B"/>
+                    </Grid>
+                    <Grid Margin="0,0,0,7">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="GAME / SUBPLACE ID" Foreground="{StaticResource Muted}"
+                                   FontSize="10" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBox Grid.Column="1" x:Name="QuickPlaceInput" Height="28" VerticalContentAlignment="Center"
+                                 ToolTip="Optional override for all Play buttons. Enter a Place ID or official Roblox game URL; blank uses each account's saved game."
+                                 FontSize="12" Padding="8,4"/>
+                    </Grid>
+                    <TextBlock x:Name="EmptyAccountsText"
+                               Text="No saved accounts yet. Click Add accounts to assign a separate browser profile to each Roblox username."
+                               Foreground="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,7,0,4"/>
+                    <ScrollViewer Height="152" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl x:Name="ConnectedAccountsList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="#413050" BorderThickness="0,0,0,1" Padding="2,6">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Username}" FontSize="13" FontWeight="SemiBold"
+                                                           TextTrimming="CharacterEllipsis" Foreground="#F2EAFF"/>
+                                                <TextBlock Text="{Binding Detail}" FontSize="10"
+                                                           TextTrimming="CharacterEllipsis" Foreground="{StaticResource Muted}"
+                                                           Margin="0,3,0,0" ToolTip="{Binding Detail}"/>
+                                            </StackPanel>
+                                            <Button Grid.Column="1" Content="Sign in" FontSize="11" Padding="12,7"
+                                                    Background="#38264B" Margin="8,0,7,0"
+                                                    Tag="{Binding}" Click="SavedAccountLogin_Click"
+                                                    ToolTip="Open official Roblox website in this browser profile"/>
+                                            <Button Grid.Column="2" Content="▶ Play" FontSize="11" Padding="13,7"
+                                                    FontWeight="SemiBold" Background="#A982F4" Foreground="#180D29"
+                                                    Tag="{Binding}" Click="SavedAccountPlay_Click"
+                                                    ToolTip="Try to launch the selected Place ID in the saved browser profile; Roblox controls the actual account/session"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                    <TextBlock x:Name="AccountLaunchStatus" Text="Play uses the official Roblox game-start link. Check the signed-in Roblox Player account; multiple clients aren't guaranteed."
+                               Foreground="{StaticResource Muted}" TextWrapping="Wrap" FontSize="10" Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+        <Border Grid.Row="1" Background="#191222" CornerRadius="11" Padding="16" Margin="0,0,0,14">
             <DockPanel>
                 <Grid DockPanel.Dock="Top" Margin="0,0,0,9">
                     <TextBlock Text="Detected Roblox Player windows" Foreground="{StaticResource Muted}" FontSize="12"/>
@@ -93,13 +165,14 @@
                 </ScrollViewer>
             </DockPanel>
         </Border>
+        </Grid>
         <Grid Grid.Row="4">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <Button Content="＋  Open Roblox" Background="#A982F4" Foreground="#180D29"
                     FontWeight="SemiBold" Margin="0,0,6,0" Click="OpenRoblox_Click"/>
-            <Button Grid.Column="1" Content="♧  Accounts" Background="#39274D"
+            <Button Grid.Column="1" Content="♧  Edit accounts" Background="#39274D"
                     FontWeight="SemiBold" Margin="3,0,3,0" Click="Accounts_Click"
                     ToolTip="Save Roblox account shortcuts in separate browser profiles — never stores Roblox passwords"/>
             <Button Grid.Column="2" Content="Manage windows" Background="#39274D"
