@@ -54,7 +54,7 @@ internal static class RobloxBrowserLauncher
             "This link does not contain a valid Roblox Place ID. A game or subplace ID is required.");
     }
 
-    public static void Open(SavedRobloxAccount account, long? placeId, bool tryJoinDirectly)
+    public static void Open(SavedRobloxAccount account, long? placeId, bool tryJoinDirectly, string? jobId = null)
     {
         if (account.Browser is not ("Edge" or "Chrome" or "Brave") ||
             account.ProfileDirectory is null || !ProfileFolder.IsMatch(account.ProfileDirectory))
@@ -71,6 +71,13 @@ internal static class RobloxBrowserLauncher
                 : "https://www.roblox.com/games/" + id
             : "https://www.roblox.com/home";
 
+        if (!string.IsNullOrWhiteSpace(jobId))
+        {
+            if (placeId is null || !tryJoinDirectly ||
+                !Guid.TryParse(jobId, out var guid))
+                throw new ArgumentException("Specific server joins require a valid Place ID and server Job GUID.");
+            url += "&gameInstanceId=" + Uri.EscapeDataString(guid.ToString());
+        }
         var info = BrowserStartInfo(executable, account, url);
 
         using var process = Process.Start(info);

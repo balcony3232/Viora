@@ -23,6 +23,7 @@ public partial class MainWindow
     {
         ConnectedAccountsList.ItemsSource = _connectedAccounts;
         ReloadConnectedAccounts();
+        _ = RefreshPublicProfilesAsync();
     }
 
     private void ReloadConnectedAccounts()
@@ -54,7 +55,8 @@ public partial class MainWindow
             SavedAccountCount.Text = _connectedAccounts.Count + " saved";
             EmptyAccountsText.Visibility = _connectedAccounts.Count == 0
                 ? Visibility.Visible : Visibility.Collapsed;
-            AccountLaunchStatus.Text = "Play opens Roblox's game-start link in the selected browser profile. The Roblox Player may use a different signed-in account.";
+            AccountLaunchStatus.Text = "Browser logins are separate, but Roblox Player may use a different account. Public profile images aren't login verification.";
+            ConfigureAccountView();
         }
         catch (Exception ex) when (ex is JsonException or IOException or
             UnauthorizedAccessException or InvalidDataException)
@@ -64,6 +66,7 @@ public partial class MainWindow
             EmptyAccountsText.Visibility = Visibility.Visible;
             EmptyAccountsText.Text = "Saved accounts could not be read; the existing file was preserved. Open Edit accounts for recovery.";
             AccountLaunchStatus.Text = "Accounts unavailable: " + ex.Message;
+            UpdateAccountSummary();
         }
     }
 
@@ -111,7 +114,9 @@ public partial class MainWindow
                 _launchAccountWarningAccepted = true;
             }
 
-            RobloxBrowserLauncher.Open(account, place, tryJoinDirectly: true);
+            string? jobId = GetOptionalJobId();
+            RobloxBrowserLauncher.Open(account, place, tryJoinDirectly: true, jobId: jobId);
+            RecordLaunch(account, place, jobId);
             AccountLaunchStatus.Text = "Opened game-start link for " + account.Username +
                 " · Place " + place + ". Check Roblox Player to confirm the account and game.";
         }

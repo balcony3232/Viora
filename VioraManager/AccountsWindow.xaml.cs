@@ -14,22 +14,83 @@ namespace VioraManager;
 
 // These are shortcuts, not Roblox authentication profiles. The user's
 // official browser owns authentication; Viora never sees passwords/cookies.
-public sealed class SavedRobloxAccount
+public sealed class SavedRobloxAccount : System.ComponentModel.INotifyPropertyChanged
 {
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public string Username { get; set; } = "";
     public string Browser { get; set; } = "Edge";
     public string ProfileDirectory { get; set; } = "Default";
     public long? PlaceId { get; set; }
-    // Version-tolerant: existing account shortcuts default to false.
-    // A true value points to an isolated browser profile derived from Id.
-    // No cookies/passwords/tokens are stored in this JSON record.
     public bool ManagedBrowserProfile { get; set; }
 
+    // Local, optional organisation fields. Username is the legacy label,
+    // not evidence of an authenticated Roblox browser session.
+    public string Alias { get; set; } = "";
+    public string RobloxUsername { get; set; } = "";
+    public string Group { get; set; } = "";
+    public string Tags { get; set; } = "";
+    public string Notes { get; set; } = "";
+    public bool IsFavorite { get; set; }
+    public bool IsPinned { get; set; }
+    public long? PublicUserId { get; set; }
+    public string PublicDisplayName { get; set; } = "";
+
     [JsonIgnore]
-    public string Detail => Browser + (ManagedBrowserProfile
-        ? " · Private browser profile" : " · " + ProfileDirectory) +
-        (PlaceId is long id ? " · Game " + id : " · No saved game");
+    public System.Windows.Media.ImageSource? AvatarImage { get; private set; }
+
+    [JsonIgnore]
+    public string DisplayLabel => !string.IsNullOrWhiteSpace(Alias) ? Alias :
+        !string.IsNullOrWhiteSpace(PublicDisplayName) ? PublicDisplayName : Username;
+
+    [JsonIgnore]
+    public string AvatarInitial => DisplayLabel.Length == 0 ? "?" :
+        DisplayLabel[..1].ToUpperInvariant();
+
+    [JsonIgnore]
+    public string SecondaryLine => PublicUserId is long id && id > 0
+        ? "@" + (string.IsNullOrWhiteSpace(RobloxUsername) ? Username : RobloxUsername) +
+          "  ·  #" + id : Username + "  ·  public profile not linked";
+
+    [JsonIgnore]
+    public string Detail => (IsPinned ? "📌 " : "") +
+        (IsFavorite ? "★ " : "") + Browser + " · " +
+        (ManagedBrowserProfile ? "Private browser profile" : ProfileDirectory) +
+        (PlaceId is long id ? " · Game " + id : " · No saved game") +
+        (string.IsNullOrWhiteSpace(Group) ? "" : " · " + Group) +
+        (string.IsNullOrWhiteSpace(Tags) ? "" : " · " + Tags);
+
+    [JsonIgnore]
+    public string SearchableText => string.Join(" ", new[]
+    {
+        Username, Alias, RobloxUsername, PublicDisplayName, Group, Tags, Notes,
+        PublicUserId?.ToString() ?? ""
+    });
+
+    public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+
+    internal void ApplyPublicProfile(RobloxPublicProfiles.PublicProfile profile)
+    {
+        PublicUserId = profile.UserId;
+        PublicDisplayName = profile.DisplayName;
+        AvatarImage = profile.Headshot;
+        NotifyVisualUpdate();
+    }
+
+    public void NotifyVisualUpdate()
+    {
+        PropertyChanged?.Invoke(this,
+            new System.ComponentModel.PropertyChangedEventArgs(nameof(DisplayLabel)));
+        PropertyChanged?.Invoke(this,
+            new System.ComponentModel.PropertyChangedEventArgs(nameof(SecondaryLine)));
+        PropertyChanged?.Invoke(this,
+            new System.ComponentModel.PropertyChangedEventArgs(nameof(AvatarInitial)));
+        PropertyChanged?.Invoke(this,
+            new System.ComponentModel.PropertyChangedEventArgs(nameof(AvatarImage)));
+        PropertyChanged?.Invoke(this,
+            new System.ComponentModel.PropertyChangedEventArgs(nameof(Detail)));
+        PropertyChanged?.Invoke(this,
+            new System.ComponentModel.PropertyChangedEventArgs(nameof(SearchableText)));
+    }
 }
 
 public partial class AccountsWindow : Window
@@ -45,7 +106,7 @@ public partial class AccountsWindow : Window
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "Viora", "Manager", "accounts.json");
 
-    public AccountsWindow(bool openLoginOnLaunch = false)
+    public AccountsWindow(bool openLoginOnLaunch = false, string? selectAccountId = null)
     {
         InitializeComponent();
         for (int i = 0; i <= 25; i++)
@@ -54,6 +115,11 @@ public partial class AccountsWindow : Window
         AccountList.ItemsSource = _accounts;
         LoadShortcuts();
         RefreshEmptyState();
+        if (selectAccountId is not null)
+        {
+            Loaded += (_, _) =>
+                AccountList.SelectedItem = _accounts.FirstOrDefault(a => a.Id == selectAccountId);
+        }
         if (openLoginOnLaunch)
             Loaded += (_, _) => BeginBrowserLogin();
     }
@@ -230,6 +296,16 @@ public partial class AccountsWindow : Window
 
             if (current is null && _accounts.Count >= 1000)
                 throw new ArgumentException("The account shortcut limit of 1,000 has been reached.");
+            string realUsername = RobloxUsernameInput.Text.Trim();
+            string alias = AliasInput.Text.Trim();
+            string group = GroupInput.Text.Trim();
+            string tags = TagsInput.Text.Trim();
+            string notes = NotesInput.Text.Trim();
+            if (realUsername.Length != 0 && !UsernamePattern.IsMatch(realUsername))
+                throw new ArgumentException("Real Roblox username must contain 3–20 letters, numbers or underscores.");
+
+            bool samePublicProfile = current is not null &&
+                string.Equals(current.RobloxUsername, realUsername, StringComparison.OrdinalIgnoreCase);
             var updated = new SavedRobloxAccount
             {
                 Id = current?.Id ?? Guid.NewGuid().ToString("N"),
@@ -237,7 +313,16 @@ public partial class AccountsWindow : Window
                 Browser = browser,
                 ProfileDirectory = profile,
                 PlaceId = place,
-                ManagedBrowserProfile = managed
+                ManagedBrowserProfile = managed,
+                RobloxUsername = realUsername,
+                Alias = alias,
+                Group = group,
+                Tags = tags,
+                Notes = notes,
+                IsFavorite = FavoriteInput.IsChecked == true,
+                IsPinned = PinnedInput.IsChecked == true,
+                PublicUserId = samePublicProfile ? current!.PublicUserId : null,
+                PublicDisplayName = samePublicProfile ? current!.PublicDisplayName : ""
             };
             int index = current is null ? -1 : _accounts.IndexOf(current);
             if (index >= 0) _accounts[index] = updated;
@@ -268,6 +353,16 @@ public partial class AccountsWindow : Window
         _selectedId = account.Id;
         UsernameInput.Text = account.Username;
         PlaceInput.Text = account.PlaceId?.ToString() ?? "";
+        RobloxUsernameInput.Text = account.RobloxUsername;
+        AliasInput.Text = account.Alias;
+        GroupInput.Text = account.Group;
+        TagsInput.Text = account.Tags;
+        NotesInput.Text = account.Notes;
+        FavoriteInput.IsChecked = account.IsFavorite;
+        PinnedInput.IsChecked = account.IsPinned;
+        OptionalDetailsExpander.IsExpanded = !string.IsNullOrWhiteSpace(account.Alias) ||
+            !string.IsNullOrWhiteSpace(account.RobloxUsername) ||
+            !string.IsNullOrWhiteSpace(account.Group) || !string.IsNullOrWhiteSpace(account.Tags);
         BrowserInput.SelectedIndex = account.Browser switch
         {
             "Chrome" => 1, "Brave" => 2, _ => 0
@@ -291,6 +386,14 @@ public partial class AccountsWindow : Window
         AccountList.SelectedItem = null;
         UsernameInput.Clear();
         PlaceInput.Clear();
+        RobloxUsernameInput.Clear();
+        AliasInput.Clear();
+        GroupInput.Clear();
+        TagsInput.Clear();
+        NotesInput.Clear();
+        FavoriteInput.IsChecked = false;
+        PinnedInput.IsChecked = false;
+        OptionalDetailsExpander.IsExpanded = false;
         BrowserInput.IsEnabled = true;
         ProfileInput.IsEnabled = true;
         BrowserInput.SelectedIndex = 0;
