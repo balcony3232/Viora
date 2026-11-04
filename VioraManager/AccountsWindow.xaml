@@ -15,7 +15,7 @@
         <StackPanel Margin="0,0,0,16">
             <TextBlock Text="Your Roblox Accounts" Foreground="#C3A1FF"
                        FontSize="22" FontWeight="SemiBold"/>
-            <TextBlock Text="Sign in through Roblox. With official OAuth configured, Viora can automatically verify the real username, User ID, display name and avatar. Without OAuth, web login only saves the browser session."
+            <TextBlock Text="Sign in inside Viora. Your Roblox username, display name and ID are saved automatically, without OAuth setup or cookie pasting."
                        Foreground="{StaticResource Muted}" TextWrapping="Wrap" FontSize="12" Margin="0,6,0,0"/>
         </StackPanel>
         <Border Grid.Row="1" Background="{StaticResource Panel}" Padding="15"
@@ -23,19 +23,19 @@
             <StackPanel>
                 <DockPanel Margin="0,0,0,9">
                     <Button x:Name="StartBrowserLoginButton" DockPanel.Dock="Right"
-                            Content="＋ Add browser account" Click="StartBrowserLogin_Click"
+                            Content="＋ Add an Account" Click="StartBrowserLogin_Click"
                             Background="#A982F4" Foreground="#180D29" FontWeight="SemiBold"
                             Padding="15,9" Margin="12,0,0,0"/>
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="1  ROBLOX LOGIN &amp; IDENTITY" Foreground="#C3A1FF"
+                        <TextBlock Text="1  LOGIN THROUGH ROBLOX" Foreground="#C3A1FF"
                                    FontSize="11" FontWeight="SemiBold"/>
                         <TextBlock x:Name="LoginStatusText"
-                                   Text="Choose a browser below, then open Roblox login."
+                                   Text="Click Add an Account, then sign in inside Viora."
                                    Foreground="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap"
                                    Margin="0,4,0,0"/>
                     </StackPanel>
                 </DockPanel>
-                <DockPanel Margin="0,0,0,9">
+                <DockPanel Visibility="Collapsed" Margin="0,0,0,9">
                     <Button x:Name="VerifyOAuthButton" DockPanel.Dock="Right"
                             Content="✓ Connect verified Roblox account"
                             Click="VerifyOAuth_Click" Padding="14,9" FontSize="11"
@@ -45,7 +45,7 @@
                                Foreground="{StaticResource Muted}" FontSize="10"
                                VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
                 </DockPanel>
-                <Expander x:Name="OAuthSetupExpander" Header="One-time setup: official Roblox OAuth Client ID"
+                <Expander Visibility="Collapsed" x:Name="OAuthSetupExpander" Header="One-time setup: official Roblox OAuth Client ID"
                           Foreground="#C8A6FF" Margin="0,0,0,9">
                     <StackPanel Margin="0,9,0,6">
                         <TextBlock Text="Register a Roblox OAuth app with openid + profile permissions and the exact redirect URL shown below. Paste its PUBLIC Client ID, never a Client Secret."
@@ -67,7 +67,7 @@
                     </StackPanel>
                 </Expander>
                 <Border BorderThickness="0,0,0,1" BorderBrush="#413050" Margin="0,0,0,10"/>
-                <TextBlock Text="2  OPTIONAL: CHANGE THE ACCOUNT LABEL / GAME" Foreground="#C3A1FF"
+                <TextBlock Text="2  OPTIONAL: NICKNAME, GAME AND GROUPS" Foreground="#C3A1FF"
                            FontSize="11" FontWeight="SemiBold" Margin="0,0,0,9"/>
                 <Grid Margin="0,0,0,9">
                     <Grid.ColumnDefinitions>
@@ -169,7 +169,7 @@
                 <TextBlock DockPanel.Dock="Top" Text="SAVED ACCOUNTS" FontSize="11"
                            FontWeight="SemiBold" Foreground="#C3A1FF" Margin="0,0,0,8"/>
                 <TextBlock x:Name="EmptyText" DockPanel.Dock="Top"
-                           Text="No accounts saved. Click Open Roblox login to automatically save an account slot."
+                           Text="No accounts saved. Click Add an Account to open the Roblox login window."
                            Foreground="{StaticResource Muted}" TextWrapping="Wrap"
                            Margin="0,5,0,9"/>
                 <ListBox x:Name="AccountList" BorderThickness="0" Background="Transparent"
@@ -207,6 +207,6 @@
         </Border>
         <TextBlock Grid.Row="3" Foreground="{StaticResource Muted}"
                    FontSize="11" TextWrapping="Wrap"
-                   Text="Official OAuth links a Roblox identity to this shortcut; it does not grant Roblox Player session control. Browser cookies stay in the browser. Only public identity metadata is saved by Viora."/>
+                   Text="Viora detects your identity from Roblox and saves only your username, User ID and display name. Browser cookies are never copied or exported; desktop Player account switching is separate."/>
     </Grid>
 </Window>
