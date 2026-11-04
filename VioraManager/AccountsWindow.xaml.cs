@@ -14,22 +14,83 @@ namespace VioraManager;
 
 // These are shortcuts, not Roblox authentication profiles. The user's
 // official browser owns authentication; Viora never sees passwords/cookies.
-public sealed class SavedRobloxAccount
+public sealed class SavedRobloxAccount : System.ComponentModel.INotifyPropertyChanged
 {
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public string Username { get; set; } = "";
     public string Browser { get; set; } = "Edge";
     public string ProfileDirectory { get; set; } = "Default";
     public long? PlaceId { get; set; }
-    // Version-tolerant: existing account shortcuts default to false.
-    // A true value points to an isolated browser profile derived from Id.
-    // No cookies/passwords/tokens are stored in this JSON record.
     public bool ManagedBrowserProfile { get; set; }
 
+    // Local, optional organisation fields. Username is the legacy label,
+    // not evidence of an authenticated Roblox browser session.
+    public string Alias { get; set; } = "";
+    public string RobloxUsername { get; set; } = "";
+    public string Group { get; set; } = "";
+    public string Tags { get; set; } = "";
+    public string Notes { get; set; } = "";
+    public bool IsFavorite { get; set; }
+    public bool IsPinned { get; set; }
+    public long? PublicUserId { get; set; }
+    public string PublicDisplayName { get; set; } = "";
+
     [JsonIgnore]
-    public string Detail => Browser + (ManagedBrowserProfile
-        ? " · Private browser profile" : " · " + ProfileDirectory) +
-        (PlaceId is long id ? " · Game " + id : " · No saved game");
+    public System.Windows.Media.ImageSource? AvatarImage { get; private set; }
+
+    [JsonIgnore]
+    public string DisplayLabel => !string.IsNullOrWhiteSpace(Alias) ? Alias :
+        !string.IsNullOrWhiteSpace(PublicDisplayName) ? PublicDisplayName : Username;
+
+    [JsonIgnore]
+    public string AvatarInitial => DisplayLabel.Length == 0 ? "?" :
+        DisplayLabel[..1].ToUpperInvariant();
+
+    [JsonIgnore]
+    public string SecondaryLine => PublicUserId is long id && id > 0
+        ? "@" + (string.IsNullOrWhiteSpace(RobloxUsername) ? Username : RobloxUsername) +
+          "  ·  #" + id : Username + "  ·  public profile not linked";
+
+    [JsonIgnore]
+    public string Detail => (IsPinned ? "📌 " : "") +
+        (IsFavorite ? "★ " : "") + Browser + " · " +
+        (ManagedBrowserProfile ? "Private browser profile" : ProfileDirectory) +
+        (PlaceId is long id ? " · Game " + id : " · No saved game") +
+        (string.IsNullOrWhiteSpace(Group) ? "" : " · " + Group) +
+        (string.IsNullOrWhiteSpace(Tags) ? "" : " · " + Tags);
+
+    [JsonIgnore]
+    public string SearchableText => string.Join(" ", new[]
+    {
+        Username, Alias, RobloxUsername, PublicDisplayName, Group, Tags, Notes,
+        PublicUserId?.ToString() ?? ""
+    });
+
+    public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+
+    public void ApplyPublicProfile(RobloxPublicProfiles.PublicProfile profile)
+    {
+        PublicUserId = profile.UserId;
+        PublicDisplayName = profile.DisplayName;
+        AvatarImage = profile.Headshot;
+        NotifyVisualUpdate();
+    }
+
+    public void NotifyVisualUpdate()
+    {
+        PropertyChanged?.Invoke(this,
+            new System.ComponentModel.PropertyChangedEventArgs(nameof(DisplayLabel)));
+        PropertyChanged?.Invoke(this,
+            new System.ComponentModel.PropertyChangedEventArgs(nameof(SecondaryLine)));
+        PropertyChanged?.Invoke(this,
+            new System.ComponentModel.PropertyChangedEventArgs(nameof(AvatarInitial)));
+        PropertyChanged?.Invoke(this,
+            new System.ComponentModel.PropertyChangedEventArgs(nameof(AvatarImage)));
+        PropertyChanged?.Invoke(this,
+            new System.ComponentModel.PropertyChangedEventArgs(nameof(Detail)));
+        PropertyChanged?.Invoke(this,
+            new System.ComponentModel.PropertyChangedEventArgs(nameof(SearchableText)));
+    }
 }
 
 public partial class AccountsWindow : Window
