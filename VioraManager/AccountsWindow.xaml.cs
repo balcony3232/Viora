@@ -31,7 +31,7 @@ public partial class AccountsWindow : Window
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
     private static readonly Regex UsernamePattern = new(@"^[A-Za-z0-9_]{3,20}$", RegexOptions.CultureInvariant);
-    private static readonly Regex ProfilePattern = new(@"^(Default|Profile ([1-9]|1[0-5]))$", RegexOptions.CultureInvariant);
+    private static readonly Regex ProfilePattern = new(@"^(Default|Profile [1-9][0-9]{0,3})$", RegexOptions.CultureInvariant);
 
     private readonly ObservableCollection<SavedRobloxAccount> _accounts = new();
     private string? _selectedId;
@@ -43,7 +43,7 @@ public partial class AccountsWindow : Window
     public AccountsWindow()
     {
         InitializeComponent();
-        for (int i = 0; i <= 15; i++)
+        for (int i = 0; i <= 25; i++)
             ProfileInput.Items.Add(i == 0 ? "Default" : "Profile " + i);
         ProfileInput.SelectedIndex = 0;
         AccountList.ItemsSource = _accounts;
@@ -58,7 +58,7 @@ public partial class AccountsWindow : Window
         {
             var json = File.ReadAllText(_storagePath);
             var entries = JsonSerializer.Deserialize<List<SavedRobloxAccount>>(json, JsonOptions);
-            if (entries is null || entries.Count > 100) throw new InvalidDataException("Invalid account file.");
+            if (entries is null || entries.Count > 1000) throw new InvalidDataException("Invalid account file.");
             var seenUsers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var seenProfiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var seenIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -89,28 +89,9 @@ public partial class AccountsWindow : Window
     private static bool IsValid(SavedRobloxAccount? a) =>
         a is not null && Guid.TryParseExact(a.Id, "N", out _) &&
         a.Username is not null && UsernamePattern.IsMatch(a.Username) &&
-        a.Browser is "Edge" or "Chrome" &&
+        a.Browser is "Edge" or "Chrome" or "Brave" &&
         a.ProfileDirectory is not null && ProfilePattern.IsMatch(a.ProfileDirectory) &&
         (a.PlaceId is null or > 0);
-
-    private static long? ParsePlaceId(string value)
-    {
-        var input = value.Trim();
-        if (input.Length == 0) return null;
-        if (long.TryParse(input, out long numeric) && numeric > 0) return numeric;
-        if (Uri.TryCreate(input, UriKind.Absolute, out var uri) &&
-            uri.Scheme == Uri.UriSchemeHttps &&
-            (uri.Host.Equals("www.roblox.com", StringComparison.OrdinalIgnoreCase) ||
-             uri.Host.Equals("roblox.com", StringComparison.OrdinalIgnoreCase)))
-        {
-            var parts = uri.AbsolutePath.Trim('/').Split('/');
-            if (parts.Length >= 2 &&
-                parts[0].Equals("games", StringComparison.OrdinalIgnoreCase) &&
-                long.TryParse(parts[1], out long game) && game > 0)
-                return game;
-        }
-        throw new ArgumentException("Use a positive numeric Roblox place ID or official https://www.roblox.com/games/... URL.");
-    }
 
     private void RefreshEmptyState() =>
         EmptyText.Visibility = _accounts.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -151,11 +132,11 @@ public partial class AccountsWindow : Window
         {
             string username = UsernameInput.Text.Trim();
             string browser = (BrowserInput.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "Edge";
-            string profile = ProfileInput.SelectedItem as string ?? "Default";
-            long? place = ParsePlaceId(PlaceInput.Text);
+            string profile = ProfileInput.Text.Trim();
+            long? place = RobloxBrowserLauncher.ParsePlaceId(PlaceInput.Text);
             if (!UsernamePattern.IsMatch(username))
                 throw new ArgumentException("Use a Roblox username with 3–20 letters, numbers or underscores.");
-            if (browser is not ("Edge" or "Chrome") || !ProfilePattern.IsMatch(profile))
+            if (browser is not ("Edge" or "Chrome" or "Brave") || !ProfilePattern.IsMatch(profile))
                 throw new ArgumentException("Choose a supported browser and profile.");
 
             // Each saved account must reference a DIFFERENT browser profile.
@@ -175,6 +156,8 @@ public partial class AccountsWindow : Window
                 ProfileDirectory = profile,
                 PlaceId = place
             };
+            if (current is null && _accounts.Count >= 1000)
+                throw new ArgumentException("The shortcut safety limit is 1,000 accounts per Windows user.");
             int index = current is null ? -1 : _accounts.IndexOf(current);
             if (index >= 0) _accounts[index] = updated;
             else _accounts.Add(updated);
@@ -202,8 +185,8 @@ public partial class AccountsWindow : Window
         _selectedId = account.Id;
         UsernameInput.Text = account.Username;
         PlaceInput.Text = account.PlaceId?.ToString() ?? "";
-        BrowserInput.SelectedIndex = account.Browser == "Chrome" ? 1 : 0;
-        ProfileInput.SelectedItem = account.ProfileDirectory;
+        BrowserInput.SelectedIndex = account.Browser switch { "Chrome" => 1, "Brave" => 2, _ => 0 };
+        ProfileInput.Text = account.ProfileDirectory;
         SaveButton.Content = "Save changes";
         SaveMessage.Text = "Editing " + account.Username + ". Browser profiles are not auto-authenticated.";
     }
@@ -267,44 +250,18 @@ public partial class AccountsWindow : Window
     {
         try
         {
-            string executable = FindInstalledBrowser(account.Browser) ??
-                throw new FileNotFoundException(account.Browser + " is not installed in a standard location.");
-            // Only official HTTPS Roblox pages are opened. An isolated browser
-            // profile handles login; never consume a cookie, password or auth token.
-            string url = placeId is long id
-                ? "https://www.roblox.com/games/" + id.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                : "https://www.roblox.com/home";
-            var info = new ProcessStartInfo(executable) { UseShellExecute = false };
-            info.ArgumentList.Add("--profile-directory=" + account.ProfileDirectory);
-            info.ArgumentList.Add("--new-window");
-            info.ArgumentList.Add(url);
-            using var started = Process.Start(info);
-            SaveMessage.Text = "Opened " + account.Browser + " (" + account.ProfileDirectory + ") for " +
-                account.Username + ". Check the Roblox username in the browser before pressing Play.";
+            RobloxBrowserLauncher.Open(account, placeId, tryJoinDirectly: placeId.HasValue);
+            SaveMessage.Text = placeId.HasValue
+                ? "Opening game-start link for " + account.Username +
+                  ". Confirm which Roblox Player account actually launched."
+                : "Opened official Roblox website in " + account.Browser + " (" +
+                  account.ProfileDirectory + "). Sign in to the correct account there.";
         }
-        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or
+        catch (Exception ex) when (ex is ArgumentException or System.ComponentModel.Win32Exception or
             FileNotFoundException or InvalidOperationException)
         {
-            MessageBox.Show(this, "Could not open the selected browser profile: " + ex.Message,
-                "Open official Roblox website", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(this, "Could not launch Roblox page: " + ex.Message,
+                "Viora Manager", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
-    }
-
-    private static string? FindInstalledBrowser(string browser)
-    {
-        string name = browser == "Edge" ? "msedge.exe" : "chrome.exe";
-        string vendor = browser == "Edge" ? @"Microsoft\Edge\Application" : @"Google\Chrome\Application";
-        var roots = new[]
-        {
-            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-            Environment.GetEnvironmentVariable("ProgramFiles(x86)") ?? "",
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)
-        };
-        foreach (string root in roots.Where(x => !string.IsNullOrWhiteSpace(x)))
-        {
-            var path = Path.Combine(root, vendor, name);
-            if (File.Exists(path)) return path;
-        }
-        return null;
     }
 }
