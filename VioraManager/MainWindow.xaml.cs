@@ -84,6 +84,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         ManagerVersionText.Text = "v" + (typeof(MainWindow).Assembly.GetName().Version?.ToString(3) ?? "unknown") + " Preview";
         InstanceList.ItemsSource = _cards;
+        SetupConnectedAccounts();
         _games = new RobloxInstanceGames(() => Dispatcher.BeginInvoke(new Action(RefreshWindows)));
         SourceInitialized += (_, _) => ApplyDarkTitleBar();
         _refresh.Tick += (_, _) => RefreshWindows();
@@ -218,6 +219,7 @@ public partial class MainWindow : Window
         // No account passwords, Roblox cookies, or injected sessions are used.
         var dialog = new AccountsWindow { Owner = this };
         dialog.ShowDialog();
+        ReloadConnectedAccounts();
     }
 
     private void OpenRoblox_Click(object sender, RoutedEventArgs e)
