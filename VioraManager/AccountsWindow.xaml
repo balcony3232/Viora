@@ -15,7 +15,7 @@
         <StackPanel Margin="0,0,0,16">
             <TextBlock Text="Your Roblox Accounts" Foreground="#C3A1FF"
                        FontSize="22" FontWeight="SemiBold"/>
-            <TextBlock Text="Open Roblox's official sign-in page in a new, separate browser profile. Sign in there, then save a label for the account. Viora never asks for your Roblox password."
+            <TextBlock Text="One click creates and saves a separate browser profile, then opens Roblox's real login page. Sign in there; the browser remembers the session. Viora never handles your password."
                        Foreground="{StaticResource Muted}" TextWrapping="Wrap" FontSize="12" Margin="0,6,0,0"/>
         </StackPanel>
         <Border Grid.Row="1" Background="{StaticResource Panel}" Padding="15"
@@ -36,7 +36,7 @@
                     </StackPanel>
                 </DockPanel>
                 <Border BorderThickness="0,0,0,1" BorderBrush="#413050" Margin="0,0,0,10"/>
-                <TextBlock Text="2  FINISH &amp; SAVE (AFTER SIGNING IN)" Foreground="#C3A1FF"
+                <TextBlock Text="2  OPTIONAL: CHANGE THE ACCOUNT LABEL / GAME" Foreground="#C3A1FF"
                            FontSize="11" FontWeight="SemiBold" Margin="0,0,0,9"/>
                 <Grid Margin="0,0,0,9">
                     <Grid.ColumnDefinitions>
@@ -44,7 +44,7 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Text="ROBLOX USERNAME / LABEL" Foreground="{StaticResource Muted}" FontSize="10" Margin="0,0,0,4"/>
+                        <TextBlock Text="ACCOUNT LABEL (EDIT IF WANTED)" Foreground="{StaticResource Muted}" FontSize="10" Margin="0,0,0,4"/>
                         <TextBox x:Name="UsernameInput" MaxLength="20" Height="28"
                                  ToolTip="An account label, not proof of who is signed in"/>
                     </StackPanel>
@@ -89,7 +89,7 @@
                 <TextBlock DockPanel.Dock="Top" Text="SAVED ACCOUNTS" FontSize="11"
                            FontWeight="SemiBold" Foreground="#C3A1FF" Margin="0,0,0,8"/>
                 <TextBlock x:Name="EmptyText" DockPanel.Dock="Top"
-                           Text="No accounts saved yet. Click Open Roblox login, sign in on Roblox, then save your username above."
+                           Text="No accounts saved. Click Open Roblox login to automatically save an account slot."
                            Foreground="{StaticResource Muted}" TextWrapping="Wrap"
                            Margin="0,5,0,9"/>
                 <ListBox x:Name="AccountList" BorderThickness="0" Background="Transparent"
@@ -127,6 +127,6 @@
         </Border>
         <TextBlock Grid.Row="3" Foreground="{StaticResource Muted}"
                    FontSize="11" TextWrapping="Wrap"
-                   Text="Roblox handles login and saves browser sessions in separate local profiles. Viora stores only usernames and profile references; it cannot verify which account is signed in without official Roblox OAuth. Desktop Player can still use a different account."/>
+                   Text="New account slots save automatically, with labels like Account1. Rename them if you wish. Browser logins are stored by your browser, not Viora. Roblox desktop Player may still use a different account."/>
     </Grid>
 </Window>
