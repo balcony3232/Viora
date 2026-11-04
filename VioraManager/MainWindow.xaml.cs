@@ -220,6 +220,7 @@ public partial class MainWindow : Window
         var dialog = new AccountsWindow(openLoginOnLaunch: true) { Owner = this };
         dialog.ShowDialog();
         ReloadConnectedAccounts();
+        _ = RefreshPublicProfilesAsync();
     }
 
     private void Accounts_Click(object sender, RoutedEventArgs e)
@@ -229,6 +230,7 @@ public partial class MainWindow : Window
         var dialog = new AccountsWindow { Owner = this };
         dialog.ShowDialog();
         ReloadConnectedAccounts();
+        _ = RefreshPublicProfilesAsync();
     }
 
     private void OpenRoblox_Click(object sender, RoutedEventArgs e)

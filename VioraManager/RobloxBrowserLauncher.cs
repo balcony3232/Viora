@@ -103,6 +103,24 @@ internal static class RobloxBrowserLauncher
             throw new InvalidOperationException("The selected browser didn't start.");
     }
 
+    public static void OpenOAuthAuthorization(SavedRobloxAccount account, string authorizationUrl)
+    {
+        if (!Uri.TryCreate(authorizationUrl, UriKind.Absolute, out var url) ||
+            url.Scheme != Uri.UriSchemeHttps ||
+            !url.Host.Equals("apis.roblox.com", StringComparison.OrdinalIgnoreCase) ||
+            url.AbsolutePath != "/oauth/v1/authorize")
+            throw new ArgumentException("Expected the official Roblox OAuth authorization endpoint.");
+        if (account.Browser is not ("Edge" or "Chrome" or "Brave"))
+            throw new ArgumentException("Unsupported browser.");
+
+        string browser = FindInstalledBrowser(account.Browser)
+            ?? throw new FileNotFoundException(account.Browser + " is not installed.");
+        var start = BrowserStartInfo(browser, account, authorizationUrl);
+        using var process = Process.Start(start);
+        if (process is null)
+            throw new InvalidOperationException("Couldn't open Roblox OAuth in the browser.");
+    }
+
     private static ProcessStartInfo BrowserStartInfo(
         string executable, SavedRobloxAccount account, string url)
     {

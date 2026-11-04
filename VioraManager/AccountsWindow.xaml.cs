@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Net.Http;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -34,6 +35,10 @@ public sealed class SavedRobloxAccount : System.ComponentModel.INotifyPropertyCh
     public bool IsPinned { get; set; }
     public long? PublicUserId { get; set; }
     public string PublicDisplayName { get; set; } = "";
+    // Non-secret identity record from explicit, validated Roblox OAuth consent.
+    // Does not prove that a desktop Roblox Player uses this same account.
+    public long? VerifiedRobloxUserId { get; set; }
+    public DateTime? VerifiedAtUtc { get; set; }
 
     [JsonIgnore]
     public System.Windows.Media.ImageSource? AvatarImage { get; private set; }
@@ -49,7 +54,8 @@ public sealed class SavedRobloxAccount : System.ComponentModel.INotifyPropertyCh
     [JsonIgnore]
     public string SecondaryLine => PublicUserId is long id && id > 0
         ? "@" + (string.IsNullOrWhiteSpace(RobloxUsername) ? Username : RobloxUsername) +
-          "  ·  #" + id : Username + "  ·  public profile not linked";
+          "  ·  #" + id + (VerifiedRobloxUserId == id ? "  ·  ✓ OAuth linked" : "  ·  public lookup")
+        : Username + "  ·  Roblox identity not linked";
 
     [JsonIgnore]
     public string Detail => (IsPinned ? "📌 " : "") +
@@ -63,7 +69,7 @@ public sealed class SavedRobloxAccount : System.ComponentModel.INotifyPropertyCh
     public string SearchableText => string.Join(" ", new[]
     {
         Username, Alias, RobloxUsername, PublicDisplayName, Group, Tags, Notes,
-        PublicUserId?.ToString() ?? ""
+        PublicUserId?.ToString() ?? "", VerifiedRobloxUserId?.ToString() ?? ""
     });
 
     public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
@@ -102,6 +108,7 @@ public partial class AccountsWindow : Window
     private readonly ObservableCollection<SavedRobloxAccount> _accounts = new();
     private string? _selectedId;
     private bool _readOnly;
+    private bool _oauthBusy;
     private readonly string _storagePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "Viora", "Manager", "accounts.json");
@@ -113,6 +120,7 @@ public partial class AccountsWindow : Window
             ProfileInput.Items.Add(i == 0 ? "Default" : "Profile " + i);
         ProfileInput.SelectedIndex = 0;
         AccountList.ItemsSource = _accounts;
+        OAuthClientIdInput.Text = RobloxOAuthLinker.GetClientId();
         LoadShortcuts();
         RefreshEmptyState();
         if (selectAccountId is not null)
@@ -153,6 +161,7 @@ public partial class AccountsWindow : Window
             _readOnly = true;
             SaveButton.IsEnabled = false;
             StartBrowserLoginButton.IsEnabled = false;
+            VerifyOAuthButton.IsEnabled = false;
             SaveMessage.Text = "Saved accounts could not be loaded. Original file preserved.";
             MessageBox.Show(this,
                 "Your saved account shortcuts couldn't be loaded. The original file has been preserved, " +
@@ -172,7 +181,7 @@ public partial class AccountsWindow : Window
     private void StartBrowserLogin_Click(object sender, RoutedEventArgs e) =>
         BeginBrowserLogin();
 
-    private void BeginBrowserLogin()
+    private async void BeginBrowserLogin()
     {
         if (_readOnly) return;
         if (_accounts.Count >= 1000)
@@ -213,25 +222,156 @@ public partial class AccountsWindow : Window
 
         RefreshEmptyState();
         AccountList.SelectedItem = saved; // Show rename/game options, if wanted.
-        LoginStatusText.Text = "Account slot saved as " + saved.Username +
-            ". Opening Roblox login now. Sign in on the Roblox website; " +
-            "the browser saves its own session automatically.";
-        SaveMessage.Text = "Optional: rename " + saved.Username +
-            " to the actual Roblox username and add a game ID below.";
+        SaveMessage.Text = "Shortcut saved. The browser handles passwords and cookies; " +
+            "Viora stores only public account metadata.";
 
+        if (RobloxOAuthLinker.GetClientId().Length > 0)
+        {
+            LoginStatusText.Text = "Account slot saved as " + saved.Username +
+                ". Starting official Roblox account verification…";
+            await VerifySavedAccountAsync(saved);
+        }
+        else
+        {
+            OAuthSetupExpander.IsExpanded = true;
+            LoginStatusText.Text = "Account slot saved as " + saved.Username +
+                ". Browser sign-in alone cannot report who logged in. Configure " +
+                "official Roblox OAuth below to link the identity automatically.";
+            try
+            {
+                RobloxBrowserLauncher.OpenLogin(saved);
+            }
+            catch (Exception ex) when (ex is ArgumentException or
+                System.ComponentModel.Win32Exception or FileNotFoundException or
+                InvalidOperationException)
+            {
+                LoginStatusText.Text = "Saved the shortcut, but couldn't open Roblox login.";
+                MessageBox.Show(this, ex.Message, "Open Roblox login",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+    }
+
+    private void SaveOAuthClient_Click(object sender, RoutedEventArgs e)
+    {
         try
         {
-            // Cookies/passwords remain managed by the browser, not by Viora.
-            RobloxBrowserLauncher.OpenLogin(saved);
+            RobloxOAuthLinker.SaveClientId(OAuthClientIdInput.Text);
+            OAuthIdentityStatus.Text = "OAuth Client ID configured. Now select an account and click Connect verified Roblox account.";
+            LoginStatusText.Text = "Official Roblox OAuth is configured; new accounts can verify their identity automatically.";
         }
-        catch (Exception ex) when (ex is ArgumentException or
-            System.ComponentModel.Win32Exception or
-            FileNotFoundException or InvalidOperationException)
+        catch (Exception ex) when (ex is ArgumentException or IOException or UnauthorizedAccessException)
         {
-            LoginStatusText.Text = "Saved the shortcut for " + saved.Username +
-                ", but Roblox login couldn't be opened. Use the Sign in button below to retry.";
-            MessageBox.Show(this, ex.Message, "Open Roblox login",
+            MessageBox.Show(this, ex.Message, "Roblox OAuth setup",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void OpenOAuthRegistration_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            using var browser = Process.Start(new ProcessStartInfo(RobloxOAuthLinker.RegistrationUrl)
+                { UseShellExecute = true });
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            MessageBox.Show(this, ex.Message, "Roblox Creator Dashboard",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private async void VerifyOAuth_Click(object sender, RoutedEventArgs e)
+    {
+        if (_readOnly || _oauthBusy) return;
+        if (AccountList.SelectedItem is not SavedRobloxAccount target)
+        {
+            MessageBox.Show(this, "Select a saved account first, or create one with Add browser account.",
+                "Link Roblox account", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        await VerifySavedAccountAsync(target);
+    }
+
+    private async System.Threading.Tasks.Task VerifySavedAccountAsync(SavedRobloxAccount target)
+    {
+        if (_readOnly || _oauthBusy) return;
+        if (RobloxOAuthLinker.GetClientId().Length == 0)
+        {
+            OAuthSetupExpander.IsExpanded = true;
+            LoginStatusText.Text = "Register a Roblox OAuth application with openid/profile scopes, " +
+                "save its Client ID below, then click Connect verified Roblox account.";
+            return;
+        }
+        _oauthBusy = true;
+        VerifyOAuthButton.IsEnabled = false;
+        StartBrowserLoginButton.IsEnabled = false;
+        OAuthIdentityStatus.Text = "Authorise Viora in the Roblox browser window; " +
+            "Viora is waiting for an official callback (up to four minutes).";
+        try
+        {
+            var verified = await RobloxOAuthLinker.VerifyAsync(target);
+            if (_accounts.Any(a => a.Id != target.Id &&
+                (a.VerifiedRobloxUserId == verified.Id ||
+                 string.Equals(a.RobloxUsername, verified.Username,
+                     StringComparison.OrdinalIgnoreCase) && a.VerifiedRobloxUserId is > 0)))
+                throw new InvalidOperationException(
+                    "This Roblox identity is already linked to another account shortcut.");
+
+            var old = new
+            {
+                target.Username, target.RobloxUsername, target.PublicDisplayName,
+                target.PublicUserId, target.VerifiedRobloxUserId, target.VerifiedAtUtc
+            };
+            target.RobloxUsername = verified.Username;
+            target.PublicUserId = verified.Id;
+            target.PublicDisplayName = verified.DisplayName;
+            target.VerifiedRobloxUserId = verified.Id;
+            target.VerifiedAtUtc = DateTime.UtcNow;
+
+            // Replace an autogenerated AccountN label automatically but preserve
+            // a user-chosen custom name or an existing same-name shortcut.
+            if (Regex.IsMatch(target.Username, @"^Account\d+$",
+                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant) &&
+                !_accounts.Any(a => a.Id != target.Id &&
+                    a.Username.Equals(verified.Username, StringComparison.OrdinalIgnoreCase)))
+                target.Username = verified.Username;
+
+            if (!Persist())
+            {
+                target.Username = old.Username;
+                target.RobloxUsername = old.RobloxUsername;
+                target.PublicDisplayName = old.PublicDisplayName;
+                target.PublicUserId = old.PublicUserId;
+                target.VerifiedRobloxUserId = old.VerifiedRobloxUserId;
+                target.VerifiedAtUtc = old.VerifiedAtUtc;
+                throw new IOException("Could not save the verified identity; original shortcut preserved.");
+            }
+            target.NotifyVisualUpdate();
+            AccountList.SelectedItem = null;
+            AccountList.SelectedItem = target;
+            OAuthIdentityStatus.Text = "✓ Verified @" + verified.Username +
+                " (Roblox User ID " + verified.Id + ").";
+            LoginStatusText.Text = "Roblox confirmed " + verified.Username +
+                ". Viora saved the verified User ID and public display name, never the OAuth tokens.";
+            SaveMessage.Text = "The browser is still responsible for its sign-in. " +
+                "Verified identity does not control Roblox Player's active account.";
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or TimeoutException or
+            HttpRequestException or System.Threading.Tasks.TaskCanceledException or
+            JsonException or IOException or ArgumentException)
+        {
+            OAuthIdentityStatus.Text = "Roblox identity verification was not completed.";
+            LoginStatusText.Text = "Existing saved shortcut remains available. " +
+                "Confirm your Client ID, registered callback URL, browser login and Roblox consent.";
+            MessageBox.Show(this, ex.Message, "Roblox OAuth verification",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        finally
+        {
+            _oauthBusy = false;
+            VerifyOAuthButton.IsEnabled = !_readOnly;
+            StartBrowserLoginButton.IsEnabled = !_readOnly;
         }
     }
 
@@ -322,7 +462,9 @@ public partial class AccountsWindow : Window
                 IsFavorite = FavoriteInput.IsChecked == true,
                 IsPinned = PinnedInput.IsChecked == true,
                 PublicUserId = samePublicProfile ? current!.PublicUserId : null,
-                PublicDisplayName = samePublicProfile ? current!.PublicDisplayName : ""
+                PublicDisplayName = samePublicProfile ? current!.PublicDisplayName : "",
+                VerifiedRobloxUserId = samePublicProfile ? current!.VerifiedRobloxUserId : null,
+                VerifiedAtUtc = samePublicProfile ? current!.VerifiedAtUtc : null
             };
             int index = current is null ? -1 : _accounts.IndexOf(current);
             if (index >= 0) _accounts[index] = updated;
