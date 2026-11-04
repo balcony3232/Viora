@@ -183,6 +183,7 @@ public partial class MainWindow
         var editor = new AccountsWindow(selectAccountId: account.Id) { Owner = this };
         editor.ShowDialog();
         ReloadConnectedAccounts();
+        _ = RefreshPublicProfilesAsync();
     }
 
     private void ExportAccounts_Click(object sender, RoutedEventArgs e)
