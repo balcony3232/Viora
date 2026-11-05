@@ -229,6 +229,12 @@
                             Padding="12,8" Margin="0,0,7,0" FontSize="11"/>
                     <Button Grid.Column="1" Content="Clear" Click="ClearAccountSelection_Click"
                             Padding="12,8" Margin="0,0,7,0" FontSize="11"/>
+                    <Button Grid.Column="2" x:Name="AccountMultiInstanceButton"
+                            HorizontalAlignment="Right" Content="Multi-instance: OFF"
+                            Click="AccountMultiInstance_Click"
+                            Padding="12,8" Margin="0,0,7,0" FontSize="11"
+                            Background="#39274D"
+                            ToolTip="Experimental legacy option; must be enabled before the first Roblox Player launches."/>
                     <Button Grid.Column="3" Content="Export list" Click="ExportAccounts_Click"
                             Padding="11,8" Margin="0,0,7,0" FontSize="11"
                             ToolTip="Save non-secret account labels and settings. Does not export browser logins."/>
@@ -294,6 +300,7 @@
                     BorderThickness="1" CornerRadius="11" Padding="15,12" Margin="0,0,0,13">
                 <StackPanel>
                     <CheckBox x:Name="MultiInstanceToggle" Click="MultiInstanceToggle_Click"
+                              Checked="MultiInstanceCheckedChanged" Unchecked="MultiInstanceCheckedChanged"
                               Foreground="#E8D9FF" FontWeight="SemiBold"
                               Content="Enable experimental multi-instance mode"/>
                     <TextBlock x:Name="ExperimentStatus" Foreground="{StaticResource Muted}"
@@ -349,7 +356,7 @@
             </Grid>
         </Grid>
         <TextBlock Grid.Row="2"
-                   Text="Official Roblox account identity cannot be inferred from a browser session. Preview builds are not a guarantee of multi-instance support."
+                   Text="Viora checks actual Roblox Player windows during batch launches. Browser sign-in does not guarantee the Player uses the same account, and multiple Players aren't officially supported."
                    Foreground="{StaticResource Muted}" TextWrapping="Wrap" FontSize="10"
                    Margin="0,9,0,0"/>
     </Grid>
