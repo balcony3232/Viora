@@ -28,6 +28,13 @@ public partial class MainWindow
         MultiInstanceToggle.IsChecked = enabled;
     }
 
+    private void MultiInstanceCheckedChanged(object sender, RoutedEventArgs e)
+    {
+        // The other tab can change the setting too; queue status must stay in sync.
+        // Defer until after its Click handler has completed any confirmation.
+        Dispatcher.BeginInvoke(new Action(RefreshLegacyModeIndicator));
+    }
+
     private void AccountMultiInstance_Click(object sender, RoutedEventArgs e)
     {
         if (_accountLaunchCancel is not null)
@@ -143,7 +150,9 @@ public partial class MainWindow
             cancel.ThrowIfCancellationRequested();
             await Task.Delay(TimeSpan.FromSeconds(1), cancel);
             var current = GetVisiblePlayerPids();
-            if (current.Except(before).Any()) return true;
+            // A changed PID by itself is not another Player if the first one
+            // was replaced or exited. Require a net additional *visible* client.
+            if (current.Count > before.Count && current.Except(before).Any()) return true;
             progress(current.Count);
         }
         return false;
