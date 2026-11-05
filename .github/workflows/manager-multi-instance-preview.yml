@@ -1,0 +1,50 @@
+name: Viora Manager v1.4.7 Multi-instance Launch Diagnostics preview
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'feature/manager-v1.4.7-multi-instance-launch-check'
+
+permissions:
+  contents: read
+
+jobs:
+  manager-preview:
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Compile standalone Windows Manager
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          [xml]$project = Get-Content 'VioraManager/VioraManager.csproj'
+          $version = [string]$project.Project.PropertyGroup.Version
+          if ([string]::IsNullOrWhiteSpace($version)) { throw 'Manager version missing.' }
+          dotnet restore 'VioraManager/VioraManager.csproj' --runtime win-x64
+          if ($LASTEXITCODE -ne 0) { throw 'Restore failed.' }
+          dotnet publish 'VioraManager/VioraManager.csproj' -c Release -r win-x64 --self-contained true --no-restore -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o manager-publish
+          if ($LASTEXITCODE -ne 0) { throw 'Publish failed.' }
+          if (!(Test-Path 'manager-publish/VioraManager.exe')) { throw 'Missing Manager executable.' }
+          New-Item -ItemType Directory -Path publish -Force | Out-Null
+          $file = "VioraManager-v$version.exe"
+          Move-Item 'manager-publish/VioraManager.exe' "publish/$file" -Force
+          $hash = (Get-FileHash "publish/$file" -Algorithm SHA256).Hash.ToLowerInvariant()
+          [IO.File]::WriteAllText("publish/$file.sha256", "$hash  $file" + [Environment]::NewLine)
+          Write-Host "Compiled $file, SHA-256 $hash"
+
+      - name: Upload Manager preview artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VioraManager-v1.4.7-multi-instance-launch-check
+          path: |
+            publish/*.exe
+            publish/*.sha256
+          if-no-files-found: error
