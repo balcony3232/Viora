@@ -250,6 +250,17 @@ public partial class MainWindow
             return;
         }
 
+        if (selected.Count > 1 && !_experiment.IsEnabled)
+        {
+            AccountLaunchStatus.Text =
+                "Multi-instance mode is OFF. Turn it on before launching any Roblox Player, " +
+                "otherwise multiple browser windows may reuse the same game client.";
+            MessageBox.Show(this, AccountLaunchStatus.Text,
+                "Enable experimental mode first",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
         if (MessageBox.Show(this,
             "Open the game-start link in " + selected.Count + " browser profiles, one at a time?\n\n" +
             "Roblox Player can still use an already-active account and may not open separate instances. " +
