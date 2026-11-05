@@ -4,8 +4,8 @@ using System.Threading;
 namespace VioraManager;
 
 /// <summary>
-/// Opt-in compatibility experiment based on a Windows named mutex used by
-/// Roblox's legacy singleton check. This does not edit the Roblox binary,
+/// Opt-in compatibility experiment against Roblox's legacy singleton event
+/// name using a Windows named Mutex. This does not edit the Roblox binary,
 /// inject code, touch Roblox cookies, or store account credentials.
 ///
 /// This behaviour is undocumented by Roblox and can stop working at any time.
@@ -13,9 +13,15 @@ namespace VioraManager;
 /// </summary>
 internal sealed class MultiInstanceExperiment : IDisposable
 {
-    // The reference project's v2.2 source uses this name. Treat it as an
-    // implementation detail that Roblox may change without notice.
-    private const string LegacySingletonName = "ROBLOX_singletonMutex";
+    // Roblox also uses an Event named ROBLOX_singletonEvent for its legacy
+    // one-Player check. v1.4.7 only held ROBLOX_singletonMutex and thus
+    // often failed to affect this check at all.
+    //
+    // Windows named kernel objects share a namespace. Some older external
+    // compatibility tools pre-create a Mutex under the Event's name, so
+    // CreateEvent cannot open/create that Event. This is an undocumented
+    // compatibility experiment and may not work after Roblox updates.
+    private const string LegacySingletonName = "ROBLOX_singletonEvent";
 
     private Mutex? _heldMutex;
     private bool _ownsMutex;
@@ -36,12 +42,12 @@ internal sealed class MultiInstanceExperiment : IDisposable
             if (!createdNew)
             {
                 mutex.Dispose();
-                message = "The Roblox singleton name already exists. Another Roblox session or helper may be running. Close Roblox and other multi-instance tools before trying again.";
+                message = "ROBLOX_singletonEvent is already in use. A Roblox session or another instance tool may own it. Close Roblox and other instance tools before trying again.";
                 return false;
             }
             _heldMutex = mutex;
             _ownsMutex = true;
-            message = "Experimental mode enabled for this Manager session. Now launch the first Roblox Player from the official website, then try a different account in a separate browser profile.";
+            message = "Legacy singleton-event compatibility activated. It may still fail on current Roblox builds. Open one Roblox Player, then test a second account; Viora will check for a second real Player window.";
             return true;
         }
         catch (UnauthorizedAccessException)
