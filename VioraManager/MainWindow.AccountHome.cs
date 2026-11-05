@@ -279,6 +279,7 @@ public partial class MainWindow
             {
                 cancel.Token.ThrowIfCancellationRequested();
                 long targetPlace = (place ?? account.PlaceId)!.Value;
+                var beforePlayers = GetVisiblePlayerPids();
                 if (account.EmbeddedBrowserProfile)
                 {
                     var window = new RobloxEmbeddedLoginWindow(account.Id,
@@ -293,8 +294,22 @@ public partial class MainWindow
                 }
                 RecordLaunch(account, targetPlace, job);
                 completed++;
-                AccountLaunchStatus.Text = "Opened " + completed + "/" + selected.Count +
-                    " browser game-start links. Verify desktop Roblox identity.";
+                AccountLaunchStatus.Text = "Attempted " + completed + "/" + selected.Count +
+                    " game links. Waiting to observe a NEW Roblox Player window.";
+                bool newPlayer = await WaitForAdditionalPlayerAsync(
+                    beforePlayers, timeoutSeconds: 20, cancel.Token,
+                    count => AccountLaunchStatus.Text = "Attempt " + completed + "/" +
+                        selected.Count + ": " + count + " visible Roblox Player windows.");
+                RefreshWindows();
+                if (!newPlayer)
+                {
+                    AccountLaunchStatus.Text = "Stopped after " + completed +
+                        " browser launches: no additional Roblox Player window was detected. " +
+                        "The legacy compatibility option may not work with this Roblox version.";
+                    break;
+                }
+                AccountLaunchStatus.Text = "Observed another Roblox Player window (" +
+                    GetVisiblePlayerPids().Count + " total). Verify its actual signed-in account.";
                 if (completed < selected.Count)
                     await Task.Delay(TimeSpan.FromSeconds(LaunchDelaySeconds), cancel.Token);
             }
